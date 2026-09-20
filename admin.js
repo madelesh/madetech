@@ -16,6 +16,13 @@ const productCategory = document.getElementById("productCategory");
 const categoryFields = document.getElementById("categoryFields");
 const categoryFieldsTitle = document.getElementById("categoryFieldsTitle");
 
+const productColorPicker = document.getElementById("productColorPicker");
+const customColorInput = document.getElementById("customColorInput");
+const storeAmazon = document.getElementById("storeAmazon");
+const storeAliExpress = document.getElementById("storeAliExpress");
+const extraStores = document.getElementById("extraStores");
+const addStoreButton = document.getElementById("addStoreButton");
+
 const keyGeneratorForm = document.getElementById("keyGeneratorForm");
 const generatedKeyBox = document.getElementById("generatedKeyBox");
 const generatedKeyValue = document.getElementById("generatedKeyValue");
@@ -25,6 +32,21 @@ const keysCount = document.getElementById("keysCount");
 
 let adminToken = localStorage.getItem("madetech_admin_token") || "";
 let products = [];
+
+const PRESET_COLORS = [
+  { name: "Negro", hex: "#111111" },
+  { name: "Blanco", hex: "#ffffff" },
+  { name: "Gris", hex: "#808080" },
+  { name: "Rojo", hex: "#ef4444" },
+  { name: "Azul", hex: "#3b82f6" },
+  { name: "Verde", hex: "#22c55e" },
+  { name: "Amarillo", hex: "#facc15" },
+  { name: "Naranja", hex: "#f97316" },
+  { name: "Rosa", hex: "#ec4899" },
+  { name: "Morado", hex: "#8b5cf6" }
+];
+
+let selectedColors = [];
 
 /* ---------------- API ---------------- */
 
@@ -65,8 +87,16 @@ const categorySchemas = {
       ["separate", "Se compra aparte"],
       ["not_supported", "No compatible"]
     ]),
-    field("gripTypes", "Tipos de agarre", "lines", "Palm\nClaw\nFingertip"),
-    field("pollingRate", "Polling rate", "text", "Ej. 8000 Hz"),
+    field("gripTypes", "Tipos de agarre", "multichoice", "", [
+      ["Palm", "Palm"],
+      ["Claw", "Claw"],
+      ["Fingertip", "Fingertip"]
+    ]),
+    field("pollingRate", "Polling rate", "select", "", [
+      ["1000 Hz", "1000 Hz"],
+      ["4000 Hz", "4000 Hz"],
+      ["8000 Hz", "8000 Hz"]
+    ]),
     field("batteryHours", "Batería (horas)", "number", "95"),
     field("dimensions", "Dimensiones", "text", "Ej. 127.1 × 63.9 × 39.9 mm")
   ],
@@ -76,7 +106,11 @@ const categorySchemas = {
     field("layout", "Formato / Layout", "text", "Ej. 75% ANSI"),
     field("hotSwap", "Hot-swap", "boolean"),
     field("rapidTrigger", "Rapid Trigger", "boolean"),
-    field("pollingRate", "Polling rate", "text", "Ej. 8000 Hz"),
+    field("pollingRate", "Polling rate", "select", "", [
+      ["1000 Hz", "1000 Hz"],
+      ["4000 Hz", "4000 Hz"],
+      ["8000 Hz", "8000 Hz"]
+    ]),
     field("keycaps", "Keycaps", "text", "Ej. PBT Double Shot"),
     field("mount", "Tipo de montaje", "text", "Ej. Gasket"),
     field("batteryHours", "Batería (horas)", "number", "120")
@@ -128,11 +162,29 @@ function renderCategoryFields(category, values = {}) {
   const schema = categorySchemas[category] || [];
   categoryFieldsTitle.textContent = category === "IEM" ? "IEM / In-Ears" : category;
   categoryFields.innerHTML = schema.map(item => fieldHtml(item, values[item.key])).join("");
+  bindSpecChoiceGroups();
 }
 
 function fieldHtml(item, value) {
   const id = `spec_${item.key}`;
   const safeValue = value ?? "";
+
+  if (item.type === "multichoice") {
+    const selected = Array.isArray(safeValue) ? safeValue.map(String) : [];
+    return `
+      <div class="spec-choice-field full-width">
+        <span class="spec-choice-label">${item.label.toUpperCase()}</span>
+        <div class="spec-choice-group" data-spec-key="${item.key}" data-spec-type="multichoice">
+          ${item.options.map(([optionValue, optionLabel]) => {
+            const active = selected.includes(String(optionValue));
+            return `<button type="button" class="spec-choice ${active ? "active" : ""}"
+              data-choice-value="${escapeAttr(optionValue)}" aria-pressed="${active}">
+              ${escapeHtml(optionLabel)}
+            </button>`;
+          }).join("")}
+        </div>
+      </div>`;
+  }
 
   if (item.type === "boolean") {
     return `
@@ -173,12 +225,176 @@ function fieldHtml(item, value) {
     </label>`;
 }
 
+function bindSpecChoiceGroups() {
+  categoryFields.querySelectorAll(".spec-choice").forEach(button => {
+    button.addEventListener("click", () => {
+      const active = button.classList.toggle("active");
+      button.setAttribute("aria-pressed", String(active));
+    });
+  });
+}
+
 productCategory.addEventListener("change", () => renderCategoryFields(productCategory.value, {}));
+
+
+/* ---------------- VISUAL PRODUCT EDITORS ---------------- */
+
+function renderColorPicker(colors = selectedColors) {
+  selectedColors = normalizeColors(colors);
+
+  const presets = PRESET_COLORS.map(color => {
+    const active = selectedColors.some(item => item.hex.toLowerCase() === color.hex.toLowerCase());
+    return `
+      <button type="button" class="admin-color-option ${active ? "active" : ""}"
+              data-color-name="${escapeAttr(color.name)}"
+              data-color-hex="${escapeAttr(color.hex)}"
+              aria-pressed="${active}" title="${escapeAttr(color.name)}">
+        <span class="admin-color-circle" style="background:${escapeAttr(color.hex)}"></span>
+        <span>${escapeHtml(color.name)}</span>
+      </button>`;
+  }).join("");
+
+  const custom = selectedColors
+    .filter(item => !PRESET_COLORS.some(preset => preset.hex.toLowerCase() === item.hex.toLowerCase()))
+    .map(color => `
+      <button type="button" class="admin-color-option active custom-color-option"
+              data-color-name="${escapeAttr(color.name)}"
+              data-color-hex="${escapeAttr(color.hex)}"
+              aria-pressed="true" title="Quitar ${escapeAttr(color.name)}">
+        <span class="admin-color-circle" style="background:${escapeAttr(color.hex)}"></span>
+        <span>${escapeHtml(color.name)}</span>
+      </button>`).join("");
+
+  productColorPicker.innerHTML = `
+    ${presets}
+    ${custom}
+    <button type="button" class="admin-color-option add-color-option" id="addCustomColor" title="Añadir otro color">
+      <span class="admin-color-circle add-color-circle">+</span>
+      <span>Otro</span>
+    </button>`;
+
+  productColorPicker.querySelectorAll("[data-color-hex]").forEach(button => {
+    button.addEventListener("click", () => {
+      const name = button.dataset.colorName;
+      const hex = button.dataset.colorHex;
+      const exists = selectedColors.some(item => item.hex.toLowerCase() === hex.toLowerCase());
+
+      selectedColors = exists
+        ? selectedColors.filter(item => item.hex.toLowerCase() !== hex.toLowerCase())
+        : [...selectedColors, { name, hex }];
+
+      renderColorPicker(selectedColors);
+    });
+  });
+
+  document.getElementById("addCustomColor")?.addEventListener("click", () => {
+    customColorInput.click();
+  });
+}
+
+customColorInput.addEventListener("change", () => {
+  const hex = customColorInput.value.toLowerCase();
+  if (!selectedColors.some(item => item.hex.toLowerCase() === hex)) {
+    selectedColors.push({ name: "Personalizado", hex });
+  }
+  renderColorPicker(selectedColors);
+});
+
+function normalizeColors(colors) {
+  if (!Array.isArray(colors)) return [];
+  const seen = new Set();
+  return colors
+    .map(item => {
+      const hex = String(item?.hex || "").trim();
+      if (!/^#[0-9a-f]{6}$/i.test(hex)) return null;
+      const preset = PRESET_COLORS.find(p => p.hex.toLowerCase() === hex.toLowerCase());
+      return {
+        name: String(item?.name || preset?.name || "Personalizado").trim(),
+        hex: hex.toLowerCase()
+      };
+    })
+    .filter(Boolean)
+    .filter(item => {
+      if (seen.has(item.hex)) return false;
+      seen.add(item.hex);
+      return true;
+    });
+}
+
+function renderTrustedStores(stores = []) {
+  const list = Array.isArray(stores) ? stores : [];
+
+  const amazon = list.find(item => normalizeStoreName(item?.name) === "amazon");
+  const aliexpress = list.find(item => normalizeStoreName(item?.name) === "aliexpress");
+
+  storeAmazon.value = amazon?.url || "";
+  storeAliExpress.value = aliexpress?.url || "";
+
+  const extras = list.filter(item => {
+    const name = normalizeStoreName(item?.name);
+    return name !== "amazon" && name !== "aliexpress";
+  });
+
+  extraStores.innerHTML = "";
+  extras.forEach(store => addExtraStoreRow(store));
+}
+
+function normalizeStoreName(name) {
+  return String(name || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace("ali-express", "aliexpress");
+}
+
+function addExtraStoreRow(store = {}) {
+  const row = document.createElement("div");
+  row.className = "store-row store-row-extra";
+  row.innerHTML = `
+    <input class="store-name-input" type="text" placeholder="Nombre de la tienda"
+           value="${escapeAttr(store.name || "")}" aria-label="Nombre de la tienda" />
+    <input class="store-url-input" type="url" placeholder="https://..."
+           value="${escapeAttr(store.url || "")}" aria-label="Link de la tienda" />
+    <button class="remove-store-btn" type="button" title="Eliminar tienda" aria-label="Eliminar tienda">×</button>
+  `;
+  row.querySelector(".remove-store-btn").addEventListener("click", () => row.remove());
+  extraStores.appendChild(row);
+}
+
+addStoreButton.addEventListener("click", () => {
+  addExtraStoreRow();
+  const rows = extraStores.querySelectorAll(".store-row-extra");
+  rows[rows.length - 1]?.querySelector(".store-name-input")?.focus();
+});
+
+function collectTrustedStores() {
+  const stores = [];
+
+  if (storeAmazon.value.trim()) {
+    stores.push({ name: "Amazon", url: storeAmazon.value.trim() });
+  }
+
+  if (storeAliExpress.value.trim()) {
+    stores.push({ name: "AliExpress", url: storeAliExpress.value.trim() });
+  }
+
+  extraStores.querySelectorAll(".store-row-extra").forEach(row => {
+    const name = row.querySelector(".store-name-input").value.trim();
+    const url = row.querySelector(".store-url-input").value.trim();
+    if (name && url) stores.push({ name, url });
+  });
+
+  return stores;
+}
+
+renderColorPicker([]);
+renderTrustedStores([]);
 
 /* ---------------- ADMIN SESSION ---------------- */
 
 async function restoreAdminSession() {
   if (!adminToken) {
+    document.body.classList.remove("admin-authenticated");
     adminLogin.hidden = false;
     adminApp.hidden = true;
     return;
@@ -191,11 +407,13 @@ async function restoreAdminSession() {
     adminIdentity.textContent = "Administrador";
     adminLogin.hidden = true;
     adminApp.hidden = false;
+    document.body.classList.add("admin-authenticated");
     renderCategoryFields(productCategory.value, {});
     await Promise.all([loadProducts(), loadKeys()]);
   } catch {
     localStorage.removeItem("madetech_admin_token");
     adminToken = "";
+    document.body.classList.remove("admin-authenticated");
     adminLogin.hidden = false;
     adminApp.hidden = true;
   }
@@ -220,6 +438,7 @@ adminLoginForm.addEventListener("submit", async event => {
     adminIdentity.textContent = email;
     adminLogin.hidden = true;
     adminApp.hidden = false;
+    document.body.classList.add("admin-authenticated");
 
     renderCategoryFields(productCategory.value, {});
     await Promise.all([loadProducts(), loadKeys()]);
@@ -233,6 +452,7 @@ adminLogout.addEventListener("click", async () => {
   try { await api("/session/logout", { method: "POST" }); } catch {}
   localStorage.removeItem("madetech_admin_token");
   adminToken = "";
+  document.body.classList.remove("admin-authenticated");
   adminApp.hidden = true;
   adminLogin.hidden = false;
 });
@@ -308,8 +528,8 @@ function editProduct(id) {
   document.getElementById("productImageUrl").value = product.imageUrl || "";
   document.getElementById("productOfficialUrl").value = product.officialUrl || "";
   document.getElementById("productFeatured").value = product.featured === true ? "true" : "false";
-  document.getElementById("productTrustedStores").value = storesToText(product.trustedStores);
-  document.getElementById("productColors").value = colorsToText(product.colors);
+  renderTrustedStores(product.trustedStores || []);
+  renderColorPicker(product.colors || []);
   document.getElementById("productConnections").value = (product.connections || []).join("\n");
   document.getElementById("productYoutube").value = product.reviewLinks?.youtube || "";
   document.getElementById("productTiktok").value = product.reviewLinks?.tiktok || "";
@@ -329,6 +549,8 @@ function resetProductForm() {
   productCategory.value = "Mouse";
   document.getElementById("productStatus").value = "published";
   document.getElementById("productFeatured").value = "false";
+  renderTrustedStores([]);
+  renderColorPicker([]);
   renderCategoryFields("Mouse", {});
 }
 
@@ -351,8 +573,8 @@ productForm.addEventListener("submit", async event => {
     imageUrl: document.getElementById("productImageUrl").value.trim(),
     officialUrl: document.getElementById("productOfficialUrl").value.trim(),
     featured: document.getElementById("productFeatured").value === "true",
-    trustedStores: parseStores(document.getElementById("productTrustedStores").value),
-    colors: parseColors(document.getElementById("productColors").value),
+    trustedStores: collectTrustedStores(),
+    colors: selectedColors.map(item => ({ name: item.name, hex: item.hex })),
     connections: lines(document.getElementById("productConnections").value),
     reviewLinks: {
       youtube: document.getElementById("productYoutube").value.trim(),
@@ -398,19 +620,28 @@ function collectCategorySpecs() {
   categoryFields.querySelectorAll("[data-spec-key]").forEach(input => {
     const key = input.dataset.specKey;
     const type = input.dataset.specType;
-    let value = input.value;
+    let value;
 
-    if (type === "boolean") {
-      if (value === "") return;
-      value = value === "true";
-    } else if (type === "number") {
-      if (value === "") return;
-      value = Number(value);
-    } else if (type === "lines") {
-      value = lines(value);
+    if (type === "multichoice") {
+      value = [...input.querySelectorAll(".spec-choice.active")]
+        .map(button => button.dataset.choiceValue)
+        .filter(Boolean);
       if (!value.length) return;
-    } else if (value === "") {
-      return;
+    } else {
+      value = input.value;
+
+      if (type === "boolean") {
+        if (value === "") return;
+        value = value === "true";
+      } else if (type === "number") {
+        if (value === "") return;
+        value = Number(value);
+      } else if (type === "lines") {
+        value = lines(value);
+        if (!value.length) return;
+      } else if (value === "") {
+        return;
+      }
     }
 
     result[key] = value;
@@ -509,36 +740,6 @@ async function revokeAccessKey(id) {
 }
 
 /* ---------------- HELPERS ---------------- */
-
-function parseStores(value) {
-  return lines(value)
-    .map(row => {
-      const [name, ...urlParts] = row.split("|");
-      return { name: String(name || "").trim(), url: urlParts.join("|").trim() };
-    })
-    .filter(item => item.name && item.url);
-}
-
-function parseColors(value) {
-  return lines(value)
-    .map(row => {
-      const [name, hex = ""] = row.split("|");
-      return { name: String(name || "").trim(), hex: String(hex || "").trim() };
-    })
-    .filter(item => item.name);
-}
-
-function storesToText(stores) {
-  return Array.isArray(stores)
-    ? stores.map(item => `${item.name || ""} | ${item.url || ""}`).join("\n")
-    : "";
-}
-
-function colorsToText(colors) {
-  return Array.isArray(colors)
-    ? colors.map(item => `${item.name || ""} | ${item.hex || ""}`).join("\n")
-    : "";
-}
 
 function lines(value) {
   return String(value || "").split("\n").map(item => item.trim()).filter(Boolean);

@@ -102,6 +102,7 @@ mobileNav.querySelectorAll("a").forEach(link => {
 /* ---------------- SESSION / KEY LOGIN ---------------- */
 
 function showGate(message = "") {
+  document.body.classList.remove("session-authenticated");
   appRoot.hidden = true;
   accessGate.hidden = false;
 
@@ -116,6 +117,7 @@ function showGate(message = "") {
 function showApp() {
   accessGate.hidden = true;
   appRoot.hidden = false;
+  document.body.classList.add("session-authenticated");
   updateProfileMenu();
   window.scrollTo({ top: 0, left: 0, behavior: "auto" });
 }

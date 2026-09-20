@@ -154,15 +154,44 @@
                 </label>
               </div>
 
-              <label>
-                TIENDAS DE CONFIANZA — UNA POR LÍNEA
-                <textarea id="productTrustedStores" rows="4" placeholder="Amazon | https://...&#10;MaxGaming | https://..."></textarea>
-              </label>
+              <div class="visual-field-block">
+                <div class="visual-field-heading">
+                  <div>
+                    <span class="visual-field-label">TIENDAS DE CONFIANZA</span>
+                    <small>Amazon y AliExpress tienen su propio cuadro. Puedes añadir más tiendas.</small>
+                  </div>
+                </div>
 
-              <label>
-                COLORES — UNO POR LÍNEA
-                <textarea id="productColors" rows="4" placeholder="Negro | #111111&#10;Blanco | #ffffff&#10;Rosa | #f4a6c8"></textarea>
-              </label>
+                <div class="store-editor" id="trustedStoresEditor">
+                  <div class="store-row store-row-fixed">
+                    <div class="store-brand-badge">Amazon</div>
+                    <input id="storeAmazon" class="store-url-input" type="url" placeholder="https://amazon.com/..." aria-label="Link de Amazon" />
+                  </div>
+
+                  <div class="store-row store-row-fixed">
+                    <div class="store-brand-badge">AliExpress</div>
+                    <input id="storeAliExpress" class="store-url-input" type="url" placeholder="https://aliexpress.com/..." aria-label="Link de AliExpress" />
+                  </div>
+
+                  <div id="extraStores"></div>
+
+                  <button class="add-store-btn" id="addStoreButton" type="button">
+                    <span>+</span> AÑADIR OTRA TIENDA
+                  </button>
+                </div>
+              </div>
+
+              <div class="visual-field-block">
+                <div class="visual-field-heading">
+                  <div>
+                    <span class="visual-field-label">COLORES DISPONIBLES</span>
+                    <small>Haz clic en los círculos. Usa + para agregar un color personalizado.</small>
+                  </div>
+                </div>
+
+                <div class="color-picker-admin" id="productColorPicker"></div>
+                <input id="customColorInput" type="color" value="#7c3aed" hidden />
+              </div>
 
               <label>
                 TIPOS DE CONEXIÓN — UNO POR LÍNEA

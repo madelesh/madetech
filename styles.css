@@ -2053,3 +2053,14 @@ footer p:last-child {
     display: flex;
   }
 }
+
+
+/* V5.2 — al iniciar sesión el panel de acceso desaparece por completo */
+body.session-authenticated .access-gate,
+body.session-authenticated #accessGate {
+  display: none !important;
+}
+
+body.session-authenticated #appRoot {
+  display: block !important;
+}

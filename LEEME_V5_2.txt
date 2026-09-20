@@ -1,0 +1,20 @@
+MADETECH V5.2 — CAMBIOS
+========================
+
+1. El panel de inicio de sesión desaparece completamente al entrar.
+2. Colores del producto: selección visual por círculos + botón "+" para color personalizado.
+3. Mouse: tipos de agarre Palm / Claw / Fingertip seleccionables con clic.
+4. Polling rate: solo 1000 Hz, 4000 Hz o 8000 Hz.
+5. Tiendas: Amazon y AliExpress tienen cuadros separados; se pueden añadir más tiendas con nombre + link.
+
+ARCHIVOS A REEMPLAZAR EN GITHUB
+-------------------------------
+index.html
+styles.css
+app.js
+admin.html
+admin.css
+admin.js
+
+config.js NO necesita cambiar.
+Cloudflare Worker y D1 NO necesitan cambiar.

@@ -433,3 +433,220 @@
 .admin-list-item .published-badge {
   color: #dff700;
 }
+
+
+/* =========================================================
+   V5.2 — EDITORES VISUALES DEL PANEL ADMIN
+   ========================================================= */
+
+body.admin-authenticated .admin-login,
+body.admin-authenticated #adminLogin {
+  display: none !important;
+}
+
+body.admin-authenticated .admin-app,
+body.admin-authenticated #adminApp {
+  display: grid !important;
+}
+
+.visual-field-block {
+  display: grid;
+  gap: 13px;
+  padding: 16px;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 18px;
+  background: #0f0f10;
+}
+
+.visual-field-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.visual-field-heading > div {
+  display: grid;
+  gap: 5px;
+}
+
+.visual-field-label,
+.spec-choice-label {
+  font-size: .67rem;
+  letter-spacing: .1em;
+  color: #8c8c88;
+}
+
+.visual-field-heading small {
+  color: #666;
+  font-size: .72rem;
+  line-height: 1.45;
+}
+
+.color-picker-admin {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.admin-color-option {
+  min-width: 64px;
+  border: 0;
+  padding: 0;
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  background: transparent;
+  color: #888;
+  font: inherit;
+  font-size: .65rem;
+  cursor: pointer;
+}
+
+.admin-color-circle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 2px solid rgba(255,255,255,.14);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.18);
+  transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+
+.admin-color-option:hover .admin-color-circle {
+  transform: translateY(-2px);
+}
+
+.admin-color-option.active {
+  color: #fff;
+}
+
+.admin-color-option.active .admin-color-circle {
+  border-color: #eeff00;
+  box-shadow: 0 0 0 3px rgba(238,255,0,.14), inset 0 0 0 1px rgba(0,0,0,.18);
+}
+
+.add-color-circle {
+  background: #1a1a1c;
+  color: #eeff00;
+  font-size: 1.55rem;
+  font-weight: 500;
+  border-style: dashed;
+}
+
+.store-editor {
+  display: grid;
+  gap: 10px;
+}
+
+.store-row {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: center;
+}
+
+.store-row-fixed {
+  grid-template-columns: 130px minmax(0, 1fr);
+}
+
+.store-brand-badge {
+  min-height: 44px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 12px;
+  background: #181819;
+  color: #fff;
+  font-size: .76rem;
+  font-weight: 700;
+}
+
+.store-editor input {
+  min-height: 44px;
+  margin: 0;
+}
+
+.remove-store-btn,
+.add-store-btn {
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  background: #181819;
+  color: #fff;
+  cursor: pointer;
+}
+
+.remove-store-btn {
+  width: 44px;
+  height: 44px;
+  color: #ffadad;
+  font-size: 1.25rem;
+}
+
+.add-store-btn {
+  width: max-content;
+  min-height: 42px;
+  padding: 0 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #eeff00;
+  font-size: .69rem;
+  font-weight: 700;
+}
+
+.add-store-btn span {
+  font-size: 1.2rem;
+}
+
+.spec-choice-field {
+  display: grid;
+  gap: 9px;
+}
+
+.spec-choice-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.spec-choice {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 999px;
+  background: #1a1a1c;
+  color: #8c8c88;
+  cursor: pointer;
+  font: inherit;
+  font-size: .76rem;
+  transition: background .15s ease, border-color .15s ease, color .15s ease, transform .15s ease;
+}
+
+.spec-choice:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255,255,255,.25);
+}
+
+.spec-choice.active {
+  background: #eeff00;
+  border-color: #eeff00;
+  color: #090909;
+  font-weight: 800;
+}
+
+@media (max-width: 650px) {
+  .store-row,
+  .store-row-fixed {
+    grid-template-columns: 1fr;
+  }
+
+  .remove-store-btn {
+    width: 100%;
+  }
+
+  .admin-color-option {
+    min-width: 56px;
+  }
+}
