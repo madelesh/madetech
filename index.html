@@ -79,7 +79,7 @@
                 <path d="M4.5 21a7.5 7.5 0 0 1 15 0"></path>
               </svg>
             </span>
-            <span class="profile-button-label">Perfil</span>
+            <span class="profile-button-label" id="profileButtonLabel">Perfil</span>
             <svg class="profile-chevron" viewBox="0 0 24 24" aria-hidden="true">
               <path d="m8 10 4 4 4-4"></path>
             </svg>
@@ -101,7 +101,10 @@
 
             <div class="profile-session-status">
               <span class="profile-status-dot"></span>
-              <span>Sesión activa</span>
+              <div class="profile-session-copy">
+                <strong id="profileSessionLabel">Sesión activa</strong>
+                <span id="profileExpiryText">Comprobando expiración...</span>
+              </div>
             </div>
 
             <a class="profile-menu-item admin-shortcut" id="adminShortcut" href="admin.html" hidden>

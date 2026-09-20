@@ -12,6 +12,9 @@ const profileButton = document.getElementById("profileButton");
 const profilePopover = document.getElementById("profilePopover");
 const profileName = document.getElementById("profileName");
 const profileRole = document.getElementById("profileRole");
+const profileButtonLabel = document.getElementById("profileButtonLabel");
+const profileSessionLabel = document.getElementById("profileSessionLabel");
+const profileExpiryText = document.getElementById("profileExpiryText");
 
 const root = document.documentElement;
 const themeToggle = document.getElementById("themeToggle");
@@ -29,6 +32,9 @@ const modalContent = document.getElementById("modalContent");
 let reviews = [];
 let currentRole = null;
 let currentToken = null;
+let currentProfileName = "";
+let currentKeyExpiresAt = null;
+let keyCountdownTimer = null;
 
 document.getElementById("year").textContent = new Date().getFullYear();
 
@@ -124,9 +130,72 @@ function showApp() {
 
 function updateProfileMenu() {
   const isAdmin = currentRole === "admin";
-  profileName.textContent = isAdmin ? "Administrador" : "Usuario MadeTech";
+  const displayName = currentProfileName || (isAdmin ? "Administrador" : "Usuario MadeTech");
+
+  profileName.textContent = displayName;
+  profileButtonLabel.textContent = displayName;
   profileRole.textContent = isAdmin ? "Cuenta de administrador" : "Acceso por key";
   adminShortcut.hidden = !isAdmin;
+
+  startKeyCountdown();
+}
+
+function applySessionProfile(data = {}) {
+  currentRole = data.role || currentRole;
+  currentProfileName = String(data.profileName || "").trim();
+  currentKeyExpiresAt = data.keyExpiresAt || null;
+}
+
+function startKeyCountdown() {
+  if (keyCountdownTimer) {
+    clearInterval(keyCountdownTimer);
+    keyCountdownTimer = null;
+  }
+
+  updateKeyCountdown();
+
+  if (currentRole === "user" && currentKeyExpiresAt) {
+    keyCountdownTimer = setInterval(updateKeyCountdown, 30000);
+  }
+}
+
+function updateKeyCountdown() {
+  if (currentRole === "admin") {
+    profileSessionLabel.textContent = "Sesión activa";
+    profileExpiryText.textContent = "Cuenta de administrador";
+    return;
+  }
+
+  profileSessionLabel.textContent = "Key activa";
+
+  if (!currentKeyExpiresAt) {
+    profileExpiryText.textContent = "Sin fecha de expiración";
+    return;
+  }
+
+  const expiration = new Date(currentKeyExpiresAt).getTime();
+  const remainingMs = expiration - Date.now();
+
+  if (!Number.isFinite(expiration)) {
+    profileExpiryText.textContent = "Expiración no disponible";
+    return;
+  }
+
+  if (remainingMs <= 0) {
+    profileSessionLabel.textContent = "Key expirada";
+    profileExpiryText.textContent = "0 h 0 min restantes";
+    if (keyCountdownTimer) {
+      clearInterval(keyCountdownTimer);
+      keyCountdownTimer = null;
+    }
+    return;
+  }
+
+  const totalMinutes = Math.max(0, Math.floor(remainingMs / 60000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  profileExpiryText.textContent = `Expira en ${hours} h ${minutes} min`;
 }
 
 function closeProfileMenu() {
@@ -164,7 +233,7 @@ async function restoreSession() {
   try {
     const me = await api("/session/me", { method: "GET" }, candidate);
     currentToken = candidate;
-    currentRole = me.role;
+    applySessionProfile(me);
 
     adminShortcut.hidden = me.role !== "admin";
     showApp();
@@ -202,7 +271,7 @@ keyLoginForm.addEventListener("submit", async event => {
 
     localStorage.setItem("madetech_user_token", result.token);
     currentToken = result.token;
-    currentRole = "user";
+    applySessionProfile(result);
 
     accessKey.value = "";
     adminShortcut.hidden = true;
@@ -238,6 +307,12 @@ logoutButton.addEventListener("click", async () => {
 
   currentToken = null;
   currentRole = null;
+  currentProfileName = "";
+  currentKeyExpiresAt = null;
+  if (keyCountdownTimer) {
+    clearInterval(keyCountdownTimer);
+    keyCountdownTimer = null;
+  }
   reviews = [];
   showGate();
 });
