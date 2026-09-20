@@ -1,0 +1,66 @@
+MADETECH V5 — CLOUDFLARE BACKEND
+===================================
+
+Esta es la primera versión del frontend que ya NO usa Firebase.
+
+Backend:
+https://madetech-api.luissegura102.workers.dev
+
+Incluye:
+- Login por Access Key.
+- Sesiones.
+- Login de administrador.
+- Crear / editar / eliminar productos.
+- Borrador / publicado.
+- Generar y revocar Access Keys.
+- Calificaciones por estrellas.
+- Mouse / Teclados / IEM / Headsets / DAC.
+- Tienda oficial y tiendas de confianza.
+- YouTube / TikTok.
+- Tema claro / oscuro.
+
+ARCHIVOS QUE DEBES SUBIR A GITHUB
+---------------------------------
+index.html
+styles.css
+app.js
+admin.html
+admin.css
+admin.js
+config.js
+
+IMPORTANTE
+----------
+No subas firebase-config.js.
+Esta V5 ya no usa Firebase.
+
+El Worker y D1 se quedan en Cloudflare.
+
+DESPLIEGUE
+----------
+1. En GitHub abre el repositorio madetech.
+2. Add file -> Upload files.
+3. Arrastra los 7 archivos anteriores.
+4. Commit changes.
+5. Espera a GitHub Pages.
+6. Haz Ctrl+F5 en la web.
+
+ADMIN
+-----
+Panel:
+https://madelesh.github.io/madetech/admin.html
+
+Entra con el correo y contraseña del administrador
+que creaste mediante /admin/bootstrap.
+
+USUARIOS
+--------
+Página principal:
+https://madelesh.github.io/madetech/
+
+Deben introducir una key generada desde el panel admin.
+
+SEGURIDAD
+---------
+Los productos y keys ya no viven dentro de app.js.
+Los datos reales se solicitan a Cloudflare D1 mediante madetech-api.

@@ -13,6 +13,38 @@
 </head>
 
 <body>
+
+  <section class="access-gate" id="accessGate">
+    <div class="gate-card">
+      <div class="gate-brand">
+        <span class="brand-dot"></span>
+        <span>MADETECH</span>
+      </div>
+
+      <span class="gate-kicker">ACCESO PRIVADO</span>
+      <h1>Ingresa tu key<br>para continuar.</h1>
+      <p>
+        El acceso a MadeTech es mediante una key autorizada por el administrador.
+      </p>
+
+      <form id="keyLoginForm" class="key-form">
+        <label for="accessKey">ACCESS KEY</label>
+        <input id="accessKey" name="accessKey" type="text" autocomplete="off"
+               placeholder="MT-XXXXX-XXXXX-XXXXX-XXXXX" required />
+        <button type="submit">ENTRAR <span>↗</span></button>
+      </form>
+
+      <p class="gate-error" id="gateError" hidden></p>
+
+      <div class="gate-footer">
+        <span>¿Eres administrador?</span>
+        <a href="admin.html">Iniciar sesión como administrador →</a>
+      </div>
+    </div>
+  </section>
+
+  <div id="appRoot" hidden>
+
   <div class="site-shell">
     <header class="topbar">
       <a class="brand" href="#inicio" aria-label="MadeTech inicio">
@@ -28,6 +60,8 @@
       </nav>
 
       <div class="header-actions">
+        <a class="admin-shortcut" id="adminShortcut" href="admin.html" hidden>ADMIN</a>
+        <button class="logout-button" id="logoutButton" type="button">SALIR</button>
         <button class="theme-toggle" id="themeToggle" type="button" aria-label="Cambiar tema">
           <svg class="sun-icon" viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="12" cy="12" r="4"></circle>
@@ -289,6 +323,7 @@
     </article>
   </div>
 
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
+  </div>
 </body>
 </html>

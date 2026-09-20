@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0b0b0c" />
+  <title>MadeTech Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body class="admin-body">
+
+  <section class="admin-login" id="adminLogin">
+    <div class="admin-login-card">
+      <a class="brand" href="index.html">
+        <span class="brand-dot"></span>
+        <span>MADETECH</span>
+      </a>
+
+      <span class="gate-kicker">ADMINISTRACIÓN</span>
+      <h1>Panel de<br>administrador.</h1>
+
+      <form id="adminLoginForm" class="admin-form">
+        <label>
+          CORREO
+          <input id="adminEmail" type="email" autocomplete="username" required />
+        </label>
+        <label>
+          CONTRASEÑA
+          <input id="adminPassword" type="password" autocomplete="current-password" required />
+        </label>
+        <button type="submit">INICIAR SESIÓN ↗</button>
+      </form>
+
+      <p class="admin-error" id="adminLoginError" hidden></p>
+      <a class="back-site" href="index.html">← Volver a MadeTech</a>
+    </div>
+  </section>
+
+  <div class="admin-app" id="adminApp" hidden>
+    <aside class="admin-sidebar">
+      <a class="brand" href="index.html">
+        <span class="brand-dot"></span>
+        <span>MADETECH</span>
+      </a>
+
+      <nav class="admin-nav">
+        <button class="active" data-panel="productsPanel">Productos</button>
+        <button data-panel="keysPanel">Access Keys</button>
+      </nav>
+
+      <div class="admin-sidebar-footer">
+        <span id="adminIdentity"></span>
+        <button id="adminLogout">Cerrar sesión</button>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-top">
+        <div>
+          <span class="admin-eyebrow">MADETECH CONTROL</span>
+          <h1 id="adminTitle">Productos</h1>
+        </div>
+        <a href="index.html" target="_blank">VER WEB ↗</a>
+      </header>
+
+      <section class="admin-panel active" id="productsPanel">
+        <div class="admin-grid">
+          <div class="admin-card product-editor">
+            <div class="card-heading">
+              <div>
+                <span class="admin-eyebrow">EDITOR</span>
+                <h2 id="productFormTitle">Nuevo producto</h2>
+              </div>
+              <button class="ghost-btn" id="resetProduct" type="button">Limpiar</button>
+            </div>
+
+            <form id="productForm" class="product-form">
+              <input type="hidden" id="productId" />
+
+              <div class="form-row">
+                <label>
+                  CATEGORÍA
+                  <select id="productCategory" required>
+                    <option value="Mouse">Mouse</option>
+                    <option value="Teclados">Teclados</option>
+                    <option value="IEM">IEM / In-Ears</option>
+                    <option value="Headsets">Headsets</option>
+                    <option value="DAC">DACs</option>
+                  </select>
+                </label>
+
+                <label>
+                  ESTADO
+                  <select id="productStatus">
+                    <option value="published">Publicado</option>
+                    <option value="draft">Borrador</option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="form-row">
+                <label>
+                  MARCA
+                  <input id="productBrand" type="text" required />
+                </label>
+                <label>
+                  NOMBRE DEL PRODUCTO
+                  <input id="productName" type="text" required />
+                </label>
+              </div>
+
+              <div class="form-row">
+                <label>
+                  MODELO
+                  <input id="productModel" type="text" placeholder="Ej. Viper V3 Pro" />
+                </label>
+                <label>
+                  MADETECH SCORE
+                  <input id="productScore" type="number" min="0" max="10" step="0.1" required />
+                </label>
+              </div>
+
+              <div class="form-row">
+                <label>
+                  PRECIO DE REFERENCIA
+                  <input id="productPrice" type="text" placeholder="$159.99" />
+                </label>
+                <label>
+                  FECHA
+                  <input id="productDate" type="text" placeholder="19 SEP 2026" />
+                </label>
+              </div>
+
+              <label>
+                URL DE IMAGEN DEL PRODUCTO
+                <input id="productImageUrl" type="url" placeholder="https://..." />
+              </label>
+
+              <div class="form-row">
+                <label>
+                  PÁGINA OFICIAL / COMPRA
+                  <input id="productOfficialUrl" type="url" placeholder="https://marca.com/producto" />
+                </label>
+                <label>
+                  DESTACADO EN PORTADA
+                  <select id="productFeatured">
+                    <option value="false">No</option>
+                    <option value="true">Sí</option>
+                  </select>
+                </label>
+              </div>
+
+              <label>
+                TIENDAS DE CONFIANZA — UNA POR LÍNEA
+                <textarea id="productTrustedStores" rows="4" placeholder="Amazon | https://...&#10;MaxGaming | https://..."></textarea>
+              </label>
+
+              <label>
+                COLORES — UNO POR LÍNEA
+                <textarea id="productColors" rows="4" placeholder="Negro | #111111&#10;Blanco | #ffffff&#10;Rosa | #f4a6c8"></textarea>
+              </label>
+
+              <label>
+                TIPOS DE CONEXIÓN — UNO POR LÍNEA
+                <textarea id="productConnections" rows="4" placeholder="2.4 GHz Wireless&#10;Bluetooth&#10;USB-C Wired"></textarea>
+              </label>
+
+              <div class="form-row">
+                <label>
+                  REVIEW EN YOUTUBE
+                  <input id="productYoutube" type="url" placeholder="https://youtube.com/..." />
+                </label>
+                <label>
+                  REVIEW EN TIKTOK
+                  <input id="productTiktok" type="url" placeholder="https://tiktok.com/..." />
+                </label>
+              </div>
+
+              <label>
+                RESUMEN
+                <textarea id="productSummary" rows="4" required></textarea>
+              </label>
+
+              <div class="admin-category-block">
+                <div class="card-heading compact-heading">
+                  <div>
+                    <span class="admin-eyebrow">ESPECIFICACIONES</span>
+                    <h2 id="categoryFieldsTitle">Mouse</h2>
+                  </div>
+                </div>
+
+                <div id="categoryFields" class="category-fields"></div>
+              </div>
+
+              <div class="form-row">
+                <label>
+                  PROS — UNO POR LÍNEA
+                  <textarea id="productPros" rows="6"></textarea>
+                </label>
+                <label>
+                  CONTRAS — UNO POR LÍNEA
+                  <textarea id="productCons" rows="6"></textarea>
+                </label>
+              </div>
+
+              <button class="primary-admin-btn" type="submit" id="saveProduct">
+                GUARDAR PRODUCTO ↗
+              </button>
+            </form>
+          </div>
+
+          <div class="admin-card">
+            <div class="card-heading">
+              <div>
+                <span class="admin-eyebrow">BIBLIOTECA</span>
+                <h2>Productos publicados</h2>
+              </div>
+              <span class="count-pill" id="productCount">0</span>
+            </div>
+
+            <div class="admin-list" id="productsList"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-panel" id="keysPanel">
+        <div class="admin-grid">
+          <div class="admin-card">
+            <div class="card-heading">
+              <div>
+                <span class="admin-eyebrow">GENERADOR</span>
+                <h2>Nueva access key</h2>
+              </div>
+            </div>
+
+            <form id="keyGeneratorForm" class="product-form">
+              <label>
+                NOMBRE / REFERENCIA DEL USUARIO
+                <input id="keyLabel" type="text" placeholder="Ej. Kevin - Discord" required />
+              </label>
+
+              <label>
+                FECHA DE EXPIRACIÓN — OPCIONAL
+                <input id="keyExpiry" type="date" />
+              </label>
+
+              <button class="primary-admin-btn" type="submit">
+                GENERAR KEY ↗
+              </button>
+            </form>
+
+            <div class="generated-key" id="generatedKeyBox" hidden>
+              <span>KEY GENERADA — SE MUESTRA UNA SOLA VEZ</span>
+              <strong id="generatedKeyValue"></strong>
+              <button id="copyGeneratedKey" type="button">COPIAR KEY</button>
+            </div>
+          </div>
+
+          <div class="admin-card">
+            <div class="card-heading">
+              <div>
+                <span class="admin-eyebrow">ACCESOS</span>
+                <h2>Keys generadas</h2>
+              </div>
+              <span class="count-pill" id="keysCount">0</span>
+            </div>
+
+            <div class="admin-list" id="keysList"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="admin.js"></script>
+</body>
+</html>
