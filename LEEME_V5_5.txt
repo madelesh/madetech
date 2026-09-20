@@ -1,0 +1,60 @@
+MADETECH V5.5 — NOMBRE, EXPIRACIÓN Y VER KEY
+=============================================
+
+QUÉ CORRIGE
+-----------
+1. El perfil del usuario toma SIEMPRE el nombre real guardado en la Access Key.
+2. El perfil consulta la base de datos al abrirse para mostrar la expiración actual.
+3. Las nuevas keys exigen fecha Y hora de expiración; así el contador puede mostrar horas y minutos.
+4. El admin puede editar el nombre del dueño y la fecha/hora de una key existente.
+5. El admin puede pulsar VER KEY y COPIAR en cualquier momento para keys creadas desde V5.5.
+6. Las keys se guardan cifradas para poder revelarlas al admin, además del hash usado para iniciar sesión.
+7. Las keys antiguas no pueden recuperarse porque antes solo se guardaba su hash. El panel ofrece REGENERAR KEY para esos casos.
+
+ORDEN DE INSTALACIÓN
+--------------------
+1. Cloudflare > D1 > madetech-db > Console.
+   Ejecuta PASO_1_D1_AGREGAR_CIFRADO.sql.
+   Después ejecuta PASO_2_D1_AGREGAR_IV.sql.
+
+2. Crea el secreto KEY_ENCRYPTION_SECRET en:
+   Workers & Pages > madetech-api > Settings > Variables and Secrets.
+
+   Genera el valor en TU PowerShell, sin enviarlo a nadie:
+
+   $bytes = New-Object byte[] 32
+   $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+   $rng.GetBytes($bytes)
+   [Convert]::ToBase64String($bytes)
+   $rng.Dispose()
+
+   Copia el resultado y guárdalo como Secret con nombre:
+   KEY_ENCRYPTION_SECRET
+
+   Luego Delete/Deploy o Save/Deploy según lo que muestre Cloudflare.
+
+3. Cloudflare > madetech-api > Edit code.
+   Reemplaza el Worker actual por worker.js y pulsa Deploy.
+
+4. GitHub: reemplaza estos archivos:
+   - app.js
+   - admin.html
+   - admin.js
+   - admin.css
+
+5. Haz Ctrl+F5 tanto en la web normal como en admin.html.
+
+PARA LA KEY QUE YA TIENES
+-------------------------
+- En Access Keys busca esa key.
+- Escribe el nombre del dueño.
+- Pon fecha Y hora de expiración.
+- Pulsa GUARDAR DATOS.
+- Como esa key fue creada antes de V5.5, NO se puede revelar su texto original desde la base de datos.
+- Si quieres que también pueda verse después, pulsa REGENERAR KEY.
+  Eso crea una key nueva para ese usuario, invalida la anterior y cierra sus sesiones actuales.
+
+IMPORTANTE
+----------
+No pierdas ni cambies KEY_ENCRYPTION_SECRET después de empezar a crear keys V5.5.
+Si cambias ese secreto, las keys ya cifradas dejarán de poder revelarse, aunque seguirán pudiendo validarse por su hash.

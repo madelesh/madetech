@@ -268,13 +268,13 @@
 
             <form id="keyGeneratorForm" class="product-form">
               <label>
-                NOMBRE / REFERENCIA DEL USUARIO
-                <input id="keyLabel" type="text" placeholder="Ej. Kevin - Discord" required />
+                NOMBRE DEL DUEÑO DE LA KEY
+                <input id="keyLabel" type="text" placeholder="Ej. Kevin" required />
               </label>
 
               <label>
-                FECHA DE EXPIRACIÓN — OPCIONAL
-                <input id="keyExpiry" type="date" />
+                FECHA Y HORA DE EXPIRACIÓN
+                <input id="keyExpiry" type="datetime-local" required />
               </label>
 
               <button class="primary-admin-btn" type="submit">
@@ -283,7 +283,7 @@
             </form>
 
             <div class="generated-key" id="generatedKeyBox" hidden>
-              <span>KEY GENERADA — SE MUESTRA UNA SOLA VEZ</span>
+              <span>KEY GENERADA — TAMBIÉN PODRÁS VERLA DESPUÉS</span>
               <strong id="generatedKeyValue"></strong>
               <button id="copyGeneratedKey" type="button">COPIAR KEY</button>
             </div>

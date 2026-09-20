@@ -213,8 +213,27 @@ function toggleProfileMenu() {
   profileButton.setAttribute("aria-expanded", String(willOpen));
 }
 
-profileButton.addEventListener("click", event => {
+profileButton.addEventListener("click", async event => {
   event.stopPropagation();
+
+  // Cada vez que se abre el perfil consultamos D1 otra vez.
+  // Así el nombre del dueño y la expiración siempre son los actuales.
+  if (profilePopover.hidden && currentToken) {
+    try {
+      const me = await api("/session/me", { method: "GET" }, currentToken);
+      applySessionProfile(me);
+      updateProfileMenu();
+    } catch {
+      // Si la sesión dejó de ser válida, volvemos al acceso por key.
+      localStorage.removeItem("madetech_user_token");
+      localStorage.removeItem("madetech_admin_token");
+      currentToken = null;
+      currentRole = null;
+      showGate("Tu sesión expiró. Ingresa nuevamente.");
+      return;
+    }
+  }
+
   toggleProfileMenu();
 });
 
@@ -285,7 +304,11 @@ keyLoginForm.addEventListener("submit", async event => {
 
     localStorage.setItem("madetech_user_token", result.token);
     currentToken = result.token;
-    applySessionProfile(result);
+
+    // Tomamos el perfil directamente desde la base de datos para mostrar
+    // el nombre real del dueño y la expiración exacta de la key.
+    const me = await api("/session/me", { method: "GET" }, currentToken);
+    applySessionProfile(me);
 
     accessKey.value = "";
     adminShortcut.hidden = true;

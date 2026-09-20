@@ -655,3 +655,118 @@ body.admin-authenticated #adminApp {
     min-width: 56px;
   }
 }
+
+/* ===============================
+   V5.5 — gestión completa de keys
+   =============================== */
+.key-admin-card {
+  align-items: stretch;
+  gap: 18px;
+}
+
+.key-admin-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.key-admin-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.key-owner-caption {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 10px;
+  letter-spacing: .12em;
+  color: #8c8c8c;
+}
+
+.key-secret-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 10px;
+}
+
+.key-secret-row code {
+  flex: 1 1 270px;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(255,255,255,.11);
+  border-radius: 12px;
+  background: rgba(255,255,255,.035);
+  color: #f1f1f1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.key-secret-row button,
+.key-save-btn {
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: 10px;
+  background: #1b1b1d;
+  color: #fff;
+  padding: 10px 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.key-secret-row button:hover,
+.key-save-btn:hover {
+  border-color: #eeff00;
+}
+
+.key-meta-line {
+  margin: 0 0 14px;
+  color: #8f8f8f;
+  font-size: 12px;
+}
+
+.key-edit-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 10px;
+}
+
+.key-edit-grid label {
+  display: grid;
+  gap: 7px;
+  color: #8f8f8f;
+  font-size: 10px;
+  letter-spacing: .09em;
+}
+
+.key-edit-grid input {
+  width: 100%;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 10px;
+  background: #19191b;
+  color: #fff;
+}
+
+.key-save-btn {
+  white-space: nowrap;
+}
+
+.key-admin-actions {
+  align-self: flex-start;
+}
+
+@media (max-width: 900px) {
+  .key-edit-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .key-save-btn {
+    width: 100%;
+  }
+}

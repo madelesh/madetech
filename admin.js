@@ -670,7 +670,14 @@ keyGeneratorForm.addEventListener("submit", async event => {
   event.preventDefault();
 
   const label = document.getElementById("keyLabel").value.trim();
-  const expiresAt = document.getElementById("keyExpiry").value || null;
+  const expiryInput = document.getElementById("keyExpiry").value;
+
+  if (!label || !expiryInput) {
+    alert("Escribe el nombre del dueño y la fecha/hora de expiración.");
+    return;
+  }
+
+  const expiresAt = localDateTimeToIso(expiryInput);
 
   try {
     const result = await api("/admin/keys", {
@@ -684,7 +691,12 @@ keyGeneratorForm.addEventListener("submit", async event => {
 
     await loadKeys();
   } catch (error) {
-    alert(`No se pudo generar la key: ${error.code || error.message}`);
+    const messages = {
+      expiration_required: "Debes elegir una fecha y hora de expiración.",
+      expiration_must_be_future: "La fecha de expiración debe ser futura.",
+      key_encryption_not_configured: "Falta configurar KEY_ENCRYPTION_SECRET en Cloudflare."
+    };
+    alert(messages[error.code] || `No se pudo generar la key: ${error.code || error.message}`);
   }
 });
 
@@ -706,26 +718,171 @@ async function loadKeys() {
   keysList.innerHTML = keys.length
     ? keys.map(key => {
       const active = Number(key.active) === 1;
-      const expiry = key.expires_at ? ` · expira ${escapeHtml(String(key.expires_at).slice(0,10))}` : "";
+      const canReveal = Number(key.can_reveal) === 1;
+      const expiryText = key.expires_at
+        ? formatKeyExpiry(key.expires_at)
+        : "SIN EXPIRACIÓN CONFIGURADA";
+
       return `
-        <article class="admin-list-item">
-          <div>
-            <h3>${escapeHtml(key.label || "Sin nombre")}</h3>
-            <p class="${active ? "status-active" : "status-revoked"}">
-              ${active ? "ACTIVA" : "REVOCADA"} · ${Number(key.uses || 0)} usos${expiry}
+        <article class="admin-list-item key-admin-card" data-key-card="${key.id}">
+          <div class="key-admin-main">
+            <div class="key-admin-title-row">
+              <div>
+                <span class="key-owner-caption">DUEÑO DE LA KEY</span>
+                <h3>${escapeHtml(key.label || "Sin nombre")}</h3>
+              </div>
+              <span class="${active ? "status-active" : "status-revoked"}">
+                ${active ? "ACTIVA" : "REVOCADA"}
+              </span>
+            </div>
+
+            <div class="key-secret-row">
+              <code id="keyRevealValue_${key.id}">${canReveal ? "MT-•••••-•••••-•••••-•••••" : "NO RECUPERABLE"}</code>
+              ${canReveal ? `<button type="button" data-reveal-key="${key.id}">VER KEY</button>` : ""}
+              ${canReveal ? `<button type="button" data-copy-key="${key.id}" hidden>COPIAR</button>` : ""}
+              ${!canReveal && active ? `<button type="button" data-regenerate-key="${key.id}">REGENERAR KEY</button>` : ""}
+            </div>
+
+            <p class="key-meta-line">
+              ${Number(key.uses || 0)} usos · ${escapeHtml(expiryText)}
               ${key.last_used_at ? ` · último acceso ${escapeHtml(key.last_used_at)}` : ""}
             </p>
+
+            <div class="key-edit-grid">
+              <label>
+                NOMBRE DEL DUEÑO
+                <input data-key-owner="${key.id}" type="text" value="${escapeAttr(key.label || "")}" />
+              </label>
+              <label>
+                FECHA Y HORA DE EXPIRACIÓN
+                <input data-key-expiry="${key.id}" type="datetime-local" value="${escapeAttr(isoToLocalDateTime(key.expires_at))}" />
+              </label>
+              <button class="key-save-btn" type="button" data-save-key="${key.id}">GUARDAR DATOS</button>
+            </div>
           </div>
-          <div class="item-actions">
+
+          <div class="item-actions key-admin-actions">
             ${active ? `<button class="danger" data-revoke-key="${key.id}">REVOCAR</button>` : ""}
           </div>
         </article>`;
     }).join("")
     : `<p style="color:#777">Todavía no has generado ninguna key.</p>`;
 
+  bindKeyActions();
+}
+
+function bindKeyActions() {
+  document.querySelectorAll("[data-reveal-key]").forEach(button => {
+    button.addEventListener("click", () => revealAccessKey(Number(button.dataset.revealKey), button));
+  });
+
+  document.querySelectorAll("[data-copy-key]").forEach(button => {
+    button.addEventListener("click", () => copyRevealedKey(Number(button.dataset.copyKey), button));
+  });
+
+  document.querySelectorAll("[data-save-key]").forEach(button => {
+    button.addEventListener("click", () => saveKeyData(Number(button.dataset.saveKey), button));
+  });
+
+  document.querySelectorAll("[data-regenerate-key]").forEach(button => {
+    button.addEventListener("click", () => regenerateAccessKey(Number(button.dataset.regenerateKey)));
+  });
+
   document.querySelectorAll("[data-revoke-key]").forEach(button => {
     button.addEventListener("click", () => revokeAccessKey(Number(button.dataset.revokeKey)));
   });
+}
+
+async function revealAccessKey(id, button) {
+  const output = document.getElementById(`keyRevealValue_${id}`);
+  const copyButton = document.querySelector(`[data-copy-key="${id}"]`);
+
+  if (button.dataset.visible === "true") {
+    output.textContent = "MT-•••••-•••••-•••••-•••••";
+    button.textContent = "VER KEY";
+    button.dataset.visible = "false";
+    if (copyButton) copyButton.hidden = true;
+    return;
+  }
+
+  try {
+    button.disabled = true;
+    button.textContent = "CARGANDO...";
+    const result = await api(`/admin/keys/${id}/reveal`, { method: "GET" });
+    output.textContent = result.key;
+    button.textContent = "OCULTAR";
+    button.dataset.visible = "true";
+    if (copyButton) copyButton.hidden = false;
+  } catch (error) {
+    if (error.code === "key_not_recoverable") {
+      alert("Esta key fue creada antes de la V5.5 y solo se guardó su hash. No se puede recuperar. Pulsa REGENERAR KEY para sustituirla por una nueva visible para el administrador.");
+    } else {
+      alert(`No se pudo mostrar la key: ${error.code || error.message}`);
+    }
+    button.textContent = "VER KEY";
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function copyRevealedKey(id, button) {
+  const output = document.getElementById(`keyRevealValue_${id}`);
+  const value = output?.textContent?.trim() || "";
+  if (!value || value.includes("•") || value === "NO RECUPERABLE") return;
+
+  await navigator.clipboard.writeText(value);
+  const oldText = button.textContent;
+  button.textContent = "COPIADA ✓";
+  setTimeout(() => button.textContent = oldText, 1300);
+}
+
+async function saveKeyData(id, button) {
+  const ownerInput = document.querySelector(`[data-key-owner="${id}"]`);
+  const expiryInput = document.querySelector(`[data-key-expiry="${id}"]`);
+
+  const label = ownerInput?.value.trim() || "";
+  const localExpiry = expiryInput?.value || "";
+
+  if (!label) {
+    alert("Escribe el nombre del dueño de la key.");
+    return;
+  }
+
+  if (!localExpiry) {
+    alert("Elige la fecha y hora en que debe expirar la key.");
+    return;
+  }
+
+  try {
+    button.disabled = true;
+    button.textContent = "GUARDANDO...";
+    await api(`/admin/keys/${id}`, {
+      method: "PUT",
+      body: JSON.stringify({
+        label,
+        expiresAt: localDateTimeToIso(localExpiry)
+      })
+    });
+    await loadKeys();
+  } catch (error) {
+    alert(`No se pudieron guardar los datos: ${error.code || error.message}`);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function regenerateAccessKey(id) {
+  if (!confirm("Se generará una key nueva. La key anterior dejará de funcionar y se cerrarán sus sesiones actuales. ¿Continuar?")) return;
+
+  try {
+    const result = await api(`/admin/keys/${id}/regenerate`, { method: "POST" });
+    generatedKeyValue.textContent = result.key;
+    generatedKeyBox.hidden = false;
+    generatedKeyBox.scrollIntoView({ behavior: "smooth", block: "center" });
+    await loadKeys();
+  } catch (error) {
+    alert(`No se pudo regenerar la key: ${error.code || error.message}`);
+  }
 }
 
 async function revokeAccessKey(id) {
@@ -737,6 +894,27 @@ async function revokeAccessKey(id) {
   } catch {
     alert("No se pudo revocar la key.");
   }
+}
+
+function localDateTimeToIso(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toISOString();
+}
+
+function isoToLocalDateTime(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const pad = number => String(number).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function formatKeyExpiry(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "EXPIRACIÓN INVÁLIDA";
+  return `expira ${date.toLocaleString("es-EC", { dateStyle: "short", timeStyle: "short" })}`;
 }
 
 /* ---------------- HELPERS ---------------- */
