@@ -1,3 +1,8 @@
+/* MadeTech V5.4 — elementos ocultos nunca deben ocupar espacio */
+[hidden] {
+  display: none !important;
+}
+
 .admin-body {
   min-height: 100vh;
   background: #09090a;

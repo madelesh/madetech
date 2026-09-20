@@ -1,3 +1,8 @@
+/* MadeTech V5.4 — elementos ocultos nunca deben ocupar espacio */
+[hidden] {
+  display: none !important;
+}
+
 :root {
   --accent: #eeff00;
   --accent-text: #0a0a0a;

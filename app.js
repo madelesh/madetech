@@ -135,7 +135,11 @@ function updateProfileMenu() {
   profileName.textContent = displayName;
   profileButtonLabel.textContent = displayName;
   profileRole.textContent = isAdmin ? "Cuenta de administrador" : "Acceso por key";
+
+  // Solo una sesión ADMIN puede ver y usar este acceso.
   adminShortcut.hidden = !isAdmin;
+  adminShortcut.setAttribute("aria-hidden", String(!isAdmin));
+  adminShortcut.tabIndex = isAdmin ? 0 : -1;
 
   startKeyCountdown();
 }
@@ -215,6 +219,16 @@ profileButton.addEventListener("click", event => {
 });
 
 profilePopover.addEventListener("click", event => event.stopPropagation());
+
+// Protección adicional: aunque alguien manipule el HTML, una sesión por key
+// no puede usar el acceso del perfil al panel administrativo.
+adminShortcut.addEventListener("click", event => {
+  if (currentRole !== "admin") {
+    event.preventDefault();
+    adminShortcut.hidden = true;
+    closeProfileMenu();
+  }
+});
 
 document.addEventListener("click", event => {
   if (!profileMenuWrap.contains(event.target)) closeProfileMenu();
@@ -305,16 +319,25 @@ logoutButton.addEventListener("click", async () => {
     localStorage.removeItem("madetech_user_token");
   }
 
+  // Limpiamos cualquier sesión guardada en este navegador.
+  localStorage.removeItem("madetech_user_token");
+  localStorage.removeItem("madetech_admin_token");
+
   currentToken = null;
   currentRole = null;
   currentProfileName = "";
   currentKeyExpiresAt = null;
+
   if (keyCountdownTimer) {
     clearInterval(keyCountdownTimer);
     keyCountdownTimer = null;
   }
+
   reviews = [];
+  adminShortcut.hidden = true;
+  closeProfileMenu();
   showGate();
+  window.scrollTo({ top: 0, left: 0, behavior: "auto" });
 });
 
 /* ---------------- PRODUCTS ---------------- */
