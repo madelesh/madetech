@@ -22,6 +22,13 @@ const storeAmazon = document.getElementById("storeAmazon");
 const storeAliExpress = document.getElementById("storeAliExpress");
 const extraStores = document.getElementById("extraStores");
 const addStoreButton = document.getElementById("addStoreButton");
+const webSearchCategory = document.getElementById("webSearchCategory");
+const webSearchBrand = document.getElementById("webSearchBrand");
+const webSearchModel = document.getElementById("webSearchModel");
+const webSearchButton = document.getElementById("webSearchButton");
+const webSearchStatus = document.getElementById("webSearchStatus");
+const webSourceList = document.getElementById("webSourceList");
+
 const mechkeysProductUrl = document.getElementById("mechkeysProductUrl");
 const mechkeysImportButton = document.getElementById("mechkeysImportButton");
 const mechkeysImportStatus = document.getElementById("mechkeysImportStatus");
@@ -237,7 +244,10 @@ function bindSpecChoiceGroups() {
   });
 }
 
-productCategory.addEventListener("change", () => renderCategoryFields(productCategory.value, {}));
+productCategory.addEventListener("change", () => {
+  renderCategoryFields(productCategory.value, {});
+  if (webSearchCategory) webSearchCategory.value = productCategory.value;
+});
 
 
 /* ---------------- VISUAL PRODUCT EDITORS ---------------- */
@@ -392,6 +402,157 @@ function collectTrustedStores() {
 
 renderColorPicker([]);
 renderTrustedStores([]);
+
+
+/* ---------------- INTERNET AUTO-IMPORT ---------------- */
+
+webSearchButton.addEventListener("click", importFromWeb);
+
+[webSearchBrand, webSearchModel].forEach(input => {
+  input.addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      importFromWeb();
+    }
+  });
+});
+
+webSearchCategory.addEventListener("change", () => {
+  productCategory.value = webSearchCategory.value;
+  renderCategoryFields(productCategory.value, {});
+});
+
+async function importFromWeb() {
+  const brand = webSearchBrand.value.trim();
+  const model = webSearchModel.value.trim();
+  const category = webSearchCategory.value;
+
+  if (!brand) {
+    showWebSearchStatus("Escribe primero la marca del producto.", "error");
+    webSearchBrand.focus();
+    return;
+  }
+
+  if (!model) {
+    showWebSearchStatus("Escribe primero el modelo del producto.", "error");
+    webSearchModel.focus();
+    return;
+  }
+
+  const oldText = webSearchButton.textContent;
+  webSearchButton.disabled = true;
+  webSearchButton.textContent = "BUSCANDO EN INTERNET...";
+  webSourceList.hidden = true;
+  webSourceList.innerHTML = "";
+  showWebSearchStatus("Buscando página oficial, documentación y tiendas especializadas...", "loading");
+
+  try {
+    const result = await api("/admin/import/web", {
+      method: "POST",
+      body: JSON.stringify({ brand, model, category })
+    });
+
+    applyImportedWebProduct(result.product || {});
+
+    const detected = Array.isArray(result.detected) ? result.detected : [];
+    const warnings = Array.isArray(result.warnings) ? result.warnings : [];
+    const sources = Array.isArray(result.sources) ? result.sources : [];
+
+    const detectedText = detected.length
+      ? `<strong>Encontrado:</strong> ${detected.map(escapeHtml).join(", ")}.`
+      : "Encontré páginas del producto, pero pocos campos pudieron reconocerse automáticamente.";
+
+    const warningHtml = warnings.length
+      ? `<ul>${warnings.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
+      : "";
+
+    showWebSearchStatus(`✓ Búsqueda terminada. ${detectedText}${warningHtml}`, "success", true);
+    renderWebSources(sources);
+    productForm.scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (error) {
+    const messages = {
+      tavily_not_configured: "TAVILY_API_KEY todavía no está configurada en Cloudflare.",
+      tavily_search_failed: "Tavily no pudo completar la búsqueda. Intenta nuevamente.",
+      web_product_not_found: "No encontré suficientes resultados para ese producto.",
+      brand_required: "Escribe la marca del producto.",
+      model_required: "Escribe el modelo del producto.",
+      invalid_category: "Selecciona una categoría válida."
+    };
+
+    showWebSearchStatus(messages[error.code] || `No se pudo buscar: ${error.message}`, "error");
+  } finally {
+    webSearchButton.disabled = false;
+    webSearchButton.textContent = oldText;
+  }
+}
+
+function applyImportedWebProduct(product) {
+  document.getElementById("productId").value = "";
+  productFormTitle.textContent = "Nuevo producto · encontrado en Internet";
+  document.getElementById("productStatus").value = "draft";
+
+  const allowedCategories = ["Mouse", "Teclados", "IEM", "Headsets", "DAC"];
+  if (allowedCategories.includes(product.category)) {
+    productCategory.value = product.category;
+    webSearchCategory.value = product.category;
+  }
+
+  document.getElementById("productBrand").value = product.brand || "";
+  document.getElementById("productName").value = product.name || "";
+  document.getElementById("productModel").value = product.model || "";
+  document.getElementById("productScore").value =
+    Number.isFinite(Number(product.score)) ? Number(product.score) : 0;
+  document.getElementById("productPrice").value = product.price || "";
+  document.getElementById("productDate").value = "";
+  document.getElementById("productImageUrl").value = product.imageUrl || "";
+  document.getElementById("productOfficialUrl").value = product.officialUrl || "";
+  document.getElementById("productFeatured").value = "false";
+  document.getElementById("productConnections").value =
+    Array.isArray(product.connections) ? product.connections.join("\n") : "";
+  document.getElementById("productYoutube").value = product.reviewLinks?.youtube || "";
+  document.getElementById("productTiktok").value = product.reviewLinks?.tiktok || "";
+  document.getElementById("productSummary").value = product.summary || "";
+  document.getElementById("productPros").value =
+    Array.isArray(product.pros) ? product.pros.join("\n") : "";
+  document.getElementById("productCons").value =
+    Array.isArray(product.cons) ? product.cons.join("\n") : "";
+
+  renderTrustedStores(Array.isArray(product.trustedStores) ? product.trustedStores : []);
+  renderColorPicker(Array.isArray(product.colors) ? product.colors : []);
+  renderCategoryFields(productCategory.value, product.specs || {});
+}
+
+function showWebSearchStatus(message, type = "", allowHtml = false) {
+  webSearchStatus.hidden = false;
+  webSearchStatus.className = `web-import-status ${type}`.trim();
+
+  if (allowHtml) webSearchStatus.innerHTML = message;
+  else webSearchStatus.textContent = message;
+}
+
+function renderWebSources(sources) {
+  if (!Array.isArray(sources) || !sources.length) {
+    webSourceList.hidden = true;
+    webSourceList.innerHTML = "";
+    return;
+  }
+
+  webSourceList.hidden = false;
+  webSourceList.innerHTML = `
+    <span>FUENTES CONSULTADAS</span>
+    <div class="web-source-chips">
+      ${sources.slice(0, 6).map(source => {
+        const url = safeExternalUrl(source.url);
+        if (!url) return "";
+        return `
+          <a href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer"
+             class="${source.official ? "official" : ""}">
+            ${source.official ? "✓ " : ""}${escapeHtml(source.title || new URL(url).hostname)}
+          </a>`;
+      }).join("")}
+    </div>
+  `;
+}
 
 
 /* ---------------- MECHKEYS AUTO-IMPORT ---------------- */
@@ -1020,6 +1181,15 @@ function formatKeyExpiry(value) {
 
 function lines(value) {
   return String(value || "").split("\n").map(item => item.trim()).filter(Boolean);
+}
+
+function safeExternalUrl(value) {
+  try {
+    const url = new URL(String(value || ""));
+    return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+  } catch {
+    return "";
+  }
 }
 
 function escapeHtml(value) {

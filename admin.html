@@ -78,6 +78,48 @@
               <button class="ghost-btn" id="resetProduct" type="button">Limpiar</button>
             </div>
 
+            <section class="web-importer" aria-labelledby="webImporterTitle">
+              <div class="web-importer-head">
+                <div>
+                  <span class="admin-eyebrow">AUTOCOMPLETAR</span>
+                  <h3 id="webImporterTitle">Buscar ficha en Internet</h3>
+                </div>
+                <span class="web-source-badge">TAVILY · WEB</span>
+              </div>
+
+              <p>Escribe marca, modelo y categoría. MadeTech buscará varias fuentes, dará prioridad a la web oficial y rellenará los datos que pueda confirmar.</p>
+
+              <div class="web-import-grid">
+                <label>
+                  CATEGORÍA
+                  <select id="webSearchCategory">
+                    <option value="Mouse">Mouse</option>
+                    <option value="Teclados">Teclados</option>
+                    <option value="IEM">IEM / In-Ears</option>
+                    <option value="Headsets">Headsets</option>
+                    <option value="DAC">DACs</option>
+                  </select>
+                </label>
+
+                <label>
+                  MARCA
+                  <input id="webSearchBrand" type="text" autocomplete="off" placeholder="Ej. Razer" />
+                </label>
+
+                <label>
+                  MODELO
+                  <input id="webSearchModel" type="text" autocomplete="off" placeholder="Ej. Viper V3 Pro" />
+                </label>
+              </div>
+
+              <button id="webSearchButton" class="web-search-button" type="button">🌐 BUSCAR FICHA TÉCNICA</button>
+
+              <div class="web-import-status" id="webSearchStatus" hidden></div>
+              <div class="web-source-list" id="webSourceList" hidden></div>
+
+              <small class="web-import-note">La búsqueda no publica nada automáticamente. Revisa los campos antes de guardar.</small>
+            </section>
+
             <section class="mechkeys-importer" aria-labelledby="mechkeysImporterTitle">
               <div class="mechkeys-importer-head">
                 <div>
