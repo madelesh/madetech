@@ -1,103 +1,294 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Catálogo Gaming</title>
+  <meta name="description" content="MadeTech — Reviews de mouse, teclados, IEM, headsets y DACs." />
+  <meta name="theme-color" content="#f4f4f0" />
+  <title>MadeTech — Reviews de tecnología</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
 </head>
+
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <div class="logo">GX</div>
-      <div>
-        <h1>Catálogo Gaming</h1>
-        <p>Mouse • Teclados • Headsets • In Ears</p>
-      </div>
-    </div>
-    <button id="loginBtn" class="btn btn-outline">Iniciar sesión</button>
-    <button id="logoutBtn" class="btn btn-danger hidden">Cerrar sesión</button>
-  </header>
+  <div class="site-shell">
+    <header class="topbar">
+      <a class="brand" href="#inicio" aria-label="MadeTech inicio">
+        <span class="brand-dot"></span>
+        <span>MADETECH</span>
+      </a>
 
-  <main>
-    <section class="hero">
-      <h2>Periféricos competitivos</h2>
-      <p>Explora productos por categoría y revisa su ficha completa.</p>
-    </section>
+      <nav class="desktop-nav">
+        <a href="#reviews">Reviews</a>
+        <a href="#categorias">Categorías</a>
+        <a href="#metodo">Metodología</a>
+        <a href="#contacto">Contacto</a>
+      </nav>
 
-    <section class="filters">
-      <button class="tab active" data-category="Todos">Inicio</button>
-      <button class="tab" data-category="Mouse">Mouse</button>
-      <button class="tab" data-category="Teclado">Teclados</button>
-      <button class="tab" data-category="Headsets">Headsets</button>
-      <button class="tab" data-category="In Ears">In Ears</button>
-      <input id="searchInput" type="search" placeholder="Buscar producto..." />
-    </section>
+      <div class="header-actions">
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Cambiar tema">
+          <svg class="sun-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path>
+          </svg>
+          <svg class="moon-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+          <span id="themeLabel">Oscuro</span>
+        </button>
 
-    <section id="adminPanel" class="admin-panel hidden">
-      <div class="panel-title">
-        <h2>Panel administrador</h2>
-        <button id="changePasswordBtn" class="btn btn-outline">Cambiar clave</button>
+        <button class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false">
+          <span></span><span></span>
+        </button>
       </div>
 
-      <form id="productForm" class="product-form">
-        <input type="hidden" id="productId" />
-        <div class="grid-2">
-          <label>Nombre<input id="name" required placeholder="Scyrox V8" /></label>
-          <label>Precio<input id="price" required type="number" step="0.01" placeholder="70" /></label>
+      <nav class="mobile-nav" id="mobileNav">
+        <a href="#reviews">Reviews</a>
+        <a href="#categorias">Categorías</a>
+        <a href="#metodo">Metodología</a>
+        <a href="#contacto">Contacto</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" id="inicio">
+        <div class="hero-main panel">
+          <div class="hero-kicker">
+            <span>REVIEWS INDEPENDIENTES</span>
+            <span>2026</span>
+          </div>
+
+          <div class="hero-copy">
+            <p class="eyebrow">PERIFÉRICOS + AUDIO</p>
+            <h1>TECH<br><span>REVIEWS</span></h1>
+            <p class="hero-description">
+              Mouse, teclados, IEM, headsets y DACs analizados sin relleno:
+              experiencia real, puntos fuertes, debilidades y una nota clara.
+            </p>
+          </div>
+
+          <div class="hero-bottom">
+            <div class="mini-stat">
+              <strong>05</strong>
+              <span>Categorías</span>
+            </div>
+            <div class="mini-stat">
+              <strong>10</strong>
+              <span>Escala máxima</span>
+            </div>
+            <a class="pill-link" href="#reviews">VER REVIEWS <span>↗</span></a>
+          </div>
+
+          <div class="hero-art" aria-hidden="true">
+            <div class="orb orb-a"></div>
+            <div class="orb orb-b"></div>
+            <div class="orb orb-c"></div>
+          </div>
         </div>
-        <div class="grid-2">
-          <label>Categoría
-            <select id="category" required>
-              <option>Mouse</option>
-              <option>Teclado</option>
-              <option>Headsets</option>
-              <option>In Ears</option>
+
+        <aside class="hero-side">
+          <article class="accent-card">
+            <div>
+              <span class="tiny-label">REVIEW DESTACADA</span>
+              <h2 id="featuredName">Mouse Pro X</h2>
+              <p id="featuredText">Ligero, preciso y construido para competitivo.</p>
+            </div>
+            <div class="accent-score">
+              <span id="featuredScore">9.1</span>
+              <small>/10</small>
+            </div>
+            <a id="featuredLink" href="#reviews">LEER ANÁLISIS ↗</a>
+          </article>
+
+          <article class="dark-card">
+            <div class="line-art" aria-hidden="true"></div>
+            <span class="tiny-label">MADETECH SCORE</span>
+            <h3>Una nota rápida.<br>Un análisis completo.</h3>
+            <p>Cada categoría tiene criterios propios para que una puntuación realmente tenga sentido.</p>
+          </article>
+        </aside>
+      </section>
+
+      <section class="section" id="categorias">
+        <div class="section-head">
+          <div>
+            <span class="section-index">(01)</span>
+            <h2>Explora por<br>categoría</h2>
+          </div>
+          <p>Elige el tipo de producto y filtra las reviews que te interesan.</p>
+        </div>
+
+        <div class="category-grid">
+          <button class="category-card accent" data-filter="Mouse">
+            <span class="category-number">01</span>
+            <span class="category-icon">
+              <svg viewBox="0 0 48 48" aria-hidden="true">
+                <rect x="13" y="5" width="22" height="38" rx="11"></rect>
+                <path d="M24 5v12M13 20h22"></path>
+              </svg>
+            </span>
+            <span class="category-name">Mouse</span>
+            <span class="category-caption">Forma · Sensor · Clicks</span>
+          </button>
+
+          <button class="category-card" data-filter="Teclados">
+            <span class="category-number">02</span>
+            <span class="category-icon">
+              <svg viewBox="0 0 48 48" aria-hidden="true">
+                <rect x="5" y="11" width="38" height="26" rx="5"></rect>
+                <path d="M11 18h3M18 18h3M25 18h3M32 18h5M11 24h4M19 24h4M27 24h4M35 24h2M11 30h5M20 30h17"></path>
+              </svg>
+            </span>
+            <span class="category-name">Teclados</span>
+            <span class="category-caption">Switches · Sonido · Latencia</span>
+          </button>
+
+          <button class="category-card dark" data-filter="IEM">
+            <span class="category-number">03</span>
+            <span class="category-icon">
+              <svg viewBox="0 0 48 48" aria-hidden="true">
+                <path d="M12 15c0-5 4-9 9-9s9 4 9 9-4 9-9 9c-2 0-4-.6-5.5-1.8L10 28v10M36 15c0-5-4-9-9-9"></path>
+                <circle cx="10" cy="39" r="3"></circle>
+              </svg>
+            </span>
+            <span class="category-name">IEM / In-Ears</span>
+            <span class="category-caption">Tuning · Imaging · Comodidad</span>
+          </button>
+
+          <button class="category-card" data-filter="Headsets">
+            <span class="category-number">04</span>
+            <span class="category-icon">
+              <svg viewBox="0 0 48 48" aria-hidden="true">
+                <path d="M9 26v-6a15 15 0 0 1 30 0v6"></path>
+                <rect x="6" y="25" width="9" height="14" rx="4"></rect>
+                <rect x="33" y="25" width="9" height="14" rx="4"></rect>
+                <path d="M38 38c0 4-3 6-8 6h-4"></path>
+              </svg>
+            </span>
+            <span class="category-name">Headsets</span>
+            <span class="category-caption">Audio · Micrófono · Confort</span>
+          </button>
+
+          <button class="category-card" data-filter="DAC">
+            <span class="category-number">05</span>
+            <span class="category-icon">
+              <svg viewBox="0 0 48 48" aria-hidden="true">
+                <rect x="7" y="9" width="34" height="30" rx="5"></rect>
+                <circle cx="29" cy="24" r="7"></circle>
+                <circle cx="15" cy="18" r="2"></circle>
+                <circle cx="15" cy="29" r="2"></circle>
+              </svg>
+            </span>
+            <span class="category-name">DACs</span>
+            <span class="category-caption">Potencia · Ruido · I/O</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="section reviews-section" id="reviews">
+        <div class="reviews-toolbar">
+          <div>
+            <span class="section-index">(02)</span>
+            <h2>Últimas reviews</h2>
+          </div>
+
+          <div class="toolbar-controls">
+            <label class="search-box">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m20 20-4-4"></path>
+              </svg>
+              <input id="searchInput" type="search" placeholder="Buscar producto" />
+            </label>
+
+            <select id="categorySelect" aria-label="Filtrar por categoría">
+              <option value="Todos">Todos</option>
+              <option value="Mouse">Mouse</option>
+              <option value="Teclados">Teclados</option>
+              <option value="IEM">IEM / In-Ears</option>
+              <option value="Headsets">Headsets</option>
+              <option value="DAC">DACs</option>
             </select>
-          </label>
-          <label>Etiqueta<input id="tag" placeholder="CALIDAD / PRECIO" /></label>
+          </div>
         </div>
-        <label>Descripción<textarea id="description" rows="3" placeholder="Descripción del producto"></textarea></label>
-        <div class="grid-3">
-          <label>Colores<input id="colors" placeholder="Negro, Blanco, Amarillo" /></label>
-          <label>Conexiones<input id="connections" placeholder="USB, Wireless 2.4GHz, Bluetooth" /></label>
-          <label>Tipo de agarre<input id="grip" placeholder="Palm Grip" /></label>
+
+        <div class="reviews-grid" id="reviewsGrid"></div>
+        <p class="empty-message" id="emptyMessage" hidden>No hay reviews que coincidan con tu búsqueda.</p>
+      </section>
+
+      <section class="section method-section" id="metodo">
+        <div class="method-visual">
+          <div class="method-photo">
+            <div class="method-rings"></div>
+            <span class="method-star">✱</span>
+          </div>
         </div>
-        <div class="grid-3">
-          <label>Sensor<input id="sensor" placeholder="Pixart 3395" /></label>
-          <label>DPI máximo<input id="dpi" placeholder="30000" /></label>
-          <label>Peso<input id="weight" placeholder="39 g" /></label>
+
+        <div class="method-copy">
+          <span class="section-index">(03)</span>
+          <h2>Cómo calificamos</h2>
+          <p class="method-lead">
+            No usamos la misma fórmula para todo. Un mouse, un IEM y un DAC necesitan criterios distintos.
+          </p>
+
+          <div class="method-list">
+            <article>
+              <span>01</span>
+              <div>
+                <strong>Uso real</strong>
+                <p>El producto se prueba en escenarios para los que realmente fue diseñado.</p>
+              </div>
+            </article>
+            <article>
+              <span>02</span>
+              <div>
+                <strong>Criterios por categoría</strong>
+                <p>Sensor y forma en mouse; tuning e imaging en IEM; potencia y ruido en DACs.</p>
+              </div>
+            </article>
+            <article>
+              <span>03</span>
+              <div>
+                <strong>Conclusión clara</strong>
+                <p>Pros, contras y puntuación final sin esconder las debilidades del producto.</p>
+              </div>
+            </article>
+          </div>
         </div>
-        <label>Imagen del producto<input id="image" type="file" accept="image/*" /></label>
-        <div class="form-actions">
-          <button class="btn btn-primary" type="submit">Guardar producto</button>
-          <button class="btn btn-outline" type="button" id="cancelEditBtn">Cancelar</button>
+      </section>
+
+      <section class="section contact-section" id="contacto">
+        <div>
+          <span class="section-index">(04)</span>
+          <h2>¿Qué debería<br>probar después?</h2>
         </div>
-        <p id="formMsg" class="msg"></p>
-      </form>
-    </section>
+        <div class="contact-card">
+          <p>Envíame una sugerencia de producto, marca o categoría para una próxima review.</p>
+          <a href="mailto:tucorreo@ejemplo.com">CONTACTAR <span>↗</span></a>
+        </div>
+      </section>
+    </main>
 
-    <section id="products" class="products"></section>
-  </main>
+    <footer>
+      <a class="brand footer-brand" href="#inicio">
+        <span class="brand-dot"></span>
+        <span>MADETECH</span>
+      </a>
+      <p>Mouse · Teclados · IEM · Headsets · DACs</p>
+      <p>© <span id="year"></span> MadeTech</p>
+    </footer>
+  </div>
 
-  <dialog id="loginModal" class="modal">
-    <form id="loginForm" class="modal-card">
-      <button type="button" class="close" id="closeLogin">×</button>
-      <h2>Iniciar sesión</h2>
-      <label>Correo<input id="email" type="email" required placeholder="admin@correo.com" /></label>
-      <label>Contraseña<input id="password" type="password" required placeholder="********" /></label>
-      <button class="btn btn-primary" type="submit">Entrar</button>
-      <p id="loginMsg" class="msg"></p>
-    </form>
-  </dialog>
+  <div class="review-modal" id="reviewModal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-modal></div>
+    <article class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <button class="modal-close" type="button" data-close-modal aria-label="Cerrar">×</button>
+      <div id="modalContent"></div>
+    </article>
+  </div>
 
-  <dialog id="detailModal" class="modal">
-    <div class="detail-card">
-      <button class="close" id="closeDetail">×</button>
-      <div id="detailContent"></div>
-    </div>
-  </dialog>
-
-  <script type="module" src="app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
