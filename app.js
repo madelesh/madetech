@@ -525,8 +525,7 @@ async function openReview(id) {
           </div>
 
           <div class="product-spec-grid">
-            ${buildSpecs(review).map(item => coreSpec(item.label, item.value)).join("") ||
-              `<p class="no-product-data">Todavía no se han agregado especificaciones.</p>`}
+            ${buildSpecs(review).map(renderSpecCard).join("")}
           </div>
         </section>
 
@@ -574,6 +573,7 @@ async function openReview(id) {
       </div>
     `;
 
+    bindProductGallery();
     if (currentRole === "user") bindRatingButtons(id, Number(rating.mine || 0));
 
     modal.classList.add("open");
@@ -586,87 +586,170 @@ async function openReview(id) {
 }
 
 function productImageHtml(review) {
-  const image = safeUrl(review.imageUrl);
-  return image
-    ? `<img class="product-detail-image" src="${image}" alt="${escapeHtml(review.name || "Producto")}">`
-    : `<div class="product-detail-placeholder" aria-label="Imagen pendiente"></div>`;
+  const images = [...new Set([
+    ...(Array.isArray(review.images) ? review.images : []),
+    review.imageUrl
+  ].map(safeUrl).filter(Boolean))].slice(0, 5);
+
+  if (!images.length) {
+    return `<div class="product-detail-placeholder" aria-label="Imagen no disponible"></div>`;
+  }
+
+  return `
+    <div class="product-gallery" data-product-gallery>
+      <div class="product-gallery-main">
+        <img class="product-detail-image" data-gallery-main src="${images[0]}" alt="${escapeHtml(review.name || "Producto")}">
+      </div>
+      ${images.length > 1 ? `
+        <div class="product-gallery-thumbs" aria-label="Galería de imágenes">
+          ${images.map((url, index) => `
+            <button type="button" class="product-gallery-thumb ${index === 0 ? "active" : ""}"
+              data-gallery-image="${escapeHtml(url)}" aria-label="Ver imagen ${index + 1}">
+              <img src="${url}" alt="Miniatura ${index + 1}">
+            </button>
+          `).join("")}
+        </div>` : ""}
+      ${renderGalleryColors(review.colors)}
+    </div>`;
+}
+
+function bindProductGallery() {
+  const gallery = document.querySelector("[data-product-gallery]");
+  if (!gallery) return;
+  const main = gallery.querySelector("[data-gallery-main]");
+  gallery.querySelectorAll("[data-gallery-image]").forEach(button => {
+    button.addEventListener("click", () => {
+      const url = safeUrl(button.dataset.galleryImage);
+      if (!url || !main) return;
+      main.src = url;
+      gallery.querySelectorAll("[data-gallery-image]").forEach(item => item.classList.remove("active"));
+      button.classList.add("active");
+    });
+  });
+}
+
+function renderGalleryColors(colors) {
+  if (!Array.isArray(colors) || !colors.length) return "";
+  return `
+    <div class="product-gallery-colors">
+      <span>Colores</span>
+      <div>${colors.slice(0, 8).map(color => `
+        <span class="gallery-color-dot" title="${escapeHtml(color.name || "Color")}" style="background:${safeColor(color.hex)}"></span>
+      `).join("")}</div>
+    </div>`;
 }
 
 function coreSpec(label, value) {
-  if (value === undefined || value === null || String(value).trim() === "") return "";
+  const available = value !== undefined && value !== null && String(value).trim() !== "";
   return `
-    <article class="product-spec-card">
+    <article class="product-spec-card ${available ? "" : "spec-unavailable"}">
       <span>${escapeHtml(label)}</span>
-      <strong>${escapeHtml(formatValue(value))}</strong>
+      <strong>${available ? escapeHtml(formatValue(value)) : "No disponible"}</strong>
     </article>
   `;
 }
 
+function renderSpecCard(item) {
+  if (item.type === "grips") return renderGripSpec(item.value);
+  return coreSpec(item.label, item.value);
+}
+
+function renderGripSpec(grips) {
+  const selected = Array.isArray(grips) ? grips : [];
+  const all = ["Palm", "Claw", "Fingertip"];
+  return `
+    <article class="product-spec-card grip-spec-card ${selected.length ? "" : "spec-unavailable"}">
+      <span>Tipos de agarre</span>
+      ${selected.length ? `
+        <div class="grip-visual-list">
+          ${all.filter(type => selected.includes(type)).map(type => `
+            <div class="grip-visual-item">
+              ${gripIcon(type)}
+              <strong>${type}</strong>
+            </div>
+          `).join("")}
+        </div>` : `<strong>No disponible</strong>`}
+    </article>`;
+}
+
+function gripIcon(type) {
+  const cls = String(type || "").toLowerCase();
+  if (cls === "palm") {
+    return `<svg class="grip-icon" viewBox="0 0 64 44" aria-hidden="true"><rect x="24" y="8" width="18" height="30" rx="9"></rect><path d="M11 24c8-12 16-15 25-11M11 24c7 2 13 6 18 13"></path><circle cx="33" cy="15" r="2"></circle></svg>`;
+  }
+  if (cls === "claw") {
+    return `<svg class="grip-icon" viewBox="0 0 64 44" aria-hidden="true"><rect x="25" y="9" width="17" height="29" rx="8"></rect><path d="M9 29c6-13 11-19 18-20M15 14l7 8 7-11M15 31c6 0 10 2 14 7"></path></svg>`;
+  }
+  return `<svg class="grip-icon" viewBox="0 0 64 44" aria-hidden="true"><rect x="27" y="9" width="16" height="29" rx="8"></rect><path d="M8 20c9-4 14-5 21-4M8 20l8 4M16 24l8-4"></path><circle cx="35" cy="16" r="2"></circle></svg>`;
+}
+
+
 function buildSpecs(product) {
   const s = product.specs || {};
   const list = [];
+  const add = (label, value, type = "normal") => list.push({ label, value, type });
 
   if (product.category === "Mouse") {
-    pushSpec(list, "Sensor", s.sensor);
-    pushSpec(list, "Peso", s.weight ? `${s.weight} g` : "");
-    pushSpec(list, "Switches", s.switchType);
-    pushSpec(list, "Dongle 8K", dongleLabel(s.dongle8k));
-    pushSpec(list, "Agarres", arrayLabel(s.gripTypes));
-    pushSpec(list, "Polling rate", s.pollingRate);
-    pushSpec(list, "Batería", s.batteryHours ? `${s.batteryHours} h` : "");
-    pushSpec(list, "Dimensiones", s.dimensions);
+    add("Sensor", s.sensor);
+    add("Peso", s.weight ? `${s.weight} g` : "");
+    add("Switches", s.switchType);
+    add("Dongle 8K", dongleLabel(s.dongle8k));
+    add("Agarres", Array.isArray(s.gripTypes) ? s.gripTypes : [], "grips");
+    add("Polling rate", s.pollingRate);
+    add("Batería", s.batteryHours ? `${s.batteryHours} h` : "");
+    add("Dimensiones", s.dimensions);
   }
 
   if (product.category === "Teclados") {
-    pushSpec(list, "Switches", s.switchType);
-    pushSpec(list, "Tecnología", s.switchTechnology);
-    pushSpec(list, "Formato", s.layout);
-    pushSpec(list, "Hot-swap", yesNo(s.hotSwap));
-    pushSpec(list, "Rapid Trigger", yesNo(s.rapidTrigger));
-    pushSpec(list, "Polling rate", s.pollingRate);
-    pushSpec(list, "Keycaps", s.keycaps);
-    pushSpec(list, "Montaje", s.mount);
-    pushSpec(list, "Batería", s.batteryHours ? `${s.batteryHours} h` : "");
+    add("Switches", s.switchType);
+    add("Tecnología", s.switchTechnology);
+    add("Formato", s.layout);
+    add("Hot-swap", yesNo(s.hotSwap));
+    add("Rapid Trigger", yesNo(s.rapidTrigger));
+    add("Polling rate", s.pollingRate);
+    add("Keycaps", s.keycaps);
+    add("Montaje", s.mount);
+    add("Batería", s.batteryHours ? `${s.batteryHours} h` : "");
   }
 
   if (product.category === "IEM") {
-    pushSpec(list, "Drivers", s.driverConfig);
-    pushSpec(list, "Firma sonora", s.soundSignature);
-    pushSpec(list, "Impedancia", s.impedance);
-    pushSpec(list, "Sensibilidad", s.sensitivity);
-    pushSpec(list, "Respuesta en frecuencia", s.frequencyResponse);
-    pushSpec(list, "Conector del cable", s.cableConnector);
-    pushSpec(list, "Plug", s.plug);
-    pushSpec(list, "Cable desmontable", yesNo(s.detachableCable));
-    pushSpec(list, "Micrófono", s.microphone);
-    pushSpec(list, "Peso por lado", s.weightPerSide ? `${s.weightPerSide} g` : "");
+    add("Drivers", s.driverConfig);
+    add("Firma sonora", s.soundSignature);
+    add("Impedancia", s.impedance);
+    add("Sensibilidad", s.sensitivity);
+    add("Respuesta en frecuencia", s.frequencyResponse);
+    add("Conector del cable", s.cableConnector);
+    add("Plug", s.plug);
+    add("Cable desmontable", yesNo(s.detachableCable));
+    add("Micrófono", s.microphone);
+    add("Peso por lado", s.weightPerSide ? `${s.weightPerSide} g` : "");
   }
 
   if (product.category === "Headsets") {
-    pushSpec(list, "Driver", s.driver);
-    pushSpec(list, "Micrófono", s.microphone);
-    pushSpec(list, "Micrófono desmontable", yesNo(s.detachableMic));
-    pushSpec(list, "Peso", s.weight ? `${s.weight} g` : "");
-    pushSpec(list, "Autonomía", s.batteryHours ? `${s.batteryHours} h` : "");
-    pushSpec(list, "Codec", s.codec);
-    pushSpec(list, "Sonido espacial", s.spatialAudio);
-    pushSpec(list, "Impedancia", s.impedance);
-    pushSpec(list, "Respuesta en frecuencia", s.frequencyResponse);
-    pushSpec(list, "Almohadillas", s.earpads);
+    add("Driver", s.driver);
+    add("Micrófono", s.microphone);
+    add("Micrófono desmontable", yesNo(s.detachableMic));
+    add("Peso", s.weight ? `${s.weight} g` : "");
+    add("Autonomía", s.batteryHours ? `${s.batteryHours} h` : "");
+    add("Codec", s.codec);
+    add("Sonido espacial", s.spatialAudio);
+    add("Impedancia", s.impedance);
+    add("Respuesta en frecuencia", s.frequencyResponse);
+    add("Almohadillas", s.earpads);
   }
 
   if (product.category === "DAC") {
-    pushSpec(list, "Chip DAC", s.dacChip);
-    pushSpec(list, "Amplificador", s.ampChip);
-    pushSpec(list, "Entradas", arrayLabel(s.inputs));
-    pushSpec(list, "Salidas", arrayLabel(s.outputs));
-    pushSpec(list, "PCM máximo", s.maxPcm);
-    pushSpec(list, "DSD máximo", s.maxDsd);
-    pushSpec(list, "Potencia", s.powerOutput);
-    pushSpec(list, "Balanceado", yesNo(s.balanced));
-    pushSpec(list, "Bluetooth", s.bluetooth);
-    pushSpec(list, "Codecs Bluetooth", arrayLabel(s.bluetoothCodecs));
-    pushSpec(list, "Ganancia", s.gain);
+    add("Chip DAC", s.dacChip);
+    add("Amplificador", s.ampChip);
+    add("Entradas", arrayLabel(s.inputs));
+    add("Salidas", arrayLabel(s.outputs));
+    add("PCM máximo", s.maxPcm);
+    add("DSD máximo", s.maxDsd);
+    add("Potencia", s.powerOutput);
+    add("Balanceado", yesNo(s.balanced));
+    add("Bluetooth", s.bluetooth);
+    add("Codecs Bluetooth", arrayLabel(s.bluetoothCodecs));
+    add("Ganancia", s.gain);
   }
 
   return list;

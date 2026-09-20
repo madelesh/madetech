@@ -2088,3 +2088,84 @@ body.session-authenticated #accessGate {
 body.session-authenticated #appRoot {
   display: block !important;
 }
+
+
+/* ==========================================================
+   MADETECH V5.8 — GALERÍA, DATOS FALTANTES Y GRIPS
+   ========================================================== */
+.product-gallery {
+  position: relative;
+  z-index: 2;
+  width: min(92%, 520px);
+  display: grid;
+  gap: 12px;
+}
+.product-gallery-main {
+  min-height: 330px;
+  display: grid;
+  place-items: center;
+}
+.product-gallery-main .product-detail-image {
+  width: 88%;
+  max-height: 340px;
+  transition: opacity .18s ease, transform .18s ease;
+}
+.product-gallery-thumbs {
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.product-gallery-thumb {
+  width: 58px;
+  height: 58px;
+  padding: 4px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 11px;
+  background: rgba(255,255,255,.04);
+  cursor: pointer;
+}
+.product-gallery-thumb.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.product-gallery-thumb img { width:100%; height:100%; object-fit:contain; }
+.product-gallery-colors {
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:9px;
+  color:rgba(255,255,255,.55);
+  font-size:.7rem;
+  text-transform:uppercase;
+  letter-spacing:.07em;
+}
+.product-gallery-colors > div { display:flex; gap:5px; }
+.gallery-color-dot {
+  width:17px; height:17px; border-radius:50%; border:1px solid rgba(255,255,255,.35);
+  box-shadow:0 0 0 2px rgba(0,0,0,.18);
+}
+.product-spec-card.spec-unavailable {
+  background: color-mix(in srgb, var(--surface-2) 86%, transparent);
+  border-style: dashed;
+}
+.product-spec-card.spec-unavailable strong { color: var(--muted); font-weight:500; }
+.grip-spec-card { grid-column: span 2; }
+.grip-visual-list { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:12px; }
+.grip-visual-item {
+  min-height:78px;
+  padding:8px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:var(--surface);
+}
+.grip-visual-item strong { margin:0; font-size:.75rem; }
+.grip-icon { width:54px; height:38px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; color:var(--accent); }
+@media (max-width:720px){
+  .product-gallery-main{min-height:240px;}
+  .product-gallery-thumb{width:50px;height:50px;}
+  .grip-spec-card{grid-column:span 1;}
+  .grip-visual-list{grid-template-columns:1fr;}
+}

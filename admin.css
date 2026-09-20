@@ -1069,3 +1069,70 @@ body.admin-authenticated #adminApp {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* ==========================================================
+   MADETECH V5.8 — CONNECTIONS + IMAGE GALLERY
+   ========================================================== */
+.connection-picker-admin {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 10px;
+}
+.connection-choice {
+  min-height: 42px;
+  padding: 0 13px;
+  border: 1px solid #35353a;
+  border-radius: 999px;
+  background: #18181b;
+  color: #aaaab2;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.connection-choice:hover { border-color: #696970; color: #fff; }
+.connection-choice.active {
+  border-color: #eeff00;
+  background: rgba(238,255,0,.1);
+  color: #eeff00;
+}
+.connection-choice-icon {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  background: rgba(255,255,255,.06);
+  font-size: 11px;
+}
+.admin-image-gallery-field { margin-top: 4px; }
+.admin-image-gallery {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+.admin-gallery-item {
+  position: relative;
+  aspect-ratio: 1;
+  border: 1px solid #343438;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #121214;
+}
+.admin-gallery-item img { width:100%; height:100%; object-fit:contain; padding:7px; }
+.admin-gallery-item span {
+  position:absolute; right:5px; bottom:5px;
+  width:21px; height:21px; display:grid; place-items:center;
+  border-radius:50%; background:#eeff00; color:#050505; font-size:10px; font-weight:800;
+}
+.admin-gallery-empty {
+  grid-column: 1/-1;
+  padding: 13px;
+  border: 1px dashed #343438;
+  border-radius: 12px;
+  color: #73737b;
+  font-size: 11px;
+}
+@media (max-width:720px){ .admin-image-gallery{grid-template-columns:repeat(3,1fr);} }

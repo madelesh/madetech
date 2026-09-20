@@ -15,6 +15,10 @@ const productCount = document.getElementById("productCount");
 const productCategory = document.getElementById("productCategory");
 const categoryFields = document.getElementById("categoryFields");
 const categoryFieldsTitle = document.getElementById("categoryFieldsTitle");
+const productConnectionsPicker = document.getElementById("productConnectionsPicker");
+const productConnectionsInput = document.getElementById("productConnections");
+const productImagesPreview = document.getElementById("productImagesPreview");
+const productImagesJson = document.getElementById("productImagesJson");
 
 const productColorPicker = document.getElementById("productColorPicker");
 const customColorInput = document.getElementById("customColorInput");
@@ -249,6 +253,99 @@ productCategory.addEventListener("change", () => {
   if (webSearchCategory) webSearchCategory.value = productCategory.value;
 });
 
+
+/* ---------------- CONNECTION PICKER ---------------- */
+
+const CONNECTION_OPTIONS = [
+  ["2.4 GHz Wireless", "2.4 GHz", "⌁"],
+  ["Bluetooth", "Bluetooth", "ᛒ"],
+  ["USB-C Wired", "USB-C", "↯"],
+  ["USB-A Wired", "USB-A", "↯"],
+  ["3.5 mm", "3.5 mm", "◉"],
+  ["4.4 mm", "4.4 mm", "◉"],
+  ["Optical", "Optical", "◇"],
+  ["Coaxial", "Coaxial", "◎"],
+  ["XLR", "XLR", "◫"],
+  ["Cable", "Cable", "—"]
+];
+
+function normalizeConnectionValue(value) {
+  const raw = String(value || "").trim();
+  const lower = raw.toLowerCase();
+  if (!raw) return "";
+  if (lower.includes("bluetooth")) return "Bluetooth";
+  if (/2\.?4/.test(lower)) return "2.4 GHz Wireless";
+  if (lower.includes("usb-c") || lower.includes("type-c")) return "USB-C Wired";
+  if (lower.includes("usb-a") || lower.includes("type-a")) return "USB-A Wired";
+  if (lower.includes("3.5")) return "3.5 mm";
+  if (lower.includes("4.4")) return "4.4 mm";
+  if (lower.includes("optical") || lower.includes("toslink")) return "Optical";
+  if (lower.includes("coax")) return "Coaxial";
+  if (lower.includes("xlr")) return "XLR";
+  if (lower.includes("cable") || lower.includes("wired")) return "Cable";
+  return raw;
+}
+
+function setConnections(values = []) {
+  const normalized = [...new Set((Array.isArray(values) ? values : []).map(normalizeConnectionValue).filter(Boolean))];
+  productConnectionsInput.value = normalized.join("\n");
+  renderConnectionPicker();
+}
+
+function getConnections() {
+  return lines(productConnectionsInput.value);
+}
+
+function renderConnectionPicker() {
+  const selected = new Set(getConnections());
+  productConnectionsPicker.innerHTML = CONNECTION_OPTIONS.map(([value, label, icon]) => `
+    <button type="button" class="connection-choice ${selected.has(value) ? "active" : ""}"
+      data-connection-value="${escapeAttr(value)}" aria-pressed="${selected.has(value)}">
+      <span class="connection-choice-icon">${icon}</span>
+      <span>${escapeHtml(label)}</span>
+    </button>
+  `).join("");
+
+  productConnectionsPicker.querySelectorAll(".connection-choice").forEach(button => {
+    button.addEventListener("click", () => {
+      const value = button.dataset.connectionValue;
+      const current = new Set(getConnections());
+      if (current.has(value)) current.delete(value); else current.add(value);
+      productConnectionsInput.value = [...current].join("\n");
+      renderConnectionPicker();
+    });
+  });
+}
+
+/* ---------------- PRODUCT IMAGE GALLERY ---------------- */
+
+function setProductImages(values = []) {
+  const images = [...new Set((Array.isArray(values) ? values : []).map(safeExternalUrl).filter(Boolean))].slice(0, 5);
+  productImagesJson.value = JSON.stringify(images);
+  renderAdminProductImages(images);
+}
+
+function getProductImages() {
+  try {
+    const parsed = JSON.parse(productImagesJson.value || "[]");
+    return Array.isArray(parsed) ? parsed.slice(0, 5) : [];
+  } catch {
+    return [];
+  }
+}
+
+function renderAdminProductImages(images = getProductImages()) {
+  if (!images.length) {
+    productImagesPreview.innerHTML = `<span class="admin-gallery-empty">Las imágenes adicionales aparecerán aquí cuando el buscador las encuentre.</span>`;
+    return;
+  }
+  productImagesPreview.innerHTML = images.map((url, index) => `
+    <div class="admin-gallery-item">
+      <img src="${escapeAttr(url)}" alt="Imagen ${index + 1} del producto">
+      <span>${index + 1}</span>
+    </div>
+  `).join("");
+}
 
 /* ---------------- VISUAL PRODUCT EDITORS ---------------- */
 
@@ -507,8 +604,8 @@ function applyImportedWebProduct(product) {
   document.getElementById("productImageUrl").value = product.imageUrl || "";
   document.getElementById("productOfficialUrl").value = product.officialUrl || "";
   document.getElementById("productFeatured").value = "false";
-  document.getElementById("productConnections").value =
-    Array.isArray(product.connections) ? product.connections.join("\n") : "";
+  setConnections(Array.isArray(product.connections) ? product.connections : []);
+  setProductImages(Array.isArray(product.images) && product.images.length ? product.images : (product.imageUrl ? [product.imageUrl] : []));
   document.getElementById("productYoutube").value = product.reviewLinks?.youtube || "";
   document.getElementById("productTiktok").value = product.reviewLinks?.tiktok || "";
   document.getElementById("productSummary").value = product.summary || "";
@@ -631,7 +728,8 @@ function applyImportedMechKeysProduct(product) {
   document.getElementById("productImageUrl").value = product.imageUrl || "";
   document.getElementById("productOfficialUrl").value = product.officialUrl || "";
   document.getElementById("productFeatured").value = "false";
-  document.getElementById("productConnections").value = Array.isArray(product.connections) ? product.connections.join("\n") : "";
+  setConnections(Array.isArray(product.connections) ? product.connections : []);
+  setProductImages(Array.isArray(product.images) && product.images.length ? product.images : (product.imageUrl ? [product.imageUrl] : []));
   document.getElementById("productYoutube").value = product.reviewLinks?.youtube || "";
   document.getElementById("productTiktok").value = product.reviewLinks?.tiktok || "";
   document.getElementById("productSummary").value = product.summary || "";
@@ -790,7 +888,8 @@ function editProduct(id) {
   document.getElementById("productFeatured").value = product.featured === true ? "true" : "false";
   renderTrustedStores(product.trustedStores || []);
   renderColorPicker(product.colors || []);
-  document.getElementById("productConnections").value = (product.connections || []).join("\n");
+  setConnections(product.connections || []);
+  setProductImages(Array.isArray(product.images) && product.images.length ? product.images : (product.imageUrl ? [product.imageUrl] : []));
   document.getElementById("productYoutube").value = product.reviewLinks?.youtube || "";
   document.getElementById("productTiktok").value = product.reviewLinks?.tiktok || "";
   document.getElementById("productSummary").value = product.summary || "";
@@ -811,6 +910,8 @@ function resetProductForm() {
   document.getElementById("productFeatured").value = "false";
   renderTrustedStores([]);
   renderColorPicker([]);
+  setConnections([]);
+  setProductImages([]);
   renderCategoryFields("Mouse", {});
 }
 
@@ -835,7 +936,8 @@ productForm.addEventListener("submit", async event => {
     featured: document.getElementById("productFeatured").value === "true",
     trustedStores: collectTrustedStores(),
     colors: selectedColors.map(item => ({ name: item.name, hex: item.hex })),
-    connections: lines(document.getElementById("productConnections").value),
+    connections: getConnections(),
+    images: getProductImages(),
     reviewLinks: {
       youtube: document.getElementById("productYoutube").value.trim(),
       tiktok: document.getElementById("productTiktok").value.trim()
@@ -1205,4 +1307,6 @@ function escapeAttr(value) {
   return escapeHtml(value).replaceAll("`", "&#096;");
 }
 
+renderConnectionPicker();
+renderAdminProductImages([]);
 restoreAdminSession();

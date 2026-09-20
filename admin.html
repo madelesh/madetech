@@ -202,6 +202,16 @@
                 URL DE IMAGEN DEL PRODUCTO
                 <input id="productImageUrl" type="url" placeholder="https://..." />
               </label>
+                <div class="admin-image-gallery-field full-width">
+                  <div class="visual-field-heading">
+                    <div>
+                      <span class="visual-field-label">GALERÍA DEL PRODUCTO</span>
+                      <small>MadeTech puede guardar hasta 5 imágenes encontradas automáticamente.</small>
+                    </div>
+                  </div>
+                  <div class="admin-image-gallery" id="productImagesPreview"></div>
+                  <input id="productImagesJson" type="hidden" value="[]" />
+                </div>
 
               <div class="form-row">
                 <label>
@@ -256,10 +266,16 @@
                 <input id="customColorInput" type="color" value="#7c3aed" hidden />
               </div>
 
-              <label>
-                TIPOS DE CONEXIÓN — UNO POR LÍNEA
-                <textarea id="productConnections" rows="4" placeholder="2.4 GHz Wireless&#10;Bluetooth&#10;USB-C Wired"></textarea>
-              </label>
+              <div class="visual-field-block">
+                <div class="visual-field-heading">
+                  <div>
+                    <span class="visual-field-label">TIPOS DE CONEXIÓN</span>
+                    <small>Selecciona una o varias opciones. No hace falta escribirlas.</small>
+                  </div>
+                </div>
+                <div class="connection-picker-admin" id="productConnectionsPicker"></div>
+                <input id="productConnections" type="hidden" value="" />
+              </div>
 
               <div class="form-row">
                 <label>
