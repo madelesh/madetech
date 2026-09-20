@@ -78,6 +78,27 @@
               <button class="ghost-btn" id="resetProduct" type="button">Limpiar</button>
             </div>
 
+            <section class="mechkeys-importer" aria-labelledby="mechkeysImporterTitle">
+              <div class="mechkeys-importer-head">
+                <div>
+                  <span class="admin-eyebrow">AUTOCOMPLETAR</span>
+                  <h3 id="mechkeysImporterTitle">Importar desde MechKeys</h3>
+                </div>
+                <span class="mechkeys-source-badge">MECHKEYS.COM</span>
+              </div>
+
+              <p>Pega el enlace individual de un producto de MechKeys. MadeTech leerá la ficha y rellenará automáticamente los campos que encuentre.</p>
+
+              <div class="mechkeys-import-row">
+                <input id="mechkeysProductUrl" type="url" inputmode="url"
+                  placeholder="https://mechkeys.com/products/zaopin-z2" />
+                <button id="mechkeysImportButton" type="button">⚡ EXTRAER DATOS</button>
+              </div>
+
+              <div class="mechkeys-import-status" id="mechkeysImportStatus" hidden></div>
+              <small class="mechkeys-import-note">La importación queda como borrador. Revisa la ficha antes de guardarla.</small>
+            </section>
+
             <form id="productForm" class="product-form">
               <input type="hidden" id="productId" />
 

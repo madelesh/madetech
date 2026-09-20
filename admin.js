@@ -22,6 +22,9 @@ const storeAmazon = document.getElementById("storeAmazon");
 const storeAliExpress = document.getElementById("storeAliExpress");
 const extraStores = document.getElementById("extraStores");
 const addStoreButton = document.getElementById("addStoreButton");
+const mechkeysProductUrl = document.getElementById("mechkeysProductUrl");
+const mechkeysImportButton = document.getElementById("mechkeysImportButton");
+const mechkeysImportStatus = document.getElementById("mechkeysImportStatus");
 
 const keyGeneratorForm = document.getElementById("keyGeneratorForm");
 const generatedKeyBox = document.getElementById("generatedKeyBox");
@@ -389,6 +392,102 @@ function collectTrustedStores() {
 
 renderColorPicker([]);
 renderTrustedStores([]);
+
+
+/* ---------------- MECHKEYS AUTO-IMPORT ---------------- */
+
+mechkeysImportButton.addEventListener("click", importFromMechKeys);
+mechkeysProductUrl.addEventListener("keydown", event => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    importFromMechKeys();
+  }
+});
+
+async function importFromMechKeys() {
+  const url = mechkeysProductUrl.value.trim();
+  if (!url) {
+    showMechKeysStatus("Pega primero el enlace individual del producto.", "error");
+    mechkeysProductUrl.focus();
+    return;
+  }
+
+  const oldText = mechkeysImportButton.textContent;
+  mechkeysImportButton.disabled = true;
+  mechkeysImportButton.textContent = "EXTRAYENDO...";
+  showMechKeysStatus("Conectando con MechKeys y leyendo la ficha técnica...", "loading");
+
+  try {
+    const result = await api("/admin/import/mechkeys", {
+      method: "POST",
+      body: JSON.stringify({ url })
+    });
+
+    applyImportedMechKeysProduct(result.product || {});
+
+    const detected = Array.isArray(result.detected) ? result.detected : [];
+    const warnings = Array.isArray(result.warnings) ? result.warnings : [];
+    const detectedText = detected.length
+      ? `<strong>Encontrado:</strong> ${detected.map(escapeHtml).join(", ")}.`
+      : "La página respondió, pero no pude reconocer campos automáticamente.";
+    const warningHtml = warnings.length
+      ? `<ul>${warnings.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
+      : "";
+
+    showMechKeysStatus(`✓ Ficha extraída. ${detectedText}${warningHtml}`, "success", true);
+    productForm.scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (error) {
+    const messages = {
+      mechkeys_url_required: "Pega un enlace de producto de MechKeys.",
+      invalid_mechkeys_url: "El enlace debe pertenecer a https://mechkeys.com/.",
+      mechkeys_product_url_required: "Pega el enlace individual del producto, por ejemplo https://mechkeys.com/products/zaopin-z2. No uses el enlace de una colección.",
+      mechkeys_fetch_failed: "No pude leer MechKeys en este momento. Prueba nuevamente en unos segundos."
+    };
+    showMechKeysStatus(messages[error.code] || `No se pudo importar: ${error.message}`, "error");
+  } finally {
+    mechkeysImportButton.disabled = false;
+    mechkeysImportButton.textContent = oldText;
+  }
+}
+
+function applyImportedMechKeysProduct(product) {
+  // Nunca sobrescribimos un producto ya guardado; la importación prepara una ficha nueva.
+  document.getElementById("productId").value = "";
+  productFormTitle.textContent = "Nuevo producto · importado de MechKeys";
+  document.getElementById("productStatus").value = "draft";
+
+  const allowedCategories = ["Mouse", "Teclados", "IEM", "Headsets", "DAC"];
+  if (allowedCategories.includes(product.category)) {
+    productCategory.value = product.category;
+  }
+
+  document.getElementById("productBrand").value = product.brand || "";
+  document.getElementById("productName").value = product.name || "";
+  document.getElementById("productModel").value = product.model || "";
+  document.getElementById("productScore").value = Number.isFinite(Number(product.score)) ? Number(product.score) : 0;
+  document.getElementById("productPrice").value = product.price || "";
+  document.getElementById("productDate").value = "";
+  document.getElementById("productImageUrl").value = product.imageUrl || "";
+  document.getElementById("productOfficialUrl").value = product.officialUrl || "";
+  document.getElementById("productFeatured").value = "false";
+  document.getElementById("productConnections").value = Array.isArray(product.connections) ? product.connections.join("\n") : "";
+  document.getElementById("productYoutube").value = product.reviewLinks?.youtube || "";
+  document.getElementById("productTiktok").value = product.reviewLinks?.tiktok || "";
+  document.getElementById("productSummary").value = product.summary || "";
+  document.getElementById("productPros").value = Array.isArray(product.pros) ? product.pros.join("\n") : "";
+  document.getElementById("productCons").value = Array.isArray(product.cons) ? product.cons.join("\n") : "";
+
+  renderTrustedStores(Array.isArray(product.trustedStores) ? product.trustedStores : []);
+  renderColorPicker(Array.isArray(product.colors) ? product.colors : []);
+  renderCategoryFields(productCategory.value, product.specs || {});
+}
+
+function showMechKeysStatus(message, type = "", allowHtml = false) {
+  mechkeysImportStatus.hidden = false;
+  mechkeysImportStatus.className = `mechkeys-import-status ${type}`.trim();
+  if (allowHtml) mechkeysImportStatus.innerHTML = message;
+  else mechkeysImportStatus.textContent = message;
+}
 
 /* ---------------- ADMIN SESSION ---------------- */
 
