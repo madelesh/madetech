@@ -1851,3 +1851,205 @@ footer p:last-child {
     align-items: flex-start;
   }
 }
+
+
+/* =========================================================
+   V5.1 — PERFIL FLOTANTE EN CABECERA
+   ========================================================= */
+
+.profile-menu-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.profile-button {
+  min-height: 44px;
+  padding: 4px 10px 4px 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-3);
+  color: var(--text);
+  cursor: pointer;
+  transition: transform .18s ease, border-color .18s ease, background .18s ease;
+}
+
+.profile-button:hover,
+.profile-button[aria-expanded="true"] {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--text) 24%, var(--line));
+  background: var(--surface-2);
+}
+
+.profile-avatar {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-text);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-text) 14%, transparent);
+}
+
+.profile-avatar svg {
+  width: 19px;
+  height: 19px;
+  stroke-width: 1.9;
+}
+
+.profile-button-label {
+  font-size: .76rem;
+  font-weight: 700;
+}
+
+.profile-chevron {
+  width: 15px;
+  height: 15px;
+  transition: transform .18s ease;
+}
+
+.profile-button[aria-expanded="true"] .profile-chevron {
+  transform: rotate(180deg);
+}
+
+.profile-popover {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 120;
+  width: min(330px, calc(100vw - 28px));
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  color: var(--text);
+  box-shadow: 0 22px 55px rgba(0,0,0,.18);
+  backdrop-filter: blur(22px);
+}
+
+.profile-popover[hidden] {
+  display: none;
+}
+
+.profile-popover-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 4px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.profile-avatar-large {
+  width: 46px;
+  height: 46px;
+  flex-basis: 46px;
+}
+
+.profile-avatar-large svg {
+  width: 23px;
+  height: 23px;
+}
+
+.profile-popover-head div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.profile-popover-head strong {
+  font-size: .92rem;
+}
+
+.profile-popover-head span:not(.profile-avatar) {
+  color: var(--muted);
+  font-size: .75rem;
+}
+
+.profile-session-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 6px;
+  color: var(--muted);
+  font-size: .75rem;
+}
+
+.profile-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.profile-menu-item,
+.profile-menu-item.admin-shortcut,
+.profile-logout {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: .8rem;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.profile-menu-item:hover,
+.profile-menu-item.admin-shortcut:hover,
+.profile-logout:hover {
+  background: var(--surface-2);
+}
+
+.profile-menu-item.admin-shortcut {
+  color: var(--text);
+}
+
+.profile-logout {
+  color: #e34a4a;
+}
+
+@media (max-width: 760px) {
+  .profile-button-label,
+  .profile-chevron {
+    display: none;
+  }
+
+  .profile-button {
+    width: 42px;
+    min-height: 42px;
+    padding: 3px;
+    justify-content: center;
+  }
+
+  .profile-avatar {
+    width: 34px;
+    height: 34px;
+  }
+
+  .profile-popover {
+    position: fixed;
+    top: 78px;
+    right: 8px;
+    width: min(330px, calc(100vw - 16px));
+  }
+
+  /* En V5.1 el acceso al admin y cerrar sesión viven dentro del perfil. */
+  .profile-popover .admin-shortcut,
+  .profile-popover .profile-logout {
+    display: flex;
+  }
+}

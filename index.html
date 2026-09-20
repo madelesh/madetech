@@ -60,8 +60,6 @@
       </nav>
 
       <div class="header-actions">
-        <a class="admin-shortcut" id="adminShortcut" href="admin.html" hidden>ADMIN</a>
-        <button class="logout-button" id="logoutButton" type="button">SALIR</button>
         <button class="theme-toggle" id="themeToggle" type="button" aria-label="Cambiar tema">
           <svg class="sun-icon" viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="12" cy="12" r="4"></circle>
@@ -72,6 +70,49 @@
           </svg>
           <span id="themeLabel">Oscuro</span>
         </button>
+
+        <div class="profile-menu-wrap" id="profileMenuWrap">
+          <button class="profile-button" id="profileButton" type="button" aria-label="Abrir perfil" aria-expanded="false">
+            <span class="profile-avatar" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="8" r="4"></circle>
+                <path d="M4.5 21a7.5 7.5 0 0 1 15 0"></path>
+              </svg>
+            </span>
+            <span class="profile-button-label">Perfil</span>
+            <svg class="profile-chevron" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m8 10 4 4 4-4"></path>
+            </svg>
+          </button>
+
+          <div class="profile-popover" id="profilePopover" hidden>
+            <div class="profile-popover-head">
+              <span class="profile-avatar profile-avatar-large" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="8" r="4"></circle>
+                  <path d="M4.5 21a7.5 7.5 0 0 1 15 0"></path>
+                </svg>
+              </span>
+              <div>
+                <strong id="profileName">Usuario MadeTech</strong>
+                <span id="profileRole">Acceso por key</span>
+              </div>
+            </div>
+
+            <div class="profile-session-status">
+              <span class="profile-status-dot"></span>
+              <span>Sesión activa</span>
+            </div>
+
+            <a class="profile-menu-item admin-shortcut" id="adminShortcut" href="admin.html" hidden>
+              <span>Panel de administrador</span><span>↗</span>
+            </a>
+
+            <button class="profile-menu-item profile-logout" id="logoutButton" type="button">
+              <span>Cerrar sesión</span><span>↗</span>
+            </button>
+          </div>
+        </div>
 
         <button class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false">
           <span></span><span></span>

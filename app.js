@@ -7,6 +7,11 @@ const accessKey = document.getElementById("accessKey");
 const gateError = document.getElementById("gateError");
 const logoutButton = document.getElementById("logoutButton");
 const adminShortcut = document.getElementById("adminShortcut");
+const profileMenuWrap = document.getElementById("profileMenuWrap");
+const profileButton = document.getElementById("profileButton");
+const profilePopover = document.getElementById("profilePopover");
+const profileName = document.getElementById("profileName");
+const profileRole = document.getElementById("profileRole");
 
 const root = document.documentElement;
 const themeToggle = document.getElementById("themeToggle");
@@ -111,7 +116,38 @@ function showGate(message = "") {
 function showApp() {
   accessGate.hidden = true;
   appRoot.hidden = false;
+  updateProfileMenu();
+  window.scrollTo({ top: 0, left: 0, behavior: "auto" });
 }
+
+function updateProfileMenu() {
+  const isAdmin = currentRole === "admin";
+  profileName.textContent = isAdmin ? "Administrador" : "Usuario MadeTech";
+  profileRole.textContent = isAdmin ? "Cuenta de administrador" : "Acceso por key";
+  adminShortcut.hidden = !isAdmin;
+}
+
+function closeProfileMenu() {
+  profilePopover.hidden = true;
+  profileButton.setAttribute("aria-expanded", "false");
+}
+
+function toggleProfileMenu() {
+  const willOpen = profilePopover.hidden;
+  profilePopover.hidden = !willOpen;
+  profileButton.setAttribute("aria-expanded", String(willOpen));
+}
+
+profileButton.addEventListener("click", event => {
+  event.stopPropagation();
+  toggleProfileMenu();
+});
+
+profilePopover.addEventListener("click", event => event.stopPropagation());
+
+document.addEventListener("click", event => {
+  if (!profileMenuWrap.contains(event.target)) closeProfileMenu();
+});
 
 async function restoreSession() {
   const userToken = localStorage.getItem("madetech_user_token");
@@ -185,6 +221,7 @@ keyLoginForm.addEventListener("submit", async event => {
 });
 
 logoutButton.addEventListener("click", async () => {
+  closeProfileMenu();
   try {
     if (currentToken) {
       await api("/session/logout", { method: "POST" });
@@ -732,7 +769,10 @@ function closeModal() {
 
 modal.querySelectorAll("[data-close-modal]").forEach(el => el.addEventListener("click", closeModal));
 document.addEventListener("keydown", e => {
-  if (e.key === "Escape" && modal.classList.contains("open")) closeModal();
+  if (e.key === "Escape") {
+    if (modal.classList.contains("open")) closeModal();
+    closeProfileMenu();
+  }
 });
 
 searchInput.addEventListener("input", renderReviews);

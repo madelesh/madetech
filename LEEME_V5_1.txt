@@ -1,0 +1,16 @@
+MADETECH V5.1 — PERFIL EN CABECERA
+
+Cambio principal:
+- Después de iniciar sesión, el login desaparece.
+- El usuario queda arriba de la página.
+- Hay un botón circular de perfil en la cabecera.
+- Al hacer clic se abre un panel flotante, sin bajar ni hacer scroll.
+- Desde ahí puede cerrar sesión.
+- Si la sesión es de administrador, aparece acceso al panel admin.
+
+Para actualizar GitHub basta reemplazar:
+- index.html
+- styles.css
+- app.js
+
+El backend Cloudflare/D1 no cambia.
