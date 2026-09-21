@@ -6,6 +6,16 @@ const adminLoginForm = document.getElementById("adminLoginForm");
 const adminLoginError = document.getElementById("adminLoginError");
 const adminIdentity = document.getElementById("adminIdentity");
 const adminLogout = document.getElementById("adminLogout");
+const adminSiteFavicon = document.getElementById("siteFavicon");
+const adminBrandLogos = [...document.querySelectorAll(".site-brand-logo")];
+const adminBrandFallbacks = [...document.querySelectorAll(".brand-fallback")];
+const brandingLogoFile = document.getElementById("brandingLogoFile");
+const brandingFaviconFile = document.getElementById("brandingFaviconFile");
+const brandingLogoPreview = document.getElementById("brandingLogoPreview");
+const brandingFaviconPreview = document.getElementById("brandingFaviconPreview");
+const clearBrandingLogo = document.getElementById("clearBrandingLogo");
+const clearBrandingFavicon = document.getElementById("clearBrandingFavicon");
+const saveBrandingSettings = document.getElementById("saveBrandingSettings");
 
 const productForm = document.getElementById("productForm");
 const productFormTitle = document.getElementById("productFormTitle");
@@ -63,6 +73,8 @@ const keysCount = document.getElementById("keysCount");
 
 let adminToken = localStorage.getItem("madetech_admin_token") || "";
 let products = [];
+let brandingLogoDataUrl = "";
+let brandingFaviconDataUrl = "";
 
 const PRESET_COLORS = [
   { name: "Negro", hex: "#111111" },
@@ -1040,6 +1052,123 @@ function showMechKeysStatus(message, type = "", allowHtml = false) {
   else mechkeysImportStatus.textContent = message;
 }
 
+
+/* ---------------- BRANDING ---------------- */
+
+async function loadBrandingSettings() {
+  try {
+    const data = await api("/settings", { method: "GET" }, null);
+    brandingLogoDataUrl = String(data.branding?.logoDataUrl || "");
+    brandingFaviconDataUrl = String(data.branding?.faviconDataUrl || "");
+    renderBrandingPreviews();
+    applyAdminBranding();
+  } catch (error) {
+    console.warn("No se pudo cargar apariencia", error);
+  }
+}
+
+function applyAdminBranding() {
+  adminBrandLogos.forEach(img => {
+    if (brandingLogoDataUrl) {
+      img.src = brandingLogoDataUrl;
+      img.hidden = false;
+    } else {
+      img.removeAttribute("src");
+      img.hidden = true;
+    }
+  });
+  adminBrandFallbacks.forEach(el => { el.hidden = Boolean(brandingLogoDataUrl); });
+  if (adminSiteFavicon) {
+    if (brandingFaviconDataUrl) adminSiteFavicon.href = brandingFaviconDataUrl;
+    else if (brandingLogoDataUrl) adminSiteFavicon.href = brandingLogoDataUrl;
+    else adminSiteFavicon.removeAttribute("href");
+  }
+}
+
+function renderBrandingPreviews() {
+  brandingLogoPreview.innerHTML = brandingLogoDataUrl
+    ? `<img src="${brandingLogoDataUrl}" alt="Vista previa del logo">`
+    : `<span>Sin logo personalizado</span>`;
+  brandingFaviconPreview.innerHTML = brandingFaviconDataUrl
+    ? `<img src="${brandingFaviconDataUrl}" alt="Vista previa del favicon">`
+    : `<span>Sin favicon personalizado</span>`;
+}
+
+async function readBrandingFile(file) {
+  if (!file) return "";
+  const allowed = ["image/png", "image/jpeg", "image/webp"];
+  if (!allowed.includes(file.type)) throw new Error("Usa PNG, JPG o WEBP.");
+  if (file.size > 220 * 1024) throw new Error("La imagen supera 220 KB. Usa una imagen más ligera.");
+
+  return await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("No se pudo leer la imagen."));
+    reader.readAsDataURL(file);
+  });
+}
+
+brandingLogoFile?.addEventListener("change", async () => {
+  try {
+    brandingLogoDataUrl = await readBrandingFile(brandingLogoFile.files?.[0]);
+    renderBrandingPreviews();
+  } catch (error) {
+    alert(error.message);
+    brandingLogoFile.value = "";
+  }
+});
+
+brandingFaviconFile?.addEventListener("change", async () => {
+  try {
+    brandingFaviconDataUrl = await readBrandingFile(brandingFaviconFile.files?.[0]);
+    renderBrandingPreviews();
+  } catch (error) {
+    alert(error.message);
+    brandingFaviconFile.value = "";
+  }
+});
+
+clearBrandingLogo?.addEventListener("click", () => {
+  brandingLogoDataUrl = "";
+  if (brandingLogoFile) brandingLogoFile.value = "";
+  renderBrandingPreviews();
+});
+
+clearBrandingFavicon?.addEventListener("click", () => {
+  brandingFaviconDataUrl = "";
+  if (brandingFaviconFile) brandingFaviconFile.value = "";
+  renderBrandingPreviews();
+});
+
+saveBrandingSettings?.addEventListener("click", async () => {
+  const original = saveBrandingSettings.textContent;
+  saveBrandingSettings.disabled = true;
+  saveBrandingSettings.textContent = "GUARDANDO...";
+  try {
+    const data = await api("/admin/settings/branding", {
+      method: "PUT",
+      body: JSON.stringify({
+        logoDataUrl: brandingLogoDataUrl,
+        faviconDataUrl: brandingFaviconDataUrl
+      })
+    });
+    brandingLogoDataUrl = String(data.branding?.logoDataUrl || "");
+    brandingFaviconDataUrl = String(data.branding?.faviconDataUrl || "");
+    renderBrandingPreviews();
+    applyAdminBranding();
+    showAdminToast("La apariencia de MadeTech ha sido actualizada");
+  } catch (error) {
+    const messages = {
+      invalid_brand_image: "El formato de imagen no es válido.",
+      brand_image_too_large: "La imagen es demasiado grande."
+    };
+    alert(messages[error.code] || `No se pudo guardar la apariencia: ${error.message}`);
+  } finally {
+    saveBrandingSettings.disabled = false;
+    saveBrandingSettings.textContent = original;
+  }
+});
+
 /* ---------------- ADMIN SESSION ---------------- */
 
 async function restoreAdminSession() {
@@ -1059,7 +1188,7 @@ async function restoreAdminSession() {
     adminApp.hidden = false;
     document.body.classList.add("admin-authenticated");
     renderCategoryFields(productCategory.value, {});
-    await Promise.all([loadProducts(), loadKeys()]);
+    await Promise.all([loadProducts(), loadKeys(), loadBrandingSettings()]);
   } catch {
     localStorage.removeItem("madetech_admin_token");
     adminToken = "";
@@ -1091,7 +1220,7 @@ adminLoginForm.addEventListener("submit", async event => {
     document.body.classList.add("admin-authenticated");
 
     renderCategoryFields(productCategory.value, {});
-    await Promise.all([loadProducts(), loadKeys()]);
+    await Promise.all([loadProducts(), loadKeys(), loadBrandingSettings()]);
   } catch {
     adminLoginError.textContent = "Correo o contraseña incorrectos.";
     adminLoginError.hidden = false;
@@ -1113,7 +1242,8 @@ function activateAdminPanel(panelId) {
   const titles = {
     productsPanel: "Agregar producto",
     libraryPanel: "Biblioteca",
-    keysPanel: "Access Keys"
+    keysPanel: "Access Keys",
+    brandingPanel: "Apariencia"
   };
   document.querySelectorAll(".admin-nav button").forEach(item => item.classList.toggle("active", item.dataset.panel === panelId));
   document.querySelectorAll(".admin-panel").forEach(panel => panel.classList.toggle("active", panel.id === panelId));

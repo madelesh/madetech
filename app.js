@@ -41,6 +41,21 @@ const emptyMessage = document.getElementById("emptyMessage");
 const modal = document.getElementById("reviewModal");
 const modalCard = modal.querySelector(".modal-card");
 const modalContent = document.getElementById("modalContent");
+const siteFavicon = document.getElementById("siteFavicon");
+const siteBrandLogos = [...document.querySelectorAll(".site-brand-logo")];
+const brandFallbacks = [...document.querySelectorAll(".brand-fallback")];
+const monthlyBanner = document.getElementById("destacado");
+const featuredBanner = document.getElementById("featuredBanner");
+const featuredBannerBrand = document.getElementById("featuredBannerBrand");
+const featuredBannerName = document.getElementById("featuredBannerName");
+const featuredBannerText = document.getElementById("featuredBannerText");
+const featuredBannerPrice = document.getElementById("featuredBannerPrice");
+const featuredBannerImage = document.getElementById("featuredBannerImage");
+const featuredBannerButton = document.getElementById("featuredBannerButton");
+const featuredBannerNav = document.getElementById("featuredBannerNav");
+const featuredPrev = document.getElementById("featuredPrev");
+const featuredNext = document.getElementById("featuredNext");
+const featuredDots = document.getElementById("featuredDots");
 
 let reviews = [];
 let currentRole = null;
@@ -48,6 +63,9 @@ let currentToken = null;
 let currentProfileName = "";
 let currentKeyExpiresAt = null;
 let keyCountdownTimer = null;
+let featuredProducts = [];
+let featuredIndex = 0;
+let featuredTimer = null;
 
 const selectedProductFilters = {
   category: new Set(),
@@ -114,6 +132,41 @@ async function api(path, options = {}, token = currentToken) {
   }
 
   return data;
+}
+
+
+/* ---------------- PUBLIC BRANDING ---------------- */
+
+async function loadPublicSettings() {
+  try {
+    const data = await api("/settings", { method: "GET" }, null);
+    applyPublicBranding(data.branding || {});
+  } catch (error) {
+    console.warn("No se pudo cargar la identidad visual de MadeTech", error);
+  }
+}
+
+function applyPublicBranding(branding) {
+  const logo = String(branding?.logoDataUrl || "");
+  const favicon = String(branding?.faviconDataUrl || "");
+
+  siteBrandLogos.forEach(img => {
+    if (logo) {
+      img.src = logo;
+      img.hidden = false;
+    } else {
+      img.removeAttribute("src");
+      img.hidden = true;
+    }
+  });
+
+  brandFallbacks.forEach(el => { el.hidden = Boolean(logo); });
+
+  if (siteFavicon) {
+    if (favicon) siteFavicon.href = favicon;
+    else if (logo) siteFavicon.href = logo;
+    else siteFavicon.removeAttribute("href");
+  }
 }
 
 /* ---------------- THEME ---------------- */
@@ -431,31 +484,20 @@ async function loadReviews() {
 }
 
 function cardTemplate(review) {
-  const score = Number(review.score || 0);
-  const category = review.category || "Producto";
   const image = safeUrl(review.imageUrl) || safeUrl(Array.isArray(review.images) ? review.images[0] : "");
-  const connections = Array.isArray(review.connections) ? review.connections.filter(Boolean).slice(0, 3) : [];
+  const connections = Array.isArray(review.connections) ? review.connections.filter(Boolean).slice(0, 2) : [];
   const price = review.price || "Precio no disponible";
 
   return `
-    <article class="review-card" data-category="${escapeHtml(category)}"
-             data-review="${review.id}" tabindex="0" role="button"
-             aria-label="Abrir ${escapeHtml(review.name || "")}">
+    <article class="review-card" data-category="${escapeHtml(review.category || "Producto")}" data-review="${review.id}"
+             tabindex="0" role="button" aria-label="Abrir ${escapeHtml(review.name || "")}">
       <div class="review-visual">
-        ${
-          image
-            ? `<img src="${image}" alt="${escapeHtml(review.name || "Producto")}" class="review-product-image">`
-            : `<div class="visual-shape"></div>`
-        }
-        ${score > 0 ? `<div class="score-badge">${score.toFixed(1)}</div>` : ""}
+        ${image
+          ? `<img src="${image}" alt="${escapeHtml(review.name || "Producto")}" class="review-product-image">`
+          : `<div class="visual-shape"></div>`}
       </div>
 
       <div class="review-content compact-product-card">
-        <div class="review-meta">
-          <span>${escapeHtml(category)}</span>
-          <span>${escapeHtml(review.brand || "")}</span>
-        </div>
-
         <h3>${escapeHtml(review.name || "Producto")}</h3>
 
         <div class="card-data-block">
@@ -468,7 +510,7 @@ function cardTemplate(review) {
         </div>
 
         <div class="review-read product-card-footer">
-          <span>VER PRODUCTO</span>
+          <span>VER</span>
           <strong>${escapeHtml(price)}</strong>
         </div>
       </div>
@@ -654,20 +696,83 @@ function bindCards() {
 }
 
 function updateFeatured() {
-  const featured = reviews.find(item => item.featured === true) || reviews[0];
-  if (!featured) return;
+  featuredProducts = reviews.filter(item => item.featured === true);
+  if (!featuredProducts.length && reviews.length) featuredProducts = [reviews[0]];
 
-  document.getElementById("featuredName").textContent =
-    `${featured.brand || ""} ${featured.name || ""}`.trim();
-  document.getElementById("featuredText").textContent = featured.summary || "";
-  document.getElementById("featuredScore").textContent =
-    Number(featured.score || 0).toFixed(1);
+  if (!featuredProducts.length || !monthlyBanner) {
+    if (monthlyBanner) monthlyBanner.hidden = true;
+    return;
+  }
 
-  document.getElementById("featuredLink").onclick = event => {
-    event.preventDefault();
-    openReview(Number(featured.id));
-  };
+  monthlyBanner.hidden = false;
+  featuredIndex = Math.min(featuredIndex, featuredProducts.length - 1);
+  renderFeaturedBanner();
+  startFeaturedRotation();
 }
+
+function renderFeaturedBanner() {
+  const product = featuredProducts[featuredIndex];
+  if (!product) return;
+
+  const image = safeUrl(product.imageUrl) || safeUrl(Array.isArray(product.images) ? product.images[0] : "");
+  featuredBanner?.classList.add("is-changing");
+
+  setTimeout(() => {
+    featuredBannerBrand.textContent = product.brand || "MadeTech";
+    featuredBannerName.textContent = product.name || product.model || "Producto destacado";
+    featuredBannerText.textContent = product.summary || "Producto destacado del mes en MadeTech.";
+    featuredBannerPrice.textContent = product.price || "";
+
+    if (image) {
+      featuredBannerImage.src = image;
+      featuredBannerImage.hidden = false;
+    } else {
+      featuredBannerImage.removeAttribute("src");
+      featuredBannerImage.hidden = true;
+    }
+
+    featuredBannerButton.onclick = () => openReview(Number(product.id));
+
+    const multiple = featuredProducts.length > 1;
+    featuredBannerNav.hidden = !multiple;
+    featuredDots.innerHTML = multiple
+      ? featuredProducts.map((_, index) => `<button type="button" class="${index === featuredIndex ? "active" : ""}" data-featured-index="${index}" aria-label="Ir al destacado ${index + 1}"></button>`).join("")
+      : "";
+
+    featuredDots.querySelectorAll("[data-featured-index]").forEach(button => {
+      button.addEventListener("click", () => {
+        featuredIndex = Number(button.dataset.featuredIndex);
+        renderFeaturedBanner();
+        startFeaturedRotation();
+      });
+    });
+
+    featuredBanner?.classList.remove("is-changing");
+  }, 120);
+}
+
+function startFeaturedRotation() {
+  if (featuredTimer) clearInterval(featuredTimer);
+  if (featuredProducts.length <= 1) return;
+  featuredTimer = setInterval(() => {
+    featuredIndex = (featuredIndex + 1) % featuredProducts.length;
+    renderFeaturedBanner();
+  }, 6500);
+}
+
+featuredPrev?.addEventListener("click", () => {
+  if (!featuredProducts.length) return;
+  featuredIndex = (featuredIndex - 1 + featuredProducts.length) % featuredProducts.length;
+  renderFeaturedBanner();
+  startFeaturedRotation();
+});
+
+featuredNext?.addEventListener("click", () => {
+  if (!featuredProducts.length) return;
+  featuredIndex = (featuredIndex + 1) % featuredProducts.length;
+  renderFeaturedBanner();
+  startFeaturedRotation();
+});
 
 /* ---------------- PRODUCT COMPARISON ---------------- */
 
@@ -1328,4 +1433,5 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+loadPublicSettings();
 restoreSession();

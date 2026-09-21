@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link id="siteFavicon" rel="icon" type="image/png" href="" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="admin.css" />
 </head>
@@ -16,8 +17,8 @@
   <section class="admin-login" id="adminLogin">
     <div class="admin-login-card">
       <a class="brand" href="index.html">
-        <span class="brand-dot"></span>
-        <span>MADETECH</span>
+        <img class="site-brand-logo" alt="MadeTech" hidden />
+        <span class="brand-fallback"><span class="brand-dot"></span><span>MADETECH</span></span>
       </a>
 
       <span class="gate-kicker">ADMINISTRACIÓN</span>
@@ -43,8 +44,8 @@
   <div class="admin-app" id="adminApp" hidden>
     <aside class="admin-sidebar">
       <a class="brand" href="index.html">
-        <span class="brand-dot"></span>
-        <span>MADETECH</span>
+        <img class="site-brand-logo" alt="MadeTech" hidden />
+        <span class="brand-fallback"><span class="brand-dot"></span><span>MADETECH</span></span>
       </a>
 
       <nav class="admin-nav">
@@ -60,6 +61,10 @@
         <button data-panel="keysPanel">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="12" r="4"></circle><path d="M12 12h9M17 12v3M20 12v2"></path></svg>
           <span>Access Keys</span>
+        </button>
+        <button data-panel="brandingPanel">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4z"></path><circle cx="9" cy="11" r="2"></circle><path d="m6 16 4-4 3 3 2-2 3 3"></path></svg>
+          <span>Apariencia</span>
         </button>
       </nav>
 
@@ -284,7 +289,7 @@
                   <input id="productOfficialUrl" type="url" placeholder="https://marca.com/producto" />
                 </label>
                 <label>
-                  DESTACADO EN PORTADA
+                  DESTACADO DEL MES
                   <select id="productFeatured">
                     <option value="false">No</option>
                     <option value="true">Sí</option>
@@ -473,6 +478,56 @@
           </div>
         </div>
       </section>
+
+      <section class="admin-panel" id="brandingPanel">
+        <div class="admin-grid branding-admin-grid">
+          <div class="admin-card">
+            <div class="card-heading">
+              <div>
+                <span class="admin-eyebrow">IDENTIDAD VISUAL</span>
+                <h2>Logo de MadeTech</h2>
+                <p>Sube un PNG, JPG o WEBP pequeño. Se mostrará en la web en lugar del texto MADETECH.</p>
+              </div>
+            </div>
+            <div class="branding-upload-block">
+              <div class="branding-preview branding-logo-preview" id="brandingLogoPreview">
+                <span>Sin logo personalizado</span>
+              </div>
+              <label class="branding-file-button">
+                <input id="brandingLogoFile" type="file" accept="image/png,image/jpeg,image/webp" />
+                <span>SUBIR LOGO</span>
+              </label>
+              <button class="ghost-btn" id="clearBrandingLogo" type="button">Quitar logo</button>
+            </div>
+          </div>
+
+          <div class="admin-card">
+            <div class="card-heading">
+              <div>
+                <span class="admin-eyebrow">NAVEGADOR</span>
+                <h2>Icono de pestaña</h2>
+                <p>Este será el favicon que aparece en la pestaña del navegador.</p>
+              </div>
+            </div>
+            <div class="branding-upload-block">
+              <div class="branding-preview branding-favicon-preview" id="brandingFaviconPreview">
+                <span>Sin favicon personalizado</span>
+              </div>
+              <label class="branding-file-button">
+                <input id="brandingFaviconFile" type="file" accept="image/png,image/jpeg,image/webp" />
+                <span>SUBIR ICONO</span>
+              </label>
+              <button class="ghost-btn" id="clearBrandingFavicon" type="button">Quitar icono</button>
+            </div>
+          </div>
+
+          <div class="branding-save-row">
+            <p>Recomendado: logo horizontal con fondo transparente e icono cuadrado. Máximo aproximado 220 KB por imagen.</p>
+            <button class="primary-admin-btn" id="saveBrandingSettings" type="button">GUARDAR APARIENCIA ↗</button>
+          </div>
+        </div>
+      </section>
+
     </main>
   </div>
 

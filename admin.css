@@ -1622,3 +1622,23 @@ body.admin-authenticated #adminApp {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* ==========================================================
+   MADETECH V5.14 — BRANDING ADMIN
+   ========================================================== */
+.admin-sidebar .site-brand-logo,
+.admin-login-card .site-brand-logo { height: 32px; max-width: 155px; object-fit: contain; }
+.admin-sidebar .brand-fallback,
+.admin-login-card .brand-fallback { display: inline-flex; align-items: center; gap: 8px; }
+.branding-admin-grid { grid-template-columns: 1fr 1fr; }
+.branding-upload-block { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.branding-preview { width: 100%; min-height: 120px; display: grid; place-items: center; overflow: hidden; border: 1px dashed rgba(255,255,255,.16); border-radius: 15px; background: #111113; color: #777; }
+.branding-logo-preview img { max-width: 260px; max-height: 80px; object-fit: contain; }
+.branding-favicon-preview img { width: 64px; height: 64px; object-fit: contain; border-radius: 12px; }
+.branding-file-button { min-height: 42px; padding: 0 15px; display: inline-flex; align-items: center; border-radius: 999px; background: #eeff00; color: #080808; font-size: .72rem; font-weight: 900; cursor: pointer; }
+.branding-file-button input { position: absolute; opacity: 0; pointer-events: none; }
+.branding-save-row { grid-column: 1/-1; display: flex; justify-content: space-between; gap: 20px; align-items: center; padding: 16px 18px; border: 1px solid rgba(255,255,255,.1); border-radius: 16px; background: #151517; }
+.branding-save-row p { margin: 0; color: #83838b; font-size: .77rem; max-width: 620px; }
+.branding-save-row .primary-admin-btn { width: auto; min-width: 220px; margin: 0; }
+@media(max-width:850px){.branding-admin-grid{grid-template-columns:1fr}.branding-save-row{grid-column:auto;flex-direction:column;align-items:stretch}.branding-save-row .primary-admin-btn{width:100%}}

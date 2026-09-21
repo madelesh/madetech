@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link id="siteFavicon" rel="icon" type="image/png" href="" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 
@@ -17,8 +18,8 @@
   <section class="access-gate" id="accessGate">
     <div class="gate-card">
       <div class="gate-brand">
-        <span class="brand-dot"></span>
-        <span>MADETECH</span>
+        <img class="site-brand-logo" alt="MadeTech" hidden />
+        <span class="brand-fallback"><span class="brand-dot"></span><span>MADETECH</span></span>
       </div>
 
       <span class="gate-kicker">ACCESO PRIVADO</span>
@@ -48,8 +49,8 @@
   <div class="site-shell">
     <header class="topbar">
       <a class="brand" href="#home" aria-label="MadeTech inicio">
-        <span class="brand-dot"></span>
-        <span>MADETECH</span>
+        <img class="site-brand-logo" alt="MadeTech" hidden />
+        <span class="brand-fallback"><span class="brand-dot"></span><span>MADETECH</span></span>
       </a>
 
       <nav class="desktop-nav">
@@ -143,6 +144,60 @@
     </header>
 
     <main>
+
+      <section class="compact-category-strip" id="categorias" aria-label="Categorías">
+        <div class="compact-category-inner">
+          <div class="compact-category-heading">
+            <span>Categorías</span>
+            <small>Explora por tipo</small>
+          </div>
+          <div class="compact-category-list">
+            <button type="button" data-filter="Mouse">
+              <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="13" y="5" width="22" height="38" rx="11"></rect><path d="M24 5v12M13 20h22"></path></svg>
+              <span>Mouse</span>
+            </button>
+            <button type="button" data-filter="Teclados">
+              <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="11" width="38" height="26" rx="5"></rect><path d="M11 18h3M18 18h3M25 18h3M32 18h5M11 24h4M19 24h4M27 24h4M35 24h2M11 30h5M20 30h17"></path></svg>
+              <span>Teclados</span>
+            </button>
+            <button type="button" data-filter="IEM">
+              <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M12 15c0-5 4-9 9-9s9 4 9 9-4 9-9 9c-2 0-4-.6-5.5-1.8L10 28v10M36 15c0-5-4-9-9-9"></path><circle cx="10" cy="39" r="3"></circle></svg>
+              <span>IEM</span>
+            </button>
+            <button type="button" data-filter="Headsets">
+              <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M9 26v-6a15 15 0 0 1 30 0v6"></path><rect x="6" y="25" width="9" height="14" rx="4"></rect><rect x="33" y="25" width="9" height="14" rx="4"></rect></svg>
+              <span>Headsets</span>
+            </button>
+            <button type="button" data-filter="DAC">
+              <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="7" y="9" width="34" height="30" rx="5"></rect><circle cx="29" cy="24" r="7"></circle><circle cx="15" cy="18" r="2"></circle><circle cx="15" cy="29" r="2"></circle></svg>
+              <span>DACs</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="monthly-banner" id="destacado" hidden>
+        <div class="monthly-banner-track" id="featuredBanner">
+          <div class="monthly-banner-copy">
+            <span class="monthly-banner-kicker">DESTACADO DEL MES</span>
+            <span class="monthly-banner-brand" id="featuredBannerBrand">MadeTech</span>
+            <h2 id="featuredBannerName">Producto destacado</h2>
+            <p id="featuredBannerText">El producto recomendado del mes.</p>
+            <div class="monthly-banner-actions">
+              <button id="featuredBannerButton" type="button">VER PRODUCTO</button>
+              <strong id="featuredBannerPrice"></strong>
+            </div>
+          </div>
+          <div class="monthly-banner-media">
+            <img id="featuredBannerImage" alt="Producto destacado" />
+          </div>
+          <div class="monthly-banner-nav" id="featuredBannerNav" hidden>
+            <button id="featuredPrev" type="button" aria-label="Producto anterior">‹</button>
+            <div id="featuredDots"></div>
+            <button id="featuredNext" type="button" aria-label="Producto siguiente">›</button>
+          </div>
+        </div>
+      </section>
       <section class="hero" id="inicio" hidden>
         <div class="hero-main panel">
           <div class="hero-kicker">
@@ -203,8 +258,8 @@
 
       <section class="section reviews-section" id="home">
         <div class="reviews-toolbar">
-          <div>
-            <span class="section-index">(01)</span>
+          <div class="catalog-heading">
+            <span>CATÁLOGO</span>
             <h2>Productos</h2>
           </div>
 
@@ -288,82 +343,6 @@
         <p class="empty-message" id="emptyMessage" hidden>No hay reviews que coincidan con tu búsqueda.</p>
       </section>
 
-      <section class="section" id="categorias">
-        <div class="section-head">
-          <div>
-            <span class="section-index">(02)</span>
-            <h2>Explora por<br>categoría</h2>
-          </div>
-          <p>Elige el tipo de producto y filtra las reviews que te interesan.</p>
-        </div>
-
-        <div class="category-grid">
-          <button class="category-card accent" data-filter="Mouse">
-            <span class="category-number">01</span>
-            <span class="category-icon">
-              <svg viewBox="0 0 48 48" aria-hidden="true">
-                <rect x="13" y="5" width="22" height="38" rx="11"></rect>
-                <path d="M24 5v12M13 20h22"></path>
-              </svg>
-            </span>
-            <span class="category-name">Mouse</span>
-            <span class="category-caption">Forma · Sensor · Clicks</span>
-          </button>
-
-          <button class="category-card" data-filter="Teclados">
-            <span class="category-number">02</span>
-            <span class="category-icon">
-              <svg viewBox="0 0 48 48" aria-hidden="true">
-                <rect x="5" y="11" width="38" height="26" rx="5"></rect>
-                <path d="M11 18h3M18 18h3M25 18h3M32 18h5M11 24h4M19 24h4M27 24h4M35 24h2M11 30h5M20 30h17"></path>
-              </svg>
-            </span>
-            <span class="category-name">Teclados</span>
-            <span class="category-caption">Switches · Sonido · Latencia</span>
-          </button>
-
-          <button class="category-card dark" data-filter="IEM">
-            <span class="category-number">03</span>
-            <span class="category-icon">
-              <svg viewBox="0 0 48 48" aria-hidden="true">
-                <path d="M12 15c0-5 4-9 9-9s9 4 9 9-4 9-9 9c-2 0-4-.6-5.5-1.8L10 28v10M36 15c0-5-4-9-9-9"></path>
-                <circle cx="10" cy="39" r="3"></circle>
-              </svg>
-            </span>
-            <span class="category-name">IEM / In-Ears</span>
-            <span class="category-caption">Tuning · Imaging · Comodidad</span>
-          </button>
-
-          <button class="category-card" data-filter="Headsets">
-            <span class="category-number">04</span>
-            <span class="category-icon">
-              <svg viewBox="0 0 48 48" aria-hidden="true">
-                <path d="M9 26v-6a15 15 0 0 1 30 0v6"></path>
-                <rect x="6" y="25" width="9" height="14" rx="4"></rect>
-                <rect x="33" y="25" width="9" height="14" rx="4"></rect>
-                <path d="M38 38c0 4-3 6-8 6h-4"></path>
-              </svg>
-            </span>
-            <span class="category-name">Headsets</span>
-            <span class="category-caption">Audio · Micrófono · Confort</span>
-          </button>
-
-          <button class="category-card" data-filter="DAC">
-            <span class="category-number">05</span>
-            <span class="category-icon">
-              <svg viewBox="0 0 48 48" aria-hidden="true">
-                <rect x="7" y="9" width="34" height="30" rx="5"></rect>
-                <circle cx="29" cy="24" r="7"></circle>
-                <circle cx="15" cy="18" r="2"></circle>
-                <circle cx="15" cy="29" r="2"></circle>
-              </svg>
-            </span>
-            <span class="category-name">DACs</span>
-            <span class="category-caption">Potencia · Ruido · I/O</span>
-          </button>
-        </div>
-      </section>
-
       <section class="section method-section compare-section" id="comparacion">
         <div class="method-visual">
           <div class="method-photo">
@@ -403,8 +382,8 @@
 
     <footer>
       <a class="brand footer-brand" href="#home">
-        <span class="brand-dot"></span>
-        <span>MADETECH</span>
+        <img class="site-brand-logo" alt="MadeTech" hidden />
+        <span class="brand-fallback"><span class="brand-dot"></span><span>MADETECH</span></span>
       </a>
       <p>Mouse · Teclados · IEM · Headsets · DACs</p>
       <p>© <span id="year"></span> MadeTech</p>
