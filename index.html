@@ -47,16 +47,28 @@
 
   <div class="site-shell">
     <header class="topbar">
-      <a class="brand" href="#inicio" aria-label="MadeTech inicio">
+      <a class="brand" href="#home" aria-label="MadeTech inicio">
         <span class="brand-dot"></span>
         <span>MADETECH</span>
       </a>
 
       <nav class="desktop-nav">
-        <a href="#reviews">Reviews</a>
-        <a href="#categorias">Categorías</a>
-        <a href="#metodo">Metodología</a>
-        <a href="#contacto">Contacto</a>
+        <a href="#home" class="nav-link">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"></path><path d="M5.5 10.5V20h13v-9.5M9 20v-6h6v6"></path></svg>
+          <span>Home</span>
+        </a>
+        <a href="#categorias" class="nav-link">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg>
+          <span>Categoría</span>
+        </a>
+        <a href="#comparacion" class="nav-link">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16M17 4v16M4 7h6M14 17h6"></path><path d="m8 5-1-1-1 1M16 19l1 1 1-1"></path></svg>
+          <span>Comparación</span>
+        </a>
+        <a href="#contacto" class="nav-link">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m4 7 8 6 8-6"></path></svg>
+          <span>Contactos</span>
+        </a>
       </nav>
 
       <div class="header-actions">
@@ -123,15 +135,15 @@
       </div>
 
       <nav class="mobile-nav" id="mobileNav">
-        <a href="#reviews">Reviews</a>
-        <a href="#categorias">Categorías</a>
-        <a href="#metodo">Metodología</a>
-        <a href="#contacto">Contacto</a>
+        <a href="#home">⌂ Home</a>
+        <a href="#categorias">▦ Categoría</a>
+        <a href="#comparacion">⇄ Comparación</a>
+        <a href="#contacto">✉ Contactos</a>
       </nav>
     </header>
 
     <main>
-      <section class="hero" id="inicio">
+      <section class="hero" id="inicio" hidden>
         <div class="hero-main panel">
           <div class="hero-kicker">
             <span>REVIEWS INDEPENDIENTES</span>
@@ -156,7 +168,7 @@
               <strong>10</strong>
               <span>Escala máxima</span>
             </div>
-            <a class="pill-link" href="#reviews">VER REVIEWS <span>↗</span></a>
+            <a class="pill-link" href="#home">VER REVIEWS <span>↗</span></a>
           </div>
 
           <div class="hero-art" aria-hidden="true">
@@ -177,7 +189,7 @@
               <span id="featuredScore">9.1</span>
               <small>/10</small>
             </div>
-            <a id="featuredLink" href="#reviews">LEER ANÁLISIS ↗</a>
+            <a id="featuredLink" href="#home">LEER ANÁLISIS ↗</a>
           </article>
 
           <article class="dark-card">
@@ -189,87 +201,11 @@
         </aside>
       </section>
 
-      <section class="section" id="categorias">
-        <div class="section-head">
-          <div>
-            <span class="section-index">(01)</span>
-            <h2>Explora por<br>categoría</h2>
-          </div>
-          <p>Elige el tipo de producto y filtra las reviews que te interesan.</p>
-        </div>
-
-        <div class="category-grid">
-          <button class="category-card accent" data-filter="Mouse">
-            <span class="category-number">01</span>
-            <span class="category-icon">
-              <svg viewBox="0 0 48 48" aria-hidden="true">
-                <rect x="13" y="5" width="22" height="38" rx="11"></rect>
-                <path d="M24 5v12M13 20h22"></path>
-              </svg>
-            </span>
-            <span class="category-name">Mouse</span>
-            <span class="category-caption">Forma · Sensor · Clicks</span>
-          </button>
-
-          <button class="category-card" data-filter="Teclados">
-            <span class="category-number">02</span>
-            <span class="category-icon">
-              <svg viewBox="0 0 48 48" aria-hidden="true">
-                <rect x="5" y="11" width="38" height="26" rx="5"></rect>
-                <path d="M11 18h3M18 18h3M25 18h3M32 18h5M11 24h4M19 24h4M27 24h4M35 24h2M11 30h5M20 30h17"></path>
-              </svg>
-            </span>
-            <span class="category-name">Teclados</span>
-            <span class="category-caption">Switches · Sonido · Latencia</span>
-          </button>
-
-          <button class="category-card dark" data-filter="IEM">
-            <span class="category-number">03</span>
-            <span class="category-icon">
-              <svg viewBox="0 0 48 48" aria-hidden="true">
-                <path d="M12 15c0-5 4-9 9-9s9 4 9 9-4 9-9 9c-2 0-4-.6-5.5-1.8L10 28v10M36 15c0-5-4-9-9-9"></path>
-                <circle cx="10" cy="39" r="3"></circle>
-              </svg>
-            </span>
-            <span class="category-name">IEM / In-Ears</span>
-            <span class="category-caption">Tuning · Imaging · Comodidad</span>
-          </button>
-
-          <button class="category-card" data-filter="Headsets">
-            <span class="category-number">04</span>
-            <span class="category-icon">
-              <svg viewBox="0 0 48 48" aria-hidden="true">
-                <path d="M9 26v-6a15 15 0 0 1 30 0v6"></path>
-                <rect x="6" y="25" width="9" height="14" rx="4"></rect>
-                <rect x="33" y="25" width="9" height="14" rx="4"></rect>
-                <path d="M38 38c0 4-3 6-8 6h-4"></path>
-              </svg>
-            </span>
-            <span class="category-name">Headsets</span>
-            <span class="category-caption">Audio · Micrófono · Confort</span>
-          </button>
-
-          <button class="category-card" data-filter="DAC">
-            <span class="category-number">05</span>
-            <span class="category-icon">
-              <svg viewBox="0 0 48 48" aria-hidden="true">
-                <rect x="7" y="9" width="34" height="30" rx="5"></rect>
-                <circle cx="29" cy="24" r="7"></circle>
-                <circle cx="15" cy="18" r="2"></circle>
-                <circle cx="15" cy="29" r="2"></circle>
-              </svg>
-            </span>
-            <span class="category-name">DACs</span>
-            <span class="category-caption">Potencia · Ruido · I/O</span>
-          </button>
-        </div>
-      </section>
-
-      <section class="section reviews-section" id="reviews">
+      <section class="section reviews-section" id="home">
         <div class="reviews-toolbar">
           <div>
-            <span class="section-index">(02)</span>
-            <h2>Últimas reviews</h2>
+            <span class="section-index">(01)</span>
+            <h2>Productos</h2>
           </div>
 
           <div class="toolbar-controls product-filter-toolbar">
@@ -352,7 +288,83 @@
         <p class="empty-message" id="emptyMessage" hidden>No hay reviews que coincidan con tu búsqueda.</p>
       </section>
 
-      <section class="section method-section" id="metodo">
+      <section class="section" id="categorias">
+        <div class="section-head">
+          <div>
+            <span class="section-index">(02)</span>
+            <h2>Explora por<br>categoría</h2>
+          </div>
+          <p>Elige el tipo de producto y filtra las reviews que te interesan.</p>
+        </div>
+
+        <div class="category-grid">
+          <button class="category-card accent" data-filter="Mouse">
+            <span class="category-number">01</span>
+            <span class="category-icon">
+              <svg viewBox="0 0 48 48" aria-hidden="true">
+                <rect x="13" y="5" width="22" height="38" rx="11"></rect>
+                <path d="M24 5v12M13 20h22"></path>
+              </svg>
+            </span>
+            <span class="category-name">Mouse</span>
+            <span class="category-caption">Forma · Sensor · Clicks</span>
+          </button>
+
+          <button class="category-card" data-filter="Teclados">
+            <span class="category-number">02</span>
+            <span class="category-icon">
+              <svg viewBox="0 0 48 48" aria-hidden="true">
+                <rect x="5" y="11" width="38" height="26" rx="5"></rect>
+                <path d="M11 18h3M18 18h3M25 18h3M32 18h5M11 24h4M19 24h4M27 24h4M35 24h2M11 30h5M20 30h17"></path>
+              </svg>
+            </span>
+            <span class="category-name">Teclados</span>
+            <span class="category-caption">Switches · Sonido · Latencia</span>
+          </button>
+
+          <button class="category-card dark" data-filter="IEM">
+            <span class="category-number">03</span>
+            <span class="category-icon">
+              <svg viewBox="0 0 48 48" aria-hidden="true">
+                <path d="M12 15c0-5 4-9 9-9s9 4 9 9-4 9-9 9c-2 0-4-.6-5.5-1.8L10 28v10M36 15c0-5-4-9-9-9"></path>
+                <circle cx="10" cy="39" r="3"></circle>
+              </svg>
+            </span>
+            <span class="category-name">IEM / In-Ears</span>
+            <span class="category-caption">Tuning · Imaging · Comodidad</span>
+          </button>
+
+          <button class="category-card" data-filter="Headsets">
+            <span class="category-number">04</span>
+            <span class="category-icon">
+              <svg viewBox="0 0 48 48" aria-hidden="true">
+                <path d="M9 26v-6a15 15 0 0 1 30 0v6"></path>
+                <rect x="6" y="25" width="9" height="14" rx="4"></rect>
+                <rect x="33" y="25" width="9" height="14" rx="4"></rect>
+                <path d="M38 38c0 4-3 6-8 6h-4"></path>
+              </svg>
+            </span>
+            <span class="category-name">Headsets</span>
+            <span class="category-caption">Audio · Micrófono · Confort</span>
+          </button>
+
+          <button class="category-card" data-filter="DAC">
+            <span class="category-number">05</span>
+            <span class="category-icon">
+              <svg viewBox="0 0 48 48" aria-hidden="true">
+                <rect x="7" y="9" width="34" height="30" rx="5"></rect>
+                <circle cx="29" cy="24" r="7"></circle>
+                <circle cx="15" cy="18" r="2"></circle>
+                <circle cx="15" cy="29" r="2"></circle>
+              </svg>
+            </span>
+            <span class="category-name">DACs</span>
+            <span class="category-caption">Potencia · Ruido · I/O</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="section method-section compare-section" id="comparacion">
         <div class="method-visual">
           <div class="method-photo">
             <div class="method-rings"></div>
@@ -362,33 +374,17 @@
 
         <div class="method-copy">
           <span class="section-index">(03)</span>
-          <h2>Cómo calificamos</h2>
+          <h2>Comparación</h2>
           <p class="method-lead">
-            No usamos la misma fórmula para todo. Un mouse, un IEM y un DAC necesitan criterios distintos.
+            Compara rápidamente los datos principales de dos productos guardados en MadeTech.
           </p>
 
-          <div class="method-list">
-            <article>
-              <span>01</span>
-              <div>
-                <strong>Uso real</strong>
-                <p>El producto se prueba en escenarios para los que realmente fue diseñado.</p>
-              </div>
-            </article>
-            <article>
-              <span>02</span>
-              <div>
-                <strong>Criterios por categoría</strong>
-                <p>Sensor y forma en mouse; tuning e imaging en IEM; potencia y ruido en DACs.</p>
-              </div>
-            </article>
-            <article>
-              <span>03</span>
-              <div>
-                <strong>Conclusión clara</strong>
-                <p>Pros, contras y puntuación final sin esconder las debilidades del producto.</p>
-              </div>
-            </article>
+          <div class="compare-tool">
+            <div class="compare-selects">
+              <label>PRODUCTO A<select id="compareProductA"><option value="">Seleccionar producto</option></select></label>
+              <label>PRODUCTO B<select id="compareProductB"><option value="">Seleccionar producto</option></select></label>
+            </div>
+            <div id="compareResult" class="compare-result">Selecciona dos productos para compararlos.</div>
           </div>
         </div>
       </section>
@@ -406,7 +402,7 @@
     </main>
 
     <footer>
-      <a class="brand footer-brand" href="#inicio">
+      <a class="brand footer-brand" href="#home">
         <span class="brand-dot"></span>
         <span>MADETECH</span>
       </a>

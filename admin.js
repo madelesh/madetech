@@ -110,63 +110,17 @@ async function api(path, options = {}, token = adminToken) {
 
 const categorySchemas = {
   Mouse: [
-    field("sensor", "Sensor", "text", "Ej. PixArt PAW3950"),
-    field("sensorType", "Tipo de sensor", "text", "Ej. Óptico"),
-    field("sensorPosition", "Posición del sensor", "text", "Ej. Centrado (52%)"),
-    field("mcu", "MCU / microcontrolador", "text", "Ej. Nordic nRF52840"),
-    field("weight", "Peso (g)", "number", "54"),
-    field("sizeCategory", "Tamaño", "select", "", [
-      ["Pequeño", "Pequeño"],
-      ["Mediano", "Mediano"],
-      ["Grande", "Grande"],
-      ["Muy grande", "Muy grande"]
-    ]),
-    field("shapeCategory", "Forma", "select", "", [
-      ["Simétrico", "Simétrico"],
-      ["Asimétrico", "Asimétrico"],
-      ["Ergonómico", "Ergonómico"]
-    ]),
-    field("handCompatibility", "Mano compatible", "select", "", [
-      ["Derecha", "Derecha"],
-      ["Izquierda", "Izquierda"],
-      ["Ambidiestro", "Ambidiestro"]
-    ]),
-    field("humpPlacement", "Posición de la joroba", "text", "Ej. Trasera - moderada"),
-    field("frontFlare", "Apertura frontal", "text", "Ej. Hacia afuera - moderado"),
-    field("sideCurvature", "Curvatura lateral", "text", "Ej. Hacia adentro"),
-    field("thumbRest", "Reposapulgar", "boolean"),
-    field("ringFingerRest", "Apoyo para dedo anular", "boolean"),
-    field("dpiMax", "DPI máximo", "number", "30000"),
-    field("trackingSpeedIps", "Velocidad de seguimiento (IPS)", "number", "750"),
-    field("accelerationG", "Aceleración (G)", "number", "50"),
-    field("switchType", "Switches", "text", "Ej. Huano Transparent Blue Shell Pink Dot 80M"),
-    field("encoder", "Encoder de rueda", "text", "Ej. TTC Gold"),
-    field("sideButtons", "Botones laterales", "number", "2"),
-    field("middleButtons", "Botones centrales", "number", "0"),
-    field("hotSwapSwitches", "Switches hot-swap", "boolean"),
-    field("hotSwapBattery", "Batería hot-swap", "boolean"),
-    field("material", "Material", "text", "Ej. Plástico / Magnesio"),
-    field("dongle8k", "Dongle 8K", "select", "", [
-      ["included", "Incluido"],
-      ["separate", "Se compra aparte"],
-      ["not_supported", "No compatible"]
-    ]),
-    field("gripTypes", "Tipos de agarre", "multichoice", "", [
-      ["Palm", "Palm"],
-      ["Claw", "Claw"],
-      ["Fingertip", "Fingertip"]
-    ]),
-    field("pollingRate", "Polling rate disponibles", "multichoice", "", [
+    field("mcu", "MCU", "text", "Ej. Nordic 54H20"),
+    field("pollingRate", "Polling Rate (Hz)", "multichoice", "", [
       ["1000 Hz", "1000 Hz"],
       ["4000 Hz", "4000 Hz"],
       ["8000 Hz", "8000 Hz"]
     ]),
-    field("pollingRateMax", "Polling rate máximo confirmado", "text", "Ej. 8000 Hz"),
-    field("batteryHours", "Batería (horas)", "number", "95"),
-    field("dimensions", "Dimensiones", "text", "Ej. 127.1 × 63.9 × 39.9 mm"),
-    field("lengthMm", "Largo (mm)", "number", "127.1"),
-    field("widthMm", "Ancho (mm)", "number", "63.9"),
-    field("heightMm", "Alto (mm)", "number", "39.9"),
+    field("switchType", "Switch", "text", "Ej. OMRON Optical"),
+    field("battery", "Battery", "text", "Ej. 300 mAh / 80 h"),
+    field("weight", "Peso (g)", "number", "Ej. 50"),
+    field("sensor", "Sensor", "text", "Ej. PAW3950"),
+    field("material", "Material", "text", "Ej. Aleación de magnesio"),
     field("eloShapesUrl", "Fuente técnica EloShapes", "url", "https://www.eloshapes.com/mouse/compare?p=...")
   ],
   Teclados: [

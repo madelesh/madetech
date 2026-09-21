@@ -318,6 +318,7 @@ async function restoreSession() {
     adminShortcut.hidden = me.role !== "admin";
     showApp();
     await loadReviews();
+    focusProductsHome();
   } catch {
     localStorage.removeItem("madetech_user_token");
     if (userToken) currentToken = null;
@@ -361,6 +362,7 @@ keyLoginForm.addEventListener("submit", async event => {
     adminShortcut.hidden = true;
     showApp();
     await loadReviews();
+    focusProductsHome();
   } catch (error) {
     const messages = {
       invalid_key: "La key no es válida o fue revocada.",
@@ -419,6 +421,7 @@ async function loadReviews() {
     const data = await api("/products");
     reviews = Array.isArray(data.products) ? data.products : [];
     populateProductFilters();
+    populateComparisonSelectors();
     renderReviews();
     updateFeatured();
   } catch (error) {
@@ -666,6 +669,60 @@ function updateFeatured() {
   };
 }
 
+/* ---------------- PRODUCT COMPARISON ---------------- */
+
+const compareProductA = document.getElementById("compareProductA");
+const compareProductB = document.getElementById("compareProductB");
+const compareResult = document.getElementById("compareResult");
+
+function populateComparisonSelectors() {
+  if (!compareProductA || !compareProductB) return;
+  const options = reviews.map(item => `<option value="${item.id}">${escapeHtml(`${item.brand || ""} ${item.name || ""}`.trim())}</option>`).join("");
+  compareProductA.innerHTML = `<option value="">Seleccionar producto</option>${options}`;
+  compareProductB.innerHTML = `<option value="">Seleccionar producto</option>${options}`;
+}
+
+function renderComparison() {
+  if (!compareResult) return;
+  const a = reviews.find(item => String(item.id) === String(compareProductA?.value || ""));
+  const b = reviews.find(item => String(item.id) === String(compareProductB?.value || ""));
+
+  if (!a || !b) {
+    compareResult.textContent = "Selecciona dos productos para compararlos.";
+    return;
+  }
+
+  const rows = [
+    ["Marca", a.brand, b.brand],
+    ["Categoría", a.category, b.category],
+    ["Precio", a.price || "No disponible", b.price || "No disponible"],
+    ["Conexión", arrayLabel(a.connections) || "No disponible", arrayLabel(b.connections) || "No disponible"]
+  ];
+
+  if (a.category === "Mouse" && b.category === "Mouse") {
+    rows.push(
+      ["Sensor", a.specs?.sensor || "No disponible", b.specs?.sensor || "No disponible"],
+      ["Peso", a.specs?.weight ? `${a.specs.weight} g` : "No disponible", b.specs?.weight ? `${b.specs.weight} g` : "No disponible"],
+      ["Polling Rate", arrayLabel(a.specs?.pollingRate) || a.specs?.pollingRateMax || "No disponible", arrayLabel(b.specs?.pollingRate) || b.specs?.pollingRateMax || "No disponible"]
+    );
+  }
+
+  compareResult.innerHTML = `
+    <div class="compare-table">
+      <div class="compare-table-head"><span>Dato</span><strong>${escapeHtml(a.name || "Producto A")}</strong><strong>${escapeHtml(b.name || "Producto B")}</strong></div>
+      ${rows.map(([label,av,bv]) => `<div class="compare-table-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(formatValue(av))}</strong><strong>${escapeHtml(formatValue(bv))}</strong></div>`).join("")}
+    </div>`;
+}
+
+compareProductA?.addEventListener("change", renderComparison);
+compareProductB?.addEventListener("change", renderComparison);
+
+function focusProductsHome() {
+  const home = document.getElementById("home");
+  if (!home) return;
+  requestAnimationFrame(() => home.scrollIntoView({ behavior: "auto", block: "start" }));
+}
+
 /* ---------------- PRODUCT DETAIL ---------------- */
 
 async function openReview(id) {
@@ -846,10 +903,10 @@ function specIcon(label) {
   if (value.includes("encoder")) return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"></circle><path d="M12 5v4M12 15v4M5 12h4M15 12h4"></path></svg>`;
   if (value.includes("botones")) return `<svg viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="5"></rect><path d="M12 3v7M8 11h8"></path></svg>`;
   if (value.includes("material")) return `<svg viewBox="0 0 24 24"><path d="m12 3 8 5-8 5-8-5z"></path><path d="m4 12 8 5 8-5M4 16l8 5 8-5"></path></svg>`;
-  if (value.includes("peso")) return `<svg viewBox="0 0 24 24"><path d="M6 20h12l-1.5-11h-9z"></path><path d="M9 9a3 3 0 0 1 6 0"></path></svg>`;
+  if (value.includes("peso") || value.includes("weight")) return `<svg viewBox="0 0 24 24"><path d="M6 20h12l-1.5-11h-9z"></path><path d="M9 9a3 3 0 0 1 6 0"></path></svg>`;
   if (value.includes("switch")) return `<svg viewBox="0 0 24 24"><rect x="6" y="5" width="12" height="14" rx="3"></rect><path d="M9 9h6M9 13h6"></path></svg>`;
   if (value.includes("polling")) return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 7v5l3 2"></path></svg>`;
-  if (value.includes("bater") || value.includes("autonom")) return `<svg viewBox="0 0 24 24"><rect x="4" y="7" width="15" height="10" rx="2"></rect><path d="M19 10h2v4h-2M7 12h7"></path></svg>`;
+  if (value.includes("bater") || value.includes("autonom") || value.includes("battery")) return `<svg viewBox="0 0 24 24"><rect x="4" y="7" width="15" height="10" rx="2"></rect><path d="M19 10h2v4h-2M7 12h7"></path></svg>`;
   if (value.includes("dimens")) return `<svg viewBox="0 0 24 24"><path d="M4 7h16M4 17h16M7 4v6M17 14v6"></path></svg>`;
   if (value.includes("formato") || value.includes("layout")) return `<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"></rect><path d="M6 10h2M10 10h2M14 10h2M6 14h12"></path></svg>`;
   if (value.includes("hot-swap") || value.includes("rapid")) return `<svg viewBox="0 0 24 24"><path d="m13 2-7 11h6l-1 9 7-12h-6z"></path></svg>`;
@@ -918,35 +975,13 @@ function buildSpecs(product) {
   const add = (label, value, type = "normal") => list.push({ label, value, type });
 
   if (product.category === "Mouse") {
-    add("Sensor", s.sensor);
-    add("Tipo de sensor", s.sensorType);
-    add("Posición del sensor", s.sensorPosition);
     add("MCU", s.mcu);
-    add("DPI máximo", s.dpiMax ? `${s.dpiMax} DPI` : "");
-    add("Polling rate disponible", s.pollingRate);
-    add("Polling rate máximo", s.pollingRateMax);
-    add("Velocidad de seguimiento", s.trackingSpeedIps ? `${s.trackingSpeedIps} IPS` : "");
-    add("Aceleración", s.accelerationG ? `${s.accelerationG} G` : "");
-    add("Peso", s.weight ? `${s.weight} g` : "");
-    add("Tamaño", s.sizeCategory);
-    add("Forma", s.shapeCategory);
-    add("Mano compatible", s.handCompatibility);
-    add("Posición de la joroba", s.humpPlacement);
-    add("Apertura frontal", s.frontFlare);
-    add("Curvatura lateral", s.sideCurvature);
-    add("Reposapulgar", yesNo(s.thumbRest));
-    add("Apoyo para anular", yesNo(s.ringFingerRest));
-    add("Switches", s.switchType);
-    add("Encoder", s.encoder);
-    add("Botones laterales", s.sideButtons);
-    add("Botones centrales", s.middleButtons);
-    add("Switches hot-swap", yesNo(s.hotSwapSwitches));
-    add("Batería hot-swap", yesNo(s.hotSwapBattery));
+    add("Polling Rate", Array.isArray(s.pollingRate) ? s.pollingRate : (s.pollingRateMax || s.pollingRate));
+    add("Switch", s.switchType);
+    add("Battery", s.battery || (s.batteryHours ? `${s.batteryHours} h` : ""));
+    add("Weight", s.weight ? `${s.weight} g` : "");
+    add("Sensor", s.sensor);
     add("Material", s.material);
-    add("Dongle 8K", dongleLabel(s.dongle8k));
-    add("Agarres", Array.isArray(s.gripTypes) ? s.gripTypes : [], "grips");
-    add("Batería", s.batteryHours ? `${s.batteryHours} h` : "");
-    add("Dimensiones", s.dimensions);
   }
 
   if (product.category === "Teclados") {
@@ -1278,7 +1313,7 @@ document.querySelectorAll("[data-filter]").forEach(button => {
 
     updateMultiFilterTrigger("category");
     renderReviews();
-    document.getElementById("reviews").scrollIntoView({ behavior: "smooth" });
+    document.getElementById("home").scrollIntoView({ behavior: "smooth" });
   });
 });
 
