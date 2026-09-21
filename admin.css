@@ -1339,3 +1339,145 @@ body.admin-authenticated #adminApp {
     justify-content: flex-end;
   }
 }
+
+
+/* ==========================================================
+   MADETECH V5.11 — ELOSHAPES IMPORTER
+   ========================================================== */
+.eloshapes-importer {
+  margin: 0;
+  padding: 20px;
+  border: 1px solid rgba(120, 190, 255, .22);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top right, rgba(73, 160, 255, .10), transparent 38%),
+    rgba(73, 160, 255, .025);
+}
+
+.eloshapes-importer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+
+.eloshapes-importer h3 {
+  margin: 4px 0 0;
+  font-size: 21px;
+  line-height: 1.05;
+}
+
+.eloshapes-importer > p {
+  margin: 0 0 16px;
+  color: #9b9ba2;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.eloshapes-source-badge {
+  padding: 7px 10px;
+  border: 1px solid rgba(120, 190, 255, .28);
+  border-radius: 999px;
+  color: #b9dbff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.eloshapes-import-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.eloshapes-import-grid label {
+  display: grid;
+  gap: 7px;
+  color: #8e8e96;
+  font-size: 10px;
+  letter-spacing: .09em;
+}
+
+.eloshapes-import-grid input {
+  width: 100%;
+  height: 48px;
+  padding: 0 13px;
+  border: 1px solid var(--line, #343438);
+  border-radius: 12px;
+  background: #19191c;
+  color: #fff;
+  outline: none;
+}
+
+.eloshapes-import-grid input:focus {
+  border-color: #78beff;
+}
+
+.eloshapes-import-button {
+  width: 100%;
+  min-height: 50px;
+  margin-top: 12px;
+  border: 0;
+  border-radius: 12px;
+  background: #dcecff;
+  color: #07111b;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.eloshapes-import-button:disabled {
+  opacity: .55;
+  cursor: wait;
+}
+
+.eloshapes-import-status {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid #343438;
+  border-radius: 12px;
+  color: #c9c9ce;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.eloshapes-import-status.success {
+  border-color: rgba(120, 190, 255, .38);
+}
+
+.eloshapes-import-status.error {
+  border-color: rgba(255, 78, 78, .45);
+  color: #ff8c8c;
+}
+
+.eloshapes-import-status ul {
+  margin: 7px 0 0 18px;
+  padding: 0;
+}
+
+.eloshapes-source-link {
+  margin-top: 10px;
+}
+
+.eloshapes-source-link a {
+  color: #b9dbff;
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.eloshapes-source-link a:hover {
+  text-decoration: underline;
+}
+
+.eloshapes-import-note {
+  display: block;
+  margin-top: 10px;
+  color: #73737b;
+  font-size: 11px;
+}
+
+@media (max-width:720px) {
+  .eloshapes-import-grid {
+    grid-template-columns: 1fr;
+  }
+}

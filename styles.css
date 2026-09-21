@@ -2378,3 +2378,78 @@ body.session-authenticated #appRoot {
     width: min(280px, calc(100vw - 32px));
   }
 }
+
+
+/* ==========================================================
+   MADETECH V5.11 — FUENTE TÉCNICA ELOSHAPES
+   ========================================================== */
+.product-technical-source {
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border: 1px solid rgba(120, 190, 255, .18);
+  border-radius: 16px;
+  background: rgba(120, 190, 255, .045);
+}
+
+.product-technical-source > div {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.technical-source-icon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 11px;
+  background: rgba(120,190,255,.09);
+  color: #b9dbff;
+}
+
+.technical-source-icon svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.product-technical-source small {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--muted);
+  font-size: .61rem;
+  letter-spacing: .09em;
+}
+
+.product-technical-source strong {
+  font-size: .88rem;
+}
+
+.product-technical-source a {
+  flex: 0 0 auto;
+  color: #b9dbff;
+  font-size: .7rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.product-technical-source a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+  .product-technical-source {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

@@ -734,6 +734,7 @@ async function openReview(id) {
           </div>
         </section>
 
+        ${renderTechnicalSource(review)}
         ${renderPurchaseLinks(review)}
         ${renderReviewLinks(review)}
 
@@ -837,6 +838,14 @@ function cleanSpecDisplayValue(value) {
 function specIcon(label) {
   const value = String(label || "").toLowerCase();
   if (value.includes("sensor")) return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path></svg>`;
+  if (value.includes("dpi")) return `<svg viewBox="0 0 24 24"><path d="M4 18a8 8 0 1 1 16 0"></path><path d="m12 14 4-4"></path><circle cx="12" cy="14" r="1.5"></circle></svg>`;
+  if (value.includes("mcu")) return `<svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"></rect><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"></path></svg>`;
+  if (value.includes("velocidad") || value.includes("aceleración")) return `<svg viewBox="0 0 24 24"><path d="M4 17a8 8 0 0 1 16 0"></path><path d="m12 13 5-5"></path></svg>`;
+  if (value.includes("forma") || value.includes("tamaño") || value.includes("joroba") || value.includes("curvatura") || value.includes("apertura")) return `<svg viewBox="0 0 24 24"><path d="M7 19c-2-3-2-8 0-11 2-3 8-3 10 0 2 3 2 8 0 11-2 3-8 3-10 0z"></path><path d="M12 5v14"></path></svg>`;
+  if (value.includes("mano") || value.includes("pulgar") || value.includes("anular")) return `<svg viewBox="0 0 24 24"><path d="M7 12V7a1.5 1.5 0 0 1 3 0v4M10 11V5a1.5 1.5 0 0 1 3 0v6M13 11V6a1.5 1.5 0 0 1 3 0v6M16 12V9a1.5 1.5 0 0 1 3 0v5c0 5-3 7-7 7h-1c-3 0-5-2-6-5l-1-3a1.5 1.5 0 0 1 3-1z"></path></svg>`;
+  if (value.includes("encoder")) return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"></circle><path d="M12 5v4M12 15v4M5 12h4M15 12h4"></path></svg>`;
+  if (value.includes("botones")) return `<svg viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="5"></rect><path d="M12 3v7M8 11h8"></path></svg>`;
+  if (value.includes("material")) return `<svg viewBox="0 0 24 24"><path d="m12 3 8 5-8 5-8-5z"></path><path d="m4 12 8 5 8-5M4 16l8 5 8-5"></path></svg>`;
   if (value.includes("peso")) return `<svg viewBox="0 0 24 24"><path d="M6 20h12l-1.5-11h-9z"></path><path d="M9 9a3 3 0 0 1 6 0"></path></svg>`;
   if (value.includes("switch")) return `<svg viewBox="0 0 24 24"><rect x="6" y="5" width="12" height="14" rx="3"></rect><path d="M9 9h6M9 13h6"></path></svg>`;
   if (value.includes("polling")) return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 7v5l3 2"></path></svg>`;
@@ -910,11 +919,32 @@ function buildSpecs(product) {
 
   if (product.category === "Mouse") {
     add("Sensor", s.sensor);
+    add("Tipo de sensor", s.sensorType);
+    add("Posición del sensor", s.sensorPosition);
+    add("MCU", s.mcu);
+    add("DPI máximo", s.dpiMax ? `${s.dpiMax} DPI` : "");
+    add("Polling rate disponible", s.pollingRate);
+    add("Polling rate máximo", s.pollingRateMax);
+    add("Velocidad de seguimiento", s.trackingSpeedIps ? `${s.trackingSpeedIps} IPS` : "");
+    add("Aceleración", s.accelerationG ? `${s.accelerationG} G` : "");
     add("Peso", s.weight ? `${s.weight} g` : "");
+    add("Tamaño", s.sizeCategory);
+    add("Forma", s.shapeCategory);
+    add("Mano compatible", s.handCompatibility);
+    add("Posición de la joroba", s.humpPlacement);
+    add("Apertura frontal", s.frontFlare);
+    add("Curvatura lateral", s.sideCurvature);
+    add("Reposapulgar", yesNo(s.thumbRest));
+    add("Apoyo para anular", yesNo(s.ringFingerRest));
     add("Switches", s.switchType);
+    add("Encoder", s.encoder);
+    add("Botones laterales", s.sideButtons);
+    add("Botones centrales", s.middleButtons);
+    add("Switches hot-swap", yesNo(s.hotSwapSwitches));
+    add("Batería hot-swap", yesNo(s.hotSwapBattery));
+    add("Material", s.material);
     add("Dongle 8K", dongleLabel(s.dongle8k));
     add("Agarres", Array.isArray(s.gripTypes) ? s.gripTypes : [], "grips");
-    add("Polling rate", s.pollingRate);
     add("Batería", s.batteryHours ? `${s.batteryHours} h` : "");
     add("Dimensiones", s.dimensions);
   }
@@ -1005,6 +1035,24 @@ function renderConnections(connections) {
       <div class="product-chip-group">
         ${connections.map(item => `<span class="product-chip">${connectionIcon(item)}${escapeHtml(item)}</span>`).join("")}
       </div>
+    </section>
+  `;
+}
+
+function renderTechnicalSource(product) {
+  const url = safeUrl(product?.specs?.eloShapesUrl);
+  if (!url) return "";
+
+  return `
+    <section class="product-technical-source">
+      <div>
+        <span class="technical-source-icon">${specIcon("Sensor")}</span>
+        <div>
+          <small>FUENTE TÉCNICA DEL MOUSE</small>
+          <strong>EloShapes</strong>
+        </div>
+      </div>
+      <a href="${url}" target="_blank" rel="noopener noreferrer">VER FICHA ↗</a>
     </section>
   `;
 }

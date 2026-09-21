@@ -39,6 +39,12 @@ const webSearchButton = document.getElementById("webSearchButton");
 const webSearchStatus = document.getElementById("webSearchStatus");
 const webSourceList = document.getElementById("webSourceList");
 
+const eloshapesBrand = document.getElementById("eloshapesBrand");
+const eloshapesModel = document.getElementById("eloshapesModel");
+const eloshapesImportButton = document.getElementById("eloshapesImportButton");
+const eloshapesImportStatus = document.getElementById("eloshapesImportStatus");
+const eloshapesSourceLink = document.getElementById("eloshapesSourceLink");
+
 const mechkeysProductUrl = document.getElementById("mechkeysProductUrl");
 const mechkeysImportButton = document.getElementById("mechkeysImportButton");
 const mechkeysImportStatus = document.getElementById("mechkeysImportStatus");
@@ -99,9 +105,42 @@ async function api(path, options = {}, token = adminToken) {
 
 const categorySchemas = {
   Mouse: [
-    field("sensor", "Tipo de sensor", "text", "Ej. Focus Pro 35K Gen-2"),
+    field("sensor", "Sensor", "text", "Ej. PixArt PAW3950"),
+    field("sensorType", "Tipo de sensor", "text", "Ej. Óptico"),
+    field("sensorPosition", "Posición del sensor", "text", "Ej. Centrado (52%)"),
+    field("mcu", "MCU / microcontrolador", "text", "Ej. Nordic nRF52840"),
     field("weight", "Peso (g)", "number", "54"),
-    field("switchType", "Tipo de switch", "text", "Ej. Optical Mouse Switch Gen-3"),
+    field("sizeCategory", "Tamaño", "select", "", [
+      ["Pequeño", "Pequeño"],
+      ["Mediano", "Mediano"],
+      ["Grande", "Grande"],
+      ["Muy grande", "Muy grande"]
+    ]),
+    field("shapeCategory", "Forma", "select", "", [
+      ["Simétrico", "Simétrico"],
+      ["Asimétrico", "Asimétrico"],
+      ["Ergonómico", "Ergonómico"]
+    ]),
+    field("handCompatibility", "Mano compatible", "select", "", [
+      ["Derecha", "Derecha"],
+      ["Izquierda", "Izquierda"],
+      ["Ambidiestro", "Ambidiestro"]
+    ]),
+    field("humpPlacement", "Posición de la joroba", "text", "Ej. Trasera - moderada"),
+    field("frontFlare", "Apertura frontal", "text", "Ej. Hacia afuera - moderado"),
+    field("sideCurvature", "Curvatura lateral", "text", "Ej. Hacia adentro"),
+    field("thumbRest", "Reposapulgar", "boolean"),
+    field("ringFingerRest", "Apoyo para dedo anular", "boolean"),
+    field("dpiMax", "DPI máximo", "number", "30000"),
+    field("trackingSpeedIps", "Velocidad de seguimiento (IPS)", "number", "750"),
+    field("accelerationG", "Aceleración (G)", "number", "50"),
+    field("switchType", "Switches", "text", "Ej. Huano Transparent Blue Shell Pink Dot 80M"),
+    field("encoder", "Encoder de rueda", "text", "Ej. TTC Gold"),
+    field("sideButtons", "Botones laterales", "number", "2"),
+    field("middleButtons", "Botones centrales", "number", "0"),
+    field("hotSwapSwitches", "Switches hot-swap", "boolean"),
+    field("hotSwapBattery", "Batería hot-swap", "boolean"),
+    field("material", "Material", "text", "Ej. Plástico / Magnesio"),
     field("dongle8k", "Dongle 8K", "select", "", [
       ["included", "Incluido"],
       ["separate", "Se compra aparte"],
@@ -112,13 +151,18 @@ const categorySchemas = {
       ["Claw", "Claw"],
       ["Fingertip", "Fingertip"]
     ]),
-    field("pollingRate", "Polling rate (Hz)", "multichoice", "", [
+    field("pollingRate", "Polling rate disponibles", "multichoice", "", [
       ["1000 Hz", "1000 Hz"],
       ["4000 Hz", "4000 Hz"],
       ["8000 Hz", "8000 Hz"]
     ]),
+    field("pollingRateMax", "Polling rate máximo confirmado", "text", "Ej. 8000 Hz"),
     field("batteryHours", "Batería (horas)", "number", "95"),
-    field("dimensions", "Dimensiones", "text", "Ej. 127.1 × 63.9 × 39.9 mm")
+    field("dimensions", "Dimensiones", "text", "Ej. 127.1 × 63.9 × 39.9 mm"),
+    field("lengthMm", "Largo (mm)", "number", "127.1"),
+    field("widthMm", "Ancho (mm)", "number", "63.9"),
+    field("heightMm", "Alto (mm)", "number", "39.9"),
+    field("eloShapesUrl", "Fuente técnica EloShapes", "url", "https://www.eloshapes.com/mouse/compare?p=...")
   ],
   Teclados: [
     field("switchType", "Switch", "text", "Ej. Gateron Jade Pro"),
@@ -607,6 +651,10 @@ function applyImportedWebProduct(product) {
   document.getElementById("productBrand").value = product.brand || "";
   document.getElementById("productName").value = product.name || "";
   document.getElementById("productModel").value = product.model || "";
+  if (product.category === "Mouse") {
+    eloshapesBrand.value = product.brand || "";
+    eloshapesModel.value = product.model || product.name || "";
+  }
   document.getElementById("productScore").value =
     Number.isFinite(Number(product.score)) ? Number(product.score) : 0;
   document.getElementById("productPrice").value = product.price || "";
@@ -660,6 +708,132 @@ function renderWebSources(sources) {
       }).join("")}
     </div>
   `;
+}
+
+
+/* ---------------- ELOSHAPES MOUSE IMPORT ---------------- */
+
+eloshapesImportButton.addEventListener("click", importFromEloShapes);
+
+[eloshapesBrand, eloshapesModel].forEach(input => {
+  input.addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      importFromEloShapes();
+    }
+  });
+});
+
+async function importFromEloShapes() {
+  const brand = eloshapesBrand.value.trim() || document.getElementById("productBrand").value.trim();
+  const model = eloshapesModel.value.trim() || document.getElementById("productModel").value.trim();
+
+  if (!brand) {
+    showEloShapesStatus("Escribe la marca del mouse.", "error");
+    eloshapesBrand.focus();
+    return;
+  }
+
+  if (!model) {
+    showEloShapesStatus("Escribe el modelo del mouse.", "error");
+    eloshapesModel.focus();
+    return;
+  }
+
+  eloshapesBrand.value = brand;
+  eloshapesModel.value = model;
+
+  const oldText = eloshapesImportButton.textContent;
+  eloshapesImportButton.disabled = true;
+  eloshapesImportButton.textContent = "CONSULTANDO ELOSHAPES...";
+  eloshapesSourceLink.hidden = true;
+  eloshapesSourceLink.innerHTML = "";
+  showEloShapesStatus("Buscando la ficha técnica exacta del mouse...", "loading");
+
+  try {
+    const result = await api("/admin/import/eloshapes", {
+      method: "POST",
+      body: JSON.stringify({ brand, model })
+    });
+
+    applyImportedEloShapesProduct(result.product || {});
+
+    const detected = Array.isArray(result.detected) ? result.detected : [];
+    const warnings = Array.isArray(result.warnings) ? result.warnings : [];
+    const detectedText = detected.length
+      ? `<strong>Datos encontrados:</strong> ${detected.map(escapeHtml).join(", ")}.`
+      : "La ficha fue encontrada, pero no pude reconocer muchos campos.";
+
+    const warningsHtml = warnings.length
+      ? `<ul>${warnings.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
+      : "";
+
+    showEloShapesStatus(`✓ EloShapes completó la ficha. ${detectedText}${warningsHtml}`, "success", true);
+
+    const sourceUrl = safeExternalUrl(result.sourceUrl);
+    if (sourceUrl) {
+      eloshapesSourceLink.hidden = false;
+      eloshapesSourceLink.innerHTML = `
+        <a href="${escapeAttr(sourceUrl)}" target="_blank" rel="noopener noreferrer">
+          Ver ficha original en EloShapes ↗
+        </a>`;
+    }
+
+    productForm.scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (error) {
+    const messages = {
+      tavily_not_configured: "Falta TAVILY_API_KEY en Cloudflare.",
+      eloshapes_not_found: "No encontré una ficha exacta de ese mouse en EloShapes.",
+      eloshapes_search_failed: "No pude consultar EloShapes en este momento.",
+      brand_required: "Escribe la marca del mouse.",
+      model_required: "Escribe el modelo del mouse."
+    };
+
+    showEloShapesStatus(messages[error.code] || `No se pudo consultar EloShapes: ${error.message}`, "error");
+  } finally {
+    eloshapesImportButton.disabled = false;
+    eloshapesImportButton.textContent = oldText;
+  }
+}
+
+function applyImportedEloShapesProduct(product) {
+  const previousMouseSpecs = productCategory.value === "Mouse"
+    ? collectCategorySpecs()
+    : {};
+
+  productCategory.value = "Mouse";
+  if (webSearchCategory) webSearchCategory.value = "Mouse";
+
+  document.getElementById("productBrand").value = product.brand || document.getElementById("productBrand").value;
+  document.getElementById("productName").value = product.name || document.getElementById("productName").value || product.model || "";
+  document.getElementById("productModel").value = product.model || document.getElementById("productModel").value;
+
+  const currentConnections = getConnections();
+  const importedConnections = Array.isArray(product.connections) ? product.connections : [];
+  setConnections([...new Set([...currentConnections, ...importedConnections])]);
+
+  const mergedSpecs = {
+    ...previousMouseSpecs,
+    ...(product.specs || {})
+  };
+  renderCategoryFields("Mouse", mergedSpecs);
+
+  const summaryInput = document.getElementById("productSummary");
+  if (!summaryInput.value.trim() && product.summary) {
+    summaryInput.value = product.summary;
+  }
+
+  if (!document.getElementById("productId").value) {
+    document.getElementById("productStatus").value = "draft";
+    productFormTitle.textContent = "Nuevo producto · ficha técnica de EloShapes";
+  }
+}
+
+function showEloShapesStatus(message, type = "", allowHtml = false) {
+  eloshapesImportStatus.hidden = false;
+  eloshapesImportStatus.className = `eloshapes-import-status ${type}`.trim();
+  if (allowHtml) eloshapesImportStatus.innerHTML = message;
+  else eloshapesImportStatus.textContent = message;
 }
 
 
@@ -733,6 +907,10 @@ function applyImportedMechKeysProduct(product) {
   document.getElementById("productBrand").value = product.brand || "";
   document.getElementById("productName").value = product.name || "";
   document.getElementById("productModel").value = product.model || "";
+  if (product.category === "Mouse") {
+    eloshapesBrand.value = product.brand || "";
+    eloshapesModel.value = product.model || product.name || "";
+  }
   document.getElementById("productScore").value = Number.isFinite(Number(product.score)) ? Number(product.score) : 0;
   document.getElementById("productPrice").value = product.price || "";
   document.getElementById("productDate").value = "";
@@ -933,6 +1111,13 @@ function editProduct(id) {
   document.getElementById("productBrand").value = product.brand || "";
   document.getElementById("productName").value = product.name || "";
   document.getElementById("productModel").value = product.model || "";
+  if (product.category === "Mouse") {
+    eloshapesBrand.value = product.brand || "";
+    eloshapesModel.value = product.model || product.name || "";
+  } else {
+    eloshapesBrand.value = "";
+    eloshapesModel.value = "";
+  }
   document.getElementById("productScore").value = product.score ?? "";
   document.getElementById("productPrice").value = product.price || "";
   document.getElementById("productDate").value = product.date || "";
@@ -967,6 +1152,10 @@ function resetProductForm() {
   setConnections([]);
   setProductImages([]);
   renderCategoryFields("Mouse", {});
+  eloshapesBrand.value = "";
+  eloshapesModel.value = "";
+  eloshapesImportStatus.hidden = true;
+  eloshapesSourceLink.hidden = true;
   renderMainImagePreview();
 }
 
