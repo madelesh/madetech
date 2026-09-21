@@ -1,4 +1,4 @@
-/* MadeTech V5.4 — elementos ocultos nunca deben ocupar espacio */
+/* MadeLesh V5.4 — elementos ocultos nunca deben ocupar espacio */
 [hidden] {
   display: none !important;
 }
@@ -2724,4 +2724,172 @@ body.session-authenticated #appRoot {
 }
 @media (max-width: 500px) {
   .reviews-grid { grid-template-columns: 1fr !important; }
+}
+
+
+/* ==========================================================
+   MADELESH V5.15 — LIGHT MODE + CONTACTOS + COMING SOON
+   ========================================================== */
+
+/* El modo claro ya no reutiliza paneles negros del modo oscuro. */
+html[data-theme="light"] .compact-category-inner {
+  background: rgba(255,255,255,.78);
+  border-color: rgba(10,10,10,.10);
+  box-shadow: 0 10px 30px rgba(0,0,0,.04);
+}
+html[data-theme="light"] .compact-category-list button {
+  background: #f4f4f1;
+  border-color: rgba(10,10,10,.10);
+  color: #161616;
+}
+html[data-theme="light"] .compact-category-list button:hover {
+  background: #fff;
+  border-color: #b9c800;
+}
+html[data-theme="light"] .monthly-banner-track {
+  color: #111;
+  border-color: rgba(165,180,0,.36);
+  background:
+    radial-gradient(circle at 78% 45%, rgba(238,255,0,.28), transparent 31%),
+    linear-gradient(120deg, #ffffff 0%, #f5f5ef 60%, #eef2b9 100%);
+  box-shadow: 0 18px 55px rgba(0,0,0,.07);
+}
+html[data-theme="light"] .monthly-banner-nav > button {
+  border-color: rgba(0,0,0,.13);
+  background: rgba(255,255,255,.82);
+  color: #111;
+}
+html[data-theme="light"] #featuredDots button { background: rgba(0,0,0,.20); }
+html[data-theme="light"] .reviews-section {
+  background: #f1f1ee;
+  color: #101010;
+  border-color: rgba(10,10,10,.09);
+}
+html[data-theme="light"] .search-box,
+html[data-theme="light"] .filter-control,
+html[data-theme="light"] .clear-filters-btn {
+  background: #fff;
+  border-color: rgba(10,10,10,.12);
+  color: #101010;
+}
+html[data-theme="light"] .search-box input { color: #101010; }
+html[data-theme="light"] .search-box input::placeholder { color: rgba(10,10,10,.44); }
+html[data-theme="light"] .filter-control-label,
+html[data-theme="light"] .card-data-label { color: rgba(10,10,10,.54); }
+html[data-theme="light"] .review-card {
+  background: #ffffff;
+  color: #101010;
+  border-color: rgba(10,10,10,.10);
+  box-shadow: 0 12px 34px rgba(0,0,0,.05);
+}
+html[data-theme="light"] .review-card:hover { border-color: rgba(150,165,0,.55); }
+html[data-theme="light"] .review-visual {
+  background:
+    linear-gradient(135deg, rgba(0,0,0,.025), transparent 45%),
+    radial-gradient(circle at 70% 30%, rgba(212,228,0,.18), transparent 31%),
+    #f4f4f1;
+}
+html[data-theme="light"] .card-connection-chip {
+  background: #f7f7f4;
+  border-color: rgba(10,10,10,.10);
+  color: rgba(10,10,10,.72);
+}
+html[data-theme="light"] .card-data-empty { color: rgba(10,10,10,.46); }
+html[data-theme="light"] .product-card-footer { border-color: rgba(10,10,10,.10); }
+html[data-theme="light"] .product-card-footer strong,
+html[data-theme="light"] .product-card-footer span { color: #101010; }
+html[data-theme="light"] .multi-filter-menu {
+  background: #fff;
+  color: #111;
+  border-color: rgba(10,10,10,.13);
+  box-shadow: 0 22px 60px rgba(0,0,0,.14);
+}
+html[data-theme="light"] .multi-filter-option { color: #222; }
+html[data-theme="light"] .multi-filter-option:hover { background: #f0f0ed; }
+html[data-theme="light"] .multi-filter-check { border-color: rgba(10,10,10,.22); }
+html[data-theme="light"] .price-filter-control select {
+  color: #111 !important;
+  color-scheme: light;
+}
+html[data-theme="light"] .price-filter-control select option { background: #fff; color: #111; }
+html[data-theme="light"] .multi-filter-trigger { color: #111; }
+html[data-theme="light"] .multi-filter-trigger.has-selection { color: #7d8700; }
+
+/* Contactos configurables */
+.contact-section { align-items: stretch; }
+.contact-intro {
+  max-width: 520px;
+  margin: 18px 0 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.contact-socials {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 10px;
+  align-content: start;
+}
+.social-contact-card {
+  min-height: 92px;
+  padding: 16px;
+  display: grid;
+  grid-template-columns: 38px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  transition: transform .18s ease, border-color .18s ease;
+}
+.social-contact-card:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+.social-contact-card svg {
+  width: 32px; height: 32px; padding: 7px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 13%, transparent);
+  color: var(--text);
+}
+.social-contact-card span { font-weight: 700; }
+.social-contact-card b { color: var(--muted); font-size: .8rem; }
+.contact-empty {
+  grid-column: 1 / -1;
+  min-height: 120px;
+  padding: 24px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--line);
+  border-radius: 18px;
+  color: var(--muted);
+}
+
+/* Comparación temporalmente deshabilitada */
+.compare-coming-soon { scroll-margin-top: 90px; }
+.coming-soon-card {
+  position: relative;
+  min-height: 250px;
+  padding: clamp(26px, 4vw, 54px);
+  display: grid;
+  grid-template-columns: auto minmax(0,1fr) auto;
+  align-items: center;
+  gap: 28px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  background: var(--surface);
+}
+.coming-soon-icon {
+  width: 78px; height: 78px;
+  display: grid; place-items: center;
+  border-radius: 22px;
+  background: var(--accent); color: var(--accent-text);
+}
+.coming-soon-icon svg { width: 34px; height: 34px; }
+.coming-soon-kicker { color: var(--muted); font-size: .7rem; font-weight: 800; letter-spacing: .12em; }
+.coming-soon-card h2 { margin: 5px 0 8px; font-size: clamp(2.1rem,4vw,4rem); letter-spacing: -.06em; line-height: .95; }
+.coming-soon-card p { max-width: 670px; margin: 0; color: var(--muted); line-height: 1.6; }
+.coming-soon-badge { padding: 10px 13px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: .67rem; font-weight: 800; letter-spacing: .08em; }
+
+@media (max-width: 760px) {
+  .contact-socials { grid-template-columns: 1fr; }
+  .coming-soon-card { grid-template-columns: 1fr; }
+  .coming-soon-badge { width: max-content; }
 }

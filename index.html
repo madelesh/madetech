@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="MadeTech — Reviews de mouse, teclados, IEM, headsets y DACs." />
+  <meta name="description" content="MadeLesh — Reviews de mouse, teclados, IEM, headsets y DACs." />
   <meta name="theme-color" content="#f4f4f0" />
-  <title>MadeTech — Reviews de tecnología</title>
+  <title>MadeLesh — Reviews de tecnología</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -18,14 +18,14 @@
   <section class="access-gate" id="accessGate">
     <div class="gate-card">
       <div class="gate-brand">
-        <img class="site-brand-logo" alt="MadeTech" hidden />
-        <span class="brand-fallback"><span class="brand-dot"></span><span>MADETECH</span></span>
+        <img class="site-brand-logo" alt="MadeLesh" hidden />
+        <span class="brand-fallback"><span class="brand-dot"></span><span>MADELESH</span></span>
       </div>
 
       <span class="gate-kicker">ACCESO PRIVADO</span>
       <h1>Ingresa tu key<br>para continuar.</h1>
       <p>
-        El acceso a MadeTech es mediante una key autorizada por el administrador.
+        El acceso a MadeLesh es mediante una key autorizada por el administrador.
       </p>
 
       <form id="keyLoginForm" class="key-form">
@@ -48,9 +48,9 @@
 
   <div class="site-shell">
     <header class="topbar">
-      <a class="brand" href="#home" aria-label="MadeTech inicio">
-        <img class="site-brand-logo" alt="MadeTech" hidden />
-        <span class="brand-fallback"><span class="brand-dot"></span><span>MADETECH</span></span>
+      <a class="brand" href="#home" aria-label="MadeLesh inicio">
+        <img class="site-brand-logo" alt="MadeLesh" hidden />
+        <span class="brand-fallback"><span class="brand-dot"></span><span>MADELESH</span></span>
       </a>
 
       <nav class="desktop-nav">
@@ -107,7 +107,7 @@
                 </svg>
               </span>
               <div>
-                <strong id="profileName">Usuario MadeTech</strong>
+                <strong id="profileName">Usuario MadeLesh</strong>
                 <span id="profileRole">Acceso por key</span>
               </div>
             </div>
@@ -180,7 +180,7 @@
         <div class="monthly-banner-track" id="featuredBanner">
           <div class="monthly-banner-copy">
             <span class="monthly-banner-kicker">DESTACADO DEL MES</span>
-            <span class="monthly-banner-brand" id="featuredBannerBrand">MadeTech</span>
+            <span class="monthly-banner-brand" id="featuredBannerBrand">MadeLesh</span>
             <h2 id="featuredBannerName">Producto destacado</h2>
             <p id="featuredBannerText">El producto recomendado del mes.</p>
             <div class="monthly-banner-actions">
@@ -343,50 +343,40 @@
         <p class="empty-message" id="emptyMessage" hidden>No hay reviews que coincidan con tu búsqueda.</p>
       </section>
 
-      <section class="section method-section compare-section" id="comparacion">
-        <div class="method-visual">
-          <div class="method-photo">
-            <div class="method-rings"></div>
-            <span class="method-star">✱</span>
-          </div>
-        </div>
-
-        <div class="method-copy">
+      <section class="section compare-section compare-coming-soon" id="comparacion">
+        <div class="coming-soon-card">
           <span class="section-index">(03)</span>
-          <h2>Comparación</h2>
-          <p class="method-lead">
-            Compara rápidamente los datos principales de dos productos guardados en MadeTech.
-          </p>
-
-          <div class="compare-tool">
-            <div class="compare-selects">
-              <label>PRODUCTO A<select id="compareProductA"><option value="">Seleccionar producto</option></select></label>
-              <label>PRODUCTO B<select id="compareProductB"><option value="">Seleccionar producto</option></select></label>
-            </div>
-            <div id="compareResult" class="compare-result">Selecciona dos productos para compararlos.</div>
+          <div class="coming-soon-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M7 4v16M17 4v16M4 7h6M14 17h6"></path><path d="m8 5-1-1-1 1M16 19l1 1 1-1"></path></svg>
           </div>
+          <div>
+            <span class="coming-soon-kicker">PRÓXIMAMENTE</span>
+            <h2>Comparación</h2>
+            <p>Estamos preparando una herramienta para comparar productos lado a lado. Esta función todavía no está habilitada.</p>
+          </div>
+          <span class="coming-soon-badge">COMING SOON</span>
         </div>
       </section>
 
       <section class="section contact-section" id="contacto">
         <div>
           <span class="section-index">(04)</span>
-          <h2>¿Qué debería<br>probar después?</h2>
+          <h2>Contactos<br>y redes</h2>
+          <p class="contact-intro">Encuentra MadeLesh en tus plataformas favoritas. Las redes se administran desde el panel.</p>
         </div>
-        <div class="contact-card">
-          <p>Envíame una sugerencia de producto, marca o categoría para una próxima review.</p>
-          <a href="mailto:tucorreo@ejemplo.com">CONTACTAR <span>↗</span></a>
+        <div class="contact-socials" id="contactSocials" aria-live="polite">
+          <div class="contact-empty" id="contactEmpty">Aún no hay redes sociales configuradas.</div>
         </div>
       </section>
     </main>
 
     <footer>
       <a class="brand footer-brand" href="#home">
-        <img class="site-brand-logo" alt="MadeTech" hidden />
-        <span class="brand-fallback"><span class="brand-dot"></span><span>MADETECH</span></span>
+        <img class="site-brand-logo" alt="MadeLesh" hidden />
+        <span class="brand-fallback"><span class="brand-dot"></span><span>MADELESH</span></span>
       </a>
       <p>Mouse · Teclados · IEM · Headsets · DACs</p>
-      <p>© <span id="year"></span> MadeTech</p>
+      <p>© <span id="year"></span> MadeLesh</p>
     </footer>
   </div>
 

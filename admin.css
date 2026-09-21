@@ -1,4 +1,4 @@
-/* MadeTech V5.4 — elementos ocultos nunca deben ocupar espacio */
+/* MadeLesh V5.4 — elementos ocultos nunca deben ocupar espacio */
 [hidden] {
   display: none !important;
 }
@@ -1642,3 +1642,34 @@ body.admin-authenticated #adminApp {
 .branding-save-row p { margin: 0; color: #83838b; font-size: .77rem; max-width: 620px; }
 .branding-save-row .primary-admin-btn { width: auto; min-width: 220px; margin: 0; }
 @media(max-width:850px){.branding-admin-grid{grid-template-columns:1fr}.branding-save-row{grid-column:auto;flex-direction:column;align-items:stretch}.branding-save-row .primary-admin-btn{width:100%}}
+
+
+/* ==========================================================
+   MADELESH V5.15 — APARIENCIA POR TEMA + CONTACTOS
+   ========================================================== */
+.branding-theme-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+.branding-theme-grid .branding-save-row { grid-column: 1 / -1; }
+.contacts-admin-grid { grid-template-columns: 1fr; }
+.contacts-admin-card { max-width: 980px; }
+.contacts-settings-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 12px;
+}
+.contacts-settings-form label { display: grid; gap: 7px; color: #8f8f97; font-size: .68rem; letter-spacing: .07em; text-transform: uppercase; }
+.contacts-settings-form input {
+  width: 100%; min-height: 48px; padding: 0 13px;
+  border: 1px solid rgba(255,255,255,.12); border-radius: 12px;
+  background: #171719; color: #fff; outline: none; text-transform: none;
+}
+.contacts-settings-form input:focus { border-color: #eeff00; }
+.contacts-save-row {
+  grid-column: 1 / -1;
+  display: flex; align-items: center; justify-content: space-between; gap: 18px;
+  margin-top: 6px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.08);
+}
+.contacts-save-row p { margin: 0; color: #73737b; font-size: .75rem; }
+@media (max-width: 780px) {
+  .branding-theme-grid, .contacts-settings-form { grid-template-columns: 1fr; }
+  .contacts-save-row { align-items: stretch; flex-direction: column; }
+}

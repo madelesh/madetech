@@ -9,13 +9,28 @@ const adminLogout = document.getElementById("adminLogout");
 const adminSiteFavicon = document.getElementById("siteFavicon");
 const adminBrandLogos = [...document.querySelectorAll(".site-brand-logo")];
 const adminBrandFallbacks = [...document.querySelectorAll(".brand-fallback")];
-const brandingLogoFile = document.getElementById("brandingLogoFile");
-const brandingFaviconFile = document.getElementById("brandingFaviconFile");
-const brandingLogoPreview = document.getElementById("brandingLogoPreview");
-const brandingFaviconPreview = document.getElementById("brandingFaviconPreview");
-const clearBrandingLogo = document.getElementById("clearBrandingLogo");
-const clearBrandingFavicon = document.getElementById("clearBrandingFavicon");
+const brandingLogoLightFile = document.getElementById("brandingLogoLightFile");
+const brandingLogoDarkFile = document.getElementById("brandingLogoDarkFile");
+const brandingFaviconLightFile = document.getElementById("brandingFaviconLightFile");
+const brandingFaviconDarkFile = document.getElementById("brandingFaviconDarkFile");
+const brandingLogoLightPreview = document.getElementById("brandingLogoLightPreview");
+const brandingLogoDarkPreview = document.getElementById("brandingLogoDarkPreview");
+const brandingFaviconLightPreview = document.getElementById("brandingFaviconLightPreview");
+const brandingFaviconDarkPreview = document.getElementById("brandingFaviconDarkPreview");
+const clearBrandingLogoLight = document.getElementById("clearBrandingLogoLight");
+const clearBrandingLogoDark = document.getElementById("clearBrandingLogoDark");
+const clearBrandingFaviconLight = document.getElementById("clearBrandingFaviconLight");
+const clearBrandingFaviconDark = document.getElementById("clearBrandingFaviconDark");
 const saveBrandingSettings = document.getElementById("saveBrandingSettings");
+
+const contactsSettingsForm = document.getElementById("contactsSettingsForm");
+const contactDiscord = document.getElementById("contactDiscord");
+const contactSteam = document.getElementById("contactSteam");
+const contactX = document.getElementById("contactX");
+const contactYoutube = document.getElementById("contactYoutube");
+const contactTiktok = document.getElementById("contactTiktok");
+const contactEmail = document.getElementById("contactEmail");
+const saveContactsSettings = document.getElementById("saveContactsSettings");
 
 const productForm = document.getElementById("productForm");
 const productFormTitle = document.getElementById("productFormTitle");
@@ -73,8 +88,10 @@ const keysCount = document.getElementById("keysCount");
 
 let adminToken = localStorage.getItem("madetech_admin_token") || "";
 let products = [];
-let brandingLogoDataUrl = "";
-let brandingFaviconDataUrl = "";
+let brandingLogoLightDataUrl = "";
+let brandingLogoDarkDataUrl = "";
+let brandingFaviconLightDataUrl = "";
+let brandingFaviconDarkDataUrl = "";
 
 const PRESET_COLORS = [
   { name: "Negro", hex: "#111111" },
@@ -1053,45 +1070,51 @@ function showMechKeysStatus(message, type = "", allowHtml = false) {
 }
 
 
-/* ---------------- BRANDING ---------------- */
+/* ---------------- BRANDING + CONTACTS ---------------- */
 
 async function loadBrandingSettings() {
   try {
     const data = await api("/settings", { method: "GET" }, null);
-    brandingLogoDataUrl = String(data.branding?.logoDataUrl || "");
-    brandingFaviconDataUrl = String(data.branding?.faviconDataUrl || "");
+    const b = data.branding || {};
+    brandingLogoLightDataUrl = String(b.logoLightDataUrl || b.logoDataUrl || "");
+    brandingLogoDarkDataUrl = String(b.logoDarkDataUrl || b.logoDataUrl || brandingLogoLightDataUrl || "");
+    brandingFaviconLightDataUrl = String(b.faviconLightDataUrl || b.faviconDataUrl || "");
+    brandingFaviconDarkDataUrl = String(b.faviconDarkDataUrl || b.faviconDataUrl || brandingFaviconLightDataUrl || "");
     renderBrandingPreviews();
     applyAdminBranding();
+    fillContactsSettings(data.contacts || {});
   } catch (error) {
-    console.warn("No se pudo cargar apariencia", error);
+    console.warn("No se pudo cargar apariencia/contactos", error);
   }
 }
 
 function applyAdminBranding() {
+  // El panel admin es oscuro; usa preferentemente el logo/icono oscuro.
+  const logo = brandingLogoDarkDataUrl || brandingLogoLightDataUrl;
+  const favicon = brandingFaviconDarkDataUrl || brandingFaviconLightDataUrl || logo;
   adminBrandLogos.forEach(img => {
-    if (brandingLogoDataUrl) {
-      img.src = brandingLogoDataUrl;
-      img.hidden = false;
-    } else {
-      img.removeAttribute("src");
-      img.hidden = true;
-    }
+    if (logo) { img.src = logo; img.hidden = false; }
+    else { img.removeAttribute("src"); img.hidden = true; }
   });
-  adminBrandFallbacks.forEach(el => { el.hidden = Boolean(brandingLogoDataUrl); });
+  adminBrandFallbacks.forEach(el => { el.hidden = Boolean(logo); });
   if (adminSiteFavicon) {
-    if (brandingFaviconDataUrl) adminSiteFavicon.href = brandingFaviconDataUrl;
-    else if (brandingLogoDataUrl) adminSiteFavicon.href = brandingLogoDataUrl;
+    if (favicon) adminSiteFavicon.href = favicon;
     else adminSiteFavicon.removeAttribute("href");
   }
 }
 
+function previewBranding(target, dataUrl, emptyText) {
+  if (!target) return;
+  target.innerHTML = dataUrl
+    ? `<img src="${dataUrl}" alt="Vista previa">`
+    : `<span>${emptyText}</span>`;
+}
+
 function renderBrandingPreviews() {
-  brandingLogoPreview.innerHTML = brandingLogoDataUrl
-    ? `<img src="${brandingLogoDataUrl}" alt="Vista previa del logo">`
-    : `<span>Sin logo personalizado</span>`;
-  brandingFaviconPreview.innerHTML = brandingFaviconDataUrl
-    ? `<img src="${brandingFaviconDataUrl}" alt="Vista previa del favicon">`
-    : `<span>Sin favicon personalizado</span>`;
+  previewBranding(brandingLogoLightPreview, brandingLogoLightDataUrl, "Sin logo para modo claro");
+  previewBranding(brandingLogoDarkPreview, brandingLogoDarkDataUrl, "Sin logo para modo oscuro");
+  previewBranding(brandingFaviconLightPreview, brandingFaviconLightDataUrl, "Sin favicon claro");
+  previewBranding(brandingFaviconDarkPreview, brandingFaviconDarkDataUrl, "Sin favicon oscuro");
 }
 
 async function readBrandingFile(file) {
@@ -1099,7 +1122,6 @@ async function readBrandingFile(file) {
   const allowed = ["image/png", "image/jpeg", "image/webp"];
   if (!allowed.includes(file.type)) throw new Error("Usa PNG, JPG o WEBP.");
   if (file.size > 220 * 1024) throw new Error("La imagen supera 220 KB. Usa una imagen más ligera.");
-
   return await new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result || ""));
@@ -1108,37 +1130,21 @@ async function readBrandingFile(file) {
   });
 }
 
-brandingLogoFile?.addEventListener("change", async () => {
-  try {
-    brandingLogoDataUrl = await readBrandingFile(brandingLogoFile.files?.[0]);
-    renderBrandingPreviews();
-  } catch (error) {
-    alert(error.message);
-    brandingLogoFile.value = "";
-  }
-});
+function bindBrandFile(input, setter) {
+  input?.addEventListener("change", async () => {
+    try { setter(await readBrandingFile(input.files?.[0])); renderBrandingPreviews(); }
+    catch (error) { alert(error.message); input.value = ""; }
+  });
+}
+bindBrandFile(brandingLogoLightFile, value => { brandingLogoLightDataUrl = value; });
+bindBrandFile(brandingLogoDarkFile, value => { brandingLogoDarkDataUrl = value; });
+bindBrandFile(brandingFaviconLightFile, value => { brandingFaviconLightDataUrl = value; });
+bindBrandFile(brandingFaviconDarkFile, value => { brandingFaviconDarkDataUrl = value; });
 
-brandingFaviconFile?.addEventListener("change", async () => {
-  try {
-    brandingFaviconDataUrl = await readBrandingFile(brandingFaviconFile.files?.[0]);
-    renderBrandingPreviews();
-  } catch (error) {
-    alert(error.message);
-    brandingFaviconFile.value = "";
-  }
-});
-
-clearBrandingLogo?.addEventListener("click", () => {
-  brandingLogoDataUrl = "";
-  if (brandingLogoFile) brandingLogoFile.value = "";
-  renderBrandingPreviews();
-});
-
-clearBrandingFavicon?.addEventListener("click", () => {
-  brandingFaviconDataUrl = "";
-  if (brandingFaviconFile) brandingFaviconFile.value = "";
-  renderBrandingPreviews();
-});
+clearBrandingLogoLight?.addEventListener("click", () => { brandingLogoLightDataUrl = ""; if (brandingLogoLightFile) brandingLogoLightFile.value = ""; renderBrandingPreviews(); });
+clearBrandingLogoDark?.addEventListener("click", () => { brandingLogoDarkDataUrl = ""; if (brandingLogoDarkFile) brandingLogoDarkFile.value = ""; renderBrandingPreviews(); });
+clearBrandingFaviconLight?.addEventListener("click", () => { brandingFaviconLightDataUrl = ""; if (brandingFaviconLightFile) brandingFaviconLightFile.value = ""; renderBrandingPreviews(); });
+clearBrandingFaviconDark?.addEventListener("click", () => { brandingFaviconDarkDataUrl = ""; if (brandingFaviconDarkFile) brandingFaviconDarkFile.value = ""; renderBrandingPreviews(); });
 
 saveBrandingSettings?.addEventListener("click", async () => {
   const original = saveBrandingSettings.textContent;
@@ -1148,24 +1154,63 @@ saveBrandingSettings?.addEventListener("click", async () => {
     const data = await api("/admin/settings/branding", {
       method: "PUT",
       body: JSON.stringify({
-        logoDataUrl: brandingLogoDataUrl,
-        faviconDataUrl: brandingFaviconDataUrl
+        logoLightDataUrl: brandingLogoLightDataUrl,
+        logoDarkDataUrl: brandingLogoDarkDataUrl,
+        faviconLightDataUrl: brandingFaviconLightDataUrl,
+        faviconDarkDataUrl: brandingFaviconDarkDataUrl
       })
     });
-    brandingLogoDataUrl = String(data.branding?.logoDataUrl || "");
-    brandingFaviconDataUrl = String(data.branding?.faviconDataUrl || "");
+    const b = data.branding || {};
+    brandingLogoLightDataUrl = String(b.logoLightDataUrl || "");
+    brandingLogoDarkDataUrl = String(b.logoDarkDataUrl || "");
+    brandingFaviconLightDataUrl = String(b.faviconLightDataUrl || "");
+    brandingFaviconDarkDataUrl = String(b.faviconDarkDataUrl || "");
     renderBrandingPreviews();
     applyAdminBranding();
-    showAdminToast("La apariencia de MadeTech ha sido actualizada");
+    showAdminToast("La apariencia de MadeLesh ha sido actualizada");
   } catch (error) {
-    const messages = {
-      invalid_brand_image: "El formato de imagen no es válido.",
-      brand_image_too_large: "La imagen es demasiado grande."
-    };
-    alert(messages[error.code] || `No se pudo guardar la apariencia: ${error.message}`);
+    alert(`No se pudo guardar la apariencia: ${error.message}`);
   } finally {
     saveBrandingSettings.disabled = false;
     saveBrandingSettings.textContent = original;
+  }
+});
+
+function fillContactsSettings(contacts) {
+  if (contactDiscord) contactDiscord.value = contacts.discord || "";
+  if (contactSteam) contactSteam.value = contacts.steam || "";
+  if (contactX) contactX.value = contacts.x || "";
+  if (contactYoutube) contactYoutube.value = contacts.youtube || "";
+  if (contactTiktok) contactTiktok.value = contacts.tiktok || "";
+  if (contactEmail) contactEmail.value = contacts.email || "";
+}
+
+contactsSettingsForm?.addEventListener("submit", async event => {
+  event.preventDefault();
+  const original = saveContactsSettings?.textContent || "GUARDAR CONTACTOS ↗";
+  if (saveContactsSettings) { saveContactsSettings.disabled = true; saveContactsSettings.textContent = "GUARDANDO..."; }
+  try {
+    const data = await api("/admin/settings/contacts", {
+      method: "PUT",
+      body: JSON.stringify({
+        discord: contactDiscord?.value.trim() || "",
+        steam: contactSteam?.value.trim() || "",
+        x: contactX?.value.trim() || "",
+        youtube: contactYoutube?.value.trim() || "",
+        tiktok: contactTiktok?.value.trim() || "",
+        email: contactEmail?.value.trim() || ""
+      })
+    });
+    fillContactsSettings(data.contacts || {});
+    showAdminToast("Los contactos de MadeLesh han sido actualizados");
+  } catch (error) {
+    const messages = {
+      invalid_contact_url: "Revisa que los enlaces de las redes sean URLs válidas.",
+      invalid_contact_email: "Revisa el correo electrónico."
+    };
+    alert(messages[error.code] || `No se pudieron guardar los contactos: ${error.message}`);
+  } finally {
+    if (saveContactsSettings) { saveContactsSettings.disabled = false; saveContactsSettings.textContent = original; }
   }
 });
 
@@ -1243,11 +1288,12 @@ function activateAdminPanel(panelId) {
     productsPanel: "Agregar producto",
     libraryPanel: "Biblioteca",
     keysPanel: "Access Keys",
-    brandingPanel: "Apariencia"
+    brandingPanel: "Apariencia",
+    contactsPanel: "Contactos"
   };
   document.querySelectorAll(".admin-nav button").forEach(item => item.classList.toggle("active", item.dataset.panel === panelId));
   document.querySelectorAll(".admin-panel").forEach(panel => panel.classList.toggle("active", panel.id === panelId));
-  document.getElementById("adminTitle").textContent = titles[panelId] || "MadeTech Control";
+  document.getElementById("adminTitle").textContent = titles[panelId] || "MadeLesh Control";
   window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
 }
 
@@ -1496,7 +1542,7 @@ async function removeProduct(id) {
   const name = product ? `${product.brand || ""} ${product.name || ""}`.trim() : "este producto";
 
   const firstConfirm = confirm(
-    `¿Quieres eliminar "${name}"?\n\nEsta acción borrará el producto de MadeTech.`
+    `¿Quieres eliminar "${name}"?\n\nEsta acción borrará el producto de MadeLesh.`
   );
   if (!firstConfirm) return;
 

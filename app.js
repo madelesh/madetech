@@ -44,6 +44,8 @@ const modalContent = document.getElementById("modalContent");
 const siteFavicon = document.getElementById("siteFavicon");
 const siteBrandLogos = [...document.querySelectorAll(".site-brand-logo")];
 const brandFallbacks = [...document.querySelectorAll(".brand-fallback")];
+const contactSocials = document.getElementById("contactSocials");
+const contactEmpty = document.getElementById("contactEmpty");
 const monthlyBanner = document.getElementById("destacado");
 const featuredBanner = document.getElementById("featuredBanner");
 const featuredBannerBrand = document.getElementById("featuredBannerBrand");
@@ -66,6 +68,8 @@ let keyCountdownTimer = null;
 let featuredProducts = [];
 let featuredIndex = 0;
 let featuredTimer = null;
+let publicBranding = {};
+let publicContacts = {};
 
 const selectedProductFilters = {
   category: new Set(),
@@ -135,20 +139,33 @@ async function api(path, options = {}, token = currentToken) {
 }
 
 
-/* ---------------- PUBLIC BRANDING ---------------- */
+/* ---------------- PUBLIC SETTINGS ---------------- */
 
 async function loadPublicSettings() {
   try {
     const data = await api("/settings", { method: "GET" }, null);
-    applyPublicBranding(data.branding || {});
+    publicBranding = data.branding || {};
+    publicContacts = data.contacts || {};
+    applyPublicBranding(publicBranding);
+    renderPublicContacts(publicContacts);
   } catch (error) {
-    console.warn("No se pudo cargar la identidad visual de MadeTech", error);
+    console.warn("No se pudieron cargar los ajustes públicos de MadeLesh", error);
   }
 }
 
-function applyPublicBranding(branding) {
-  const logo = String(branding?.logoDataUrl || "");
-  const favicon = String(branding?.faviconDataUrl || "");
+function applyPublicBranding(branding = publicBranding) {
+  publicBranding = branding || {};
+  const dark = root.dataset.theme === "dark";
+  const logo = String(
+    dark
+      ? (branding?.logoDarkDataUrl || branding?.logoLightDataUrl || branding?.logoDataUrl || "")
+      : (branding?.logoLightDataUrl || branding?.logoDarkDataUrl || branding?.logoDataUrl || "")
+  );
+  const favicon = String(
+    dark
+      ? (branding?.faviconDarkDataUrl || branding?.faviconLightDataUrl || branding?.faviconDataUrl || logo)
+      : (branding?.faviconLightDataUrl || branding?.faviconDarkDataUrl || branding?.faviconDataUrl || logo)
+  );
 
   siteBrandLogos.forEach(img => {
     if (logo) {
@@ -159,14 +176,53 @@ function applyPublicBranding(branding) {
       img.hidden = true;
     }
   });
-
   brandFallbacks.forEach(el => { el.hidden = Boolean(logo); });
 
   if (siteFavicon) {
     if (favicon) siteFavicon.href = favicon;
-    else if (logo) siteFavicon.href = logo;
     else siteFavicon.removeAttribute("href");
   }
+}
+
+function renderPublicContacts(contacts = {}) {
+  if (!contactSocials) return;
+
+  const definitions = [
+    ["discord", "Discord", socialIcon("discord")],
+    ["steam", "Steam", socialIcon("steam")],
+    ["x", "X", socialIcon("x")],
+    ["youtube", "YouTube", socialIcon("youtube")],
+    ["tiktok", "TikTok", socialIcon("tiktok")],
+    ["email", "Correo", socialIcon("email")]
+  ];
+
+  const links = definitions.flatMap(([key, label, icon]) => {
+    const raw = String(contacts?.[key] || "").trim();
+    if (!raw) return [];
+    const href = key === "email" ? `mailto:${raw}` : safeUrl(raw);
+    if (!href) return [];
+    const target = key === "email" ? "" : ' target="_blank" rel="noopener noreferrer"';
+    return [`<a class="social-contact-card social-${key}" href="${escapeHtml(href)}"${target}>${icon}<span>${escapeHtml(label)}</span><b>↗</b></a>`];
+  });
+
+  if (!links.length) {
+    contactSocials.innerHTML = `<div class="contact-empty">Aún no hay redes sociales configuradas.</div>`;
+    return;
+  }
+
+  contactSocials.innerHTML = links.join("");
+}
+
+function socialIcon(type) {
+  const icons = {
+    discord: `<svg viewBox="0 0 24 24"><path d="M8 7c2-1 6-1 8 0l2 9c-2 2-4 3-6 3s-4-1-6-3l2-9Z"></path><circle cx="10" cy="13" r="1"></circle><circle cx="14" cy="13" r="1"></circle></svg>`,
+    steam: `<svg viewBox="0 0 24 24"><circle cx="15.5" cy="8.5" r="3.5"></circle><circle cx="6" cy="16.5" r="2.5"></circle><path d="m8 15 5-4M8 18l5 2 3-2"></path></svg>`,
+    x: `<svg viewBox="0 0 24 24"><path d="M5 4l14 16M19 4 5 20"></path></svg>`,
+    youtube: `<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="4"></rect><path d="m10 9 5 3-5 3Z"></path></svg>`,
+    tiktok: `<svg viewBox="0 0 24 24"><path d="M14 4v10a4 4 0 1 1-4-4M14 4c1 3 3 4 6 4"></path></svg>`,
+    email: `<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m4 7 8 6 8-6"></path></svg>`
+  };
+  return icons[type] || "";
 }
 
 /* ---------------- THEME ---------------- */
@@ -181,6 +237,7 @@ function setTheme(theme) {
     "content",
     dark ? "#0b0b0c" : "#f4f4f0"
   );
+  applyPublicBranding(publicBranding);
 }
 
 const savedTheme = localStorage.getItem("madetech-theme");
@@ -230,7 +287,7 @@ function showApp() {
 
 function updateProfileMenu() {
   const isAdmin = currentRole === "admin";
-  const displayName = currentProfileName || (isAdmin ? "Administrador" : "Usuario MadeTech");
+  const displayName = currentProfileName || (isAdmin ? "Administrador" : "Usuario MadeLesh");
 
   profileName.textContent = displayName;
   profileButtonLabel.textContent = displayName;
@@ -718,9 +775,9 @@ function renderFeaturedBanner() {
   featuredBanner?.classList.add("is-changing");
 
   setTimeout(() => {
-    featuredBannerBrand.textContent = product.brand || "MadeTech";
+    featuredBannerBrand.textContent = product.brand || "MadeLesh";
     featuredBannerName.textContent = product.name || product.model || "Producto destacado";
-    featuredBannerText.textContent = product.summary || "Producto destacado del mes en MadeTech.";
+    featuredBannerText.textContent = product.summary || "Producto destacado del mes en MadeLesh.";
     featuredBannerPrice.textContent = product.price || "";
 
     if (image) {
@@ -860,7 +917,7 @@ async function openReview(id) {
 
           ${Number(review.score || 0) > 0 ? `<div class="product-editor-score">
             <strong>${Number(review.score || 0).toFixed(1)}</strong>
-            <span>/10 MadeTech Score</span>
+            <span>/10 MadeLesh Score</span>
           </div>` : ""}
 
           <p class="product-detail-summary">${escapeHtml(displaySummary(review))}</p>
@@ -1246,7 +1303,7 @@ function renderProsCons(product) {
 
   return `
     <section class="product-info-section">
-      <div class="product-section-head"><h3>Pros y contras</h3><p>Resumen MadeTech</p></div>
+      <div class="product-section-head"><h3>Pros y contras</h3><p>Resumen MadeLesh</p></div>
       <div class="procon-rich-grid">
         <article class="procon-rich-card"><h4>Pros</h4><ul>${pros.map(item => `<li>${escapeHtml(item)}</li>`).join("") || "<li>Sin datos</li>"}</ul></article>
         <article class="procon-rich-card"><h4>Contras</h4><ul>${cons.map(item => `<li>${escapeHtml(item)}</li>`).join("") || "<li>Sin datos</li>"}</ul></article>

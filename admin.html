@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0b0b0c" />
-  <title>MadeTech Admin</title>
+  <title>MadeLesh Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -17,8 +17,8 @@
   <section class="admin-login" id="adminLogin">
     <div class="admin-login-card">
       <a class="brand" href="index.html">
-        <img class="site-brand-logo" alt="MadeTech" hidden />
-        <span class="brand-fallback"><span class="brand-dot"></span><span>MADETECH</span></span>
+        <img class="site-brand-logo" alt="MadeLesh" hidden />
+        <span class="brand-fallback"><span class="brand-dot"></span><span>MADELESH</span></span>
       </a>
 
       <span class="gate-kicker">ADMINISTRACIÓN</span>
@@ -37,15 +37,15 @@
       </form>
 
       <p class="admin-error" id="adminLoginError" hidden></p>
-      <a class="back-site" href="index.html">← Volver a MadeTech</a>
+      <a class="back-site" href="index.html">← Volver a MadeLesh</a>
     </div>
   </section>
 
   <div class="admin-app" id="adminApp" hidden>
     <aside class="admin-sidebar">
       <a class="brand" href="index.html">
-        <img class="site-brand-logo" alt="MadeTech" hidden />
-        <span class="brand-fallback"><span class="brand-dot"></span><span>MADETECH</span></span>
+        <img class="site-brand-logo" alt="MadeLesh" hidden />
+        <span class="brand-fallback"><span class="brand-dot"></span><span>MADELESH</span></span>
       </a>
 
       <nav class="admin-nav">
@@ -66,6 +66,10 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4z"></path><circle cx="9" cy="11" r="2"></circle><path d="m6 16 4-4 3 3 2-2 3 3"></path></svg>
           <span>Apariencia</span>
         </button>
+        <button data-panel="contactsPanel">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"></path><path d="m5 7 7 5 7-5"></path></svg>
+          <span>Contactos</span>
+        </button>
       </nav>
 
       <div class="admin-sidebar-footer">
@@ -77,7 +81,7 @@
     <main class="admin-main">
       <header class="admin-top">
         <div>
-          <span class="admin-eyebrow">MADETECH CONTROL</span>
+          <span class="admin-eyebrow">MADELESH CONTROL</span>
           <h1 id="adminTitle">Agregar producto</h1>
         </div>
         <a href="index.html" target="_blank">VER WEB ↗</a>
@@ -104,7 +108,7 @@
                 <span class="url-source-badge">AUTO</span>
               </div>
 
-              <p>Pega el enlace directo del producto. MadeTech detectará si es EloShapes, MechKeys, una web oficial u otra tienda y usará el extractor más adecuado.</p>
+              <p>Pega el enlace directo del producto. MadeLesh detectará si es EloShapes, MechKeys, una web oficial u otra tienda y usará el extractor más adecuado.</p>
 
               <div class="url-import-row">
                 <input id="universalProductUrl" type="url" inputmode="url"
@@ -127,7 +131,7 @@
                 <span class="web-source-badge">TAVILY · WEB</span>
               </div>
 
-              <p>Escribe marca, modelo y categoría. MadeTech buscará varias fuentes, dará prioridad a la web oficial y rellenará los datos que pueda confirmar.</p>
+              <p>Escribe marca, modelo y categoría. MadeLesh buscará varias fuentes, dará prioridad a la web oficial y rellenará los datos que pueda confirmar.</p>
 
               <div class="web-import-grid">
                 <label>
@@ -198,7 +202,7 @@
                 <span class="mechkeys-source-badge">MECHKEYS.COM</span>
               </div>
 
-              <p>Pega el enlace individual de un producto de MechKeys. MadeTech leerá la ficha y rellenará automáticamente los campos que encuentre.</p>
+              <p>Pega el enlace individual de un producto de MechKeys. MadeLesh leerá la ficha y rellenará automáticamente los campos que encuentre.</p>
 
               <div class="mechkeys-import-row">
                 <input id="mechkeysProductUrl" type="url" inputmode="url"
@@ -402,7 +406,7 @@
               <div>
                 <span class="admin-eyebrow">BIBLIOTECA</span>
                 <h2>Todos los productos</h2>
-                <p>Administra, edita o elimina los productos guardados en MadeTech.</p>
+                <p>Administra, edita o elimina los productos guardados en MadeLesh.</p>
               </div>
               <span class="count-pill" id="productCount">0</span>
             </div>
@@ -480,50 +484,64 @@
       </section>
 
       <section class="admin-panel" id="brandingPanel">
-        <div class="admin-grid branding-admin-grid">
+        <div class="admin-grid branding-admin-grid branding-theme-grid">
           <div class="admin-card">
-            <div class="card-heading">
-              <div>
-                <span class="admin-eyebrow">IDENTIDAD VISUAL</span>
-                <h2>Logo de MadeTech</h2>
-                <p>Sube un PNG, JPG o WEBP pequeño. Se mostrará en la web en lugar del texto MADETECH.</p>
-              </div>
-            </div>
+            <div class="card-heading"><div><span class="admin-eyebrow">MODO CLARO</span><h2>Logo claro</h2><p>Logo usado cuando la web está en modo claro.</p></div></div>
             <div class="branding-upload-block">
-              <div class="branding-preview branding-logo-preview" id="brandingLogoPreview">
-                <span>Sin logo personalizado</span>
-              </div>
-              <label class="branding-file-button">
-                <input id="brandingLogoFile" type="file" accept="image/png,image/jpeg,image/webp" />
-                <span>SUBIR LOGO</span>
-              </label>
-              <button class="ghost-btn" id="clearBrandingLogo" type="button">Quitar logo</button>
+              <div class="branding-preview branding-logo-preview" id="brandingLogoLightPreview"><span>Sin logo para modo claro</span></div>
+              <label class="branding-file-button"><input id="brandingLogoLightFile" type="file" accept="image/png,image/jpeg,image/webp" /><span>SUBIR LOGO CLARO</span></label>
+              <button class="ghost-btn" id="clearBrandingLogoLight" type="button">Quitar logo</button>
             </div>
           </div>
-
           <div class="admin-card">
-            <div class="card-heading">
-              <div>
-                <span class="admin-eyebrow">NAVEGADOR</span>
-                <h2>Icono de pestaña</h2>
-                <p>Este será el favicon que aparece en la pestaña del navegador.</p>
-              </div>
-            </div>
+            <div class="card-heading"><div><span class="admin-eyebrow">MODO OSCURO</span><h2>Logo oscuro</h2><p>Logo usado cuando la web está en modo oscuro.</p></div></div>
             <div class="branding-upload-block">
-              <div class="branding-preview branding-favicon-preview" id="brandingFaviconPreview">
-                <span>Sin favicon personalizado</span>
-              </div>
-              <label class="branding-file-button">
-                <input id="brandingFaviconFile" type="file" accept="image/png,image/jpeg,image/webp" />
-                <span>SUBIR ICONO</span>
-              </label>
-              <button class="ghost-btn" id="clearBrandingFavicon" type="button">Quitar icono</button>
+              <div class="branding-preview branding-logo-preview" id="brandingLogoDarkPreview"><span>Sin logo para modo oscuro</span></div>
+              <label class="branding-file-button"><input id="brandingLogoDarkFile" type="file" accept="image/png,image/jpeg,image/webp" /><span>SUBIR LOGO OSCURO</span></label>
+              <button class="ghost-btn" id="clearBrandingLogoDark" type="button">Quitar logo</button>
             </div>
           </div>
-
+          <div class="admin-card">
+            <div class="card-heading"><div><span class="admin-eyebrow">PESTAÑA · MODO CLARO</span><h2>Favicon claro</h2><p>Icono de la pestaña cuando la web está en modo claro.</p></div></div>
+            <div class="branding-upload-block">
+              <div class="branding-preview branding-favicon-preview" id="brandingFaviconLightPreview"><span>Sin favicon claro</span></div>
+              <label class="branding-file-button"><input id="brandingFaviconLightFile" type="file" accept="image/png,image/jpeg,image/webp" /><span>SUBIR ICONO CLARO</span></label>
+              <button class="ghost-btn" id="clearBrandingFaviconLight" type="button">Quitar icono</button>
+            </div>
+          </div>
+          <div class="admin-card">
+            <div class="card-heading"><div><span class="admin-eyebrow">PESTAÑA · MODO OSCURO</span><h2>Favicon oscuro</h2><p>Icono de la pestaña cuando la web está en modo oscuro.</p></div></div>
+            <div class="branding-upload-block">
+              <div class="branding-preview branding-favicon-preview" id="brandingFaviconDarkPreview"><span>Sin favicon oscuro</span></div>
+              <label class="branding-file-button"><input id="brandingFaviconDarkFile" type="file" accept="image/png,image/jpeg,image/webp" /><span>SUBIR ICONO OSCURO</span></label>
+              <button class="ghost-btn" id="clearBrandingFaviconDark" type="button">Quitar icono</button>
+            </div>
+          </div>
           <div class="branding-save-row">
-            <p>Recomendado: logo horizontal con fondo transparente e icono cuadrado. Máximo aproximado 220 KB por imagen.</p>
+            <p>PNG, JPG o WEBP. Recomendado: fondo transparente. Máximo aproximado 220 KB por imagen.</p>
             <button class="primary-admin-btn" id="saveBrandingSettings" type="button">GUARDAR APARIENCIA ↗</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-panel" id="contactsPanel">
+        <div class="admin-grid contacts-admin-grid">
+          <div class="admin-card contacts-admin-card">
+            <div class="card-heading">
+              <div><span class="admin-eyebrow">REDES SOCIALES</span><h2>Contactos de MadeLesh</h2><p>Agrega solo las redes que quieras mostrar públicamente.</p></div>
+            </div>
+            <form id="contactsSettingsForm" class="contacts-settings-form">
+              <label><span>Discord</span><input id="contactDiscord" type="url" placeholder="https://discord.gg/..." /></label>
+              <label><span>Steam</span><input id="contactSteam" type="url" placeholder="https://steamcommunity.com/id/..." /></label>
+              <label><span>X</span><input id="contactX" type="url" placeholder="https://x.com/..." /></label>
+              <label><span>YouTube</span><input id="contactYoutube" type="url" placeholder="https://youtube.com/@..." /></label>
+              <label><span>TikTok</span><input id="contactTiktok" type="url" placeholder="https://tiktok.com/@..." /></label>
+              <label><span>Correo electrónico</span><input id="contactEmail" type="email" placeholder="correo@ejemplo.com" /></label>
+              <div class="contacts-save-row">
+                <p>Los campos vacíos no se mostrarán en la página.</p>
+                <button class="primary-admin-btn" id="saveContactsSettings" type="submit">GUARDAR CONTACTOS ↗</button>
+              </div>
+            </form>
           </div>
         </div>
       </section>
