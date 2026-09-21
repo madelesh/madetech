@@ -272,8 +272,8 @@
             <h2>Últimas reviews</h2>
           </div>
 
-          <div class="toolbar-controls">
-            <label class="search-box">
+          <div class="toolbar-controls product-filter-toolbar">
+            <label class="search-box filter-search">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <circle cx="11" cy="11" r="7"></circle>
                 <path d="m20 20-4-4"></path>
@@ -281,14 +281,61 @@
               <input id="searchInput" type="search" placeholder="Buscar producto" />
             </label>
 
-            <select id="categorySelect" aria-label="Filtrar por categoría">
-              <option value="Todos">Todos</option>
-              <option value="Mouse">Mouse</option>
-              <option value="Teclados">Teclados</option>
-              <option value="IEM">IEM / In-Ears</option>
-              <option value="Headsets">Headsets</option>
-              <option value="DAC">DACs</option>
-            </select>
+            <label class="filter-control">
+              <span class="filter-control-label">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"></path></svg>
+                <span>Categoría</span>
+              </span>
+              <select id="categorySelect" aria-label="Filtrar por categoría">
+                <option value="Todos">Todas</option>
+                <option value="Mouse">Mouse</option>
+                <option value="Teclados">Teclados</option>
+                <option value="IEM">IEM / In-Ears</option>
+                <option value="Headsets">Headsets</option>
+                <option value="DAC">DACs</option>
+              </select>
+            </label>
+
+            <label class="filter-control">
+              <span class="filter-control-label">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"></circle><path d="M16.5 7.5 7.5 16.5"></path></svg>
+                <span>Color</span>
+              </span>
+              <select id="colorFilter" aria-label="Filtrar por color"><option value="Todos">Todos</option></select>
+            </label>
+
+            <label class="filter-control">
+              <span class="filter-control-label">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9a10 10 0 0 1 14 0M8 12a6 6 0 0 1 8 0M11 15a2 2 0 0 1 2 0"></path><circle cx="12" cy="18" r="1"></circle></svg>
+                <span>Conexión</span>
+              </span>
+              <select id="connectionFilter" aria-label="Filtrar por conexión"><option value="Todos">Todas</option></select>
+            </label>
+
+            <label class="filter-control">
+              <span class="filter-control-label">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16M7 15l3-3 3 2 4-6"></path></svg>
+                <span>Precio</span>
+              </span>
+              <select id="priceSort" aria-label="Ordenar por precio">
+                <option value="default">Orden normal</option>
+                <option value="low-high">Más bajo → más alto</option>
+                <option value="high-low">Más alto → más bajo</option>
+              </select>
+            </label>
+
+            <label class="filter-control">
+              <span class="filter-control-label">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v10H4zM8 7V4h8v3"></path></svg>
+                <span>Marca</span>
+              </span>
+              <select id="brandFilter" aria-label="Filtrar por marca"><option value="Todos">Todas</option></select>
+            </label>
+
+            <button class="clear-filters-btn" id="clearFilters" type="button" title="Limpiar filtros">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5 5 19"></path></svg>
+              <span>Limpiar</span>
+            </button>
           </div>
         </div>
 

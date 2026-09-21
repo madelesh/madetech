@@ -19,6 +19,11 @@ const productConnectionsPicker = document.getElementById("productConnectionsPick
 const productConnectionsInput = document.getElementById("productConnections");
 const productImagesPreview = document.getElementById("productImagesPreview");
 const productImagesJson = document.getElementById("productImagesJson");
+const productImageUrlInput = document.getElementById("productImageUrl");
+const productImagePreview = document.getElementById("productImagePreview");
+const libraryNavCount = document.getElementById("libraryNavCount");
+const adminToast = document.getElementById("adminToast");
+const adminToastText = document.getElementById("adminToastText");
 
 const productColorPicker = document.getElementById("productColorPicker");
 const customColorInput = document.getElementById("customColorInput");
@@ -106,7 +111,7 @@ const categorySchemas = {
       ["Claw", "Claw"],
       ["Fingertip", "Fingertip"]
     ]),
-    field("pollingRate", "Polling rate", "select", "", [
+    field("pollingRate", "Polling rate (Hz)", "multichoice", "", [
       ["1000 Hz", "1000 Hz"],
       ["4000 Hz", "4000 Hz"],
       ["8000 Hz", "8000 Hz"]
@@ -120,7 +125,7 @@ const categorySchemas = {
     field("layout", "Formato / Layout", "text", "Ej. 75% ANSI"),
     field("hotSwap", "Hot-swap", "boolean"),
     field("rapidTrigger", "Rapid Trigger", "boolean"),
-    field("pollingRate", "Polling rate", "select", "", [
+    field("pollingRate", "Polling rate (Hz)", "multichoice", "", [
       ["1000 Hz", "1000 Hz"],
       ["4000 Hz", "4000 Hz"],
       ["8000 Hz", "8000 Hz"]
@@ -184,7 +189,9 @@ function fieldHtml(item, value) {
   const safeValue = value ?? "";
 
   if (item.type === "multichoice") {
-    const selected = Array.isArray(safeValue) ? safeValue.map(String) : [];
+    const selected = Array.isArray(safeValue)
+      ? safeValue.map(String)
+      : (String(safeValue || "").trim() ? String(safeValue).split(/[,/]|\s+\+\s+/).map(item => item.trim()).filter(Boolean) : []);
     return `
       <div class="spec-choice-field full-width">
         <span class="spec-choice-label">${item.label.toUpperCase()}</span>
@@ -317,12 +324,13 @@ function renderConnectionPicker() {
   });
 }
 
-/* ---------------- PRODUCT IMAGE GALLERY ---------------- */
+/* ---------------- PRODUCT IMAGE PREVIEW ---------------- */
 
 function setProductImages(values = []) {
   const images = [...new Set((Array.isArray(values) ? values : []).map(safeExternalUrl).filter(Boolean))].slice(0, 5);
   productImagesJson.value = JSON.stringify(images);
-  renderAdminProductImages(images);
+  if (!productImageUrlInput.value && images[0]) productImageUrlInput.value = images[0];
+  renderMainImagePreview();
 }
 
 function getProductImages() {
@@ -334,18 +342,19 @@ function getProductImages() {
   }
 }
 
-function renderAdminProductImages(images = getProductImages()) {
-  if (!images.length) {
-    productImagesPreview.innerHTML = `<span class="admin-gallery-empty">Las imágenes adicionales aparecerán aquí cuando el buscador las encuentre.</span>`;
+function renderMainImagePreview() {
+  const url = safeExternalUrl(productImageUrlInput?.value || "");
+  if (!url) {
+    productImagePreview.innerHTML = `<div class="admin-image-preview-empty">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"></rect><circle cx="9" cy="10" r="2"></circle><path d="m5 18 5-5 3 3 2-2 4 4"></path></svg>
+      <span>Vista previa de la imagen</span>
+    </div>`;
     return;
   }
-  productImagesPreview.innerHTML = images.map((url, index) => `
-    <div class="admin-gallery-item">
-      <img src="${escapeAttr(url)}" alt="Imagen ${index + 1} del producto">
-      <span>${index + 1}</span>
-    </div>
-  `).join("");
+  productImagePreview.innerHTML = `<img src="${escapeAttr(url)}" alt="Vista previa del producto" onerror="this.parentElement.classList.add('image-error')">`;
 }
+
+productImageUrlInput?.addEventListener("input", renderMainImagePreview);
 
 /* ---------------- VISUAL PRODUCT EDITORS ---------------- */
 
@@ -602,6 +611,7 @@ function applyImportedWebProduct(product) {
   document.getElementById("productPrice").value = product.price || "";
   document.getElementById("productDate").value = "";
   document.getElementById("productImageUrl").value = product.imageUrl || "";
+  renderMainImagePreview();
   document.getElementById("productOfficialUrl").value = product.officialUrl || "";
   document.getElementById("productFeatured").value = "false";
   setConnections(Array.isArray(product.connections) ? product.connections : []);
@@ -726,6 +736,7 @@ function applyImportedMechKeysProduct(product) {
   document.getElementById("productPrice").value = product.price || "";
   document.getElementById("productDate").value = "";
   document.getElementById("productImageUrl").value = product.imageUrl || "";
+  renderMainImagePreview();
   document.getElementById("productOfficialUrl").value = product.officialUrl || "";
   document.getElementById("productFeatured").value = "false";
   setConnections(Array.isArray(product.connections) ? product.connections : []);
@@ -817,16 +828,20 @@ adminLogout.addEventListener("click", async () => {
 
 /* ---------------- PANELS ---------------- */
 
-document.querySelectorAll(".admin-nav button").forEach(button => {
-  button.addEventListener("click", () => {
-    document.querySelectorAll(".admin-nav button").forEach(item => item.classList.remove("active"));
-    document.querySelectorAll(".admin-panel").forEach(panel => panel.classList.remove("active"));
+function activateAdminPanel(panelId) {
+  const titles = {
+    productsPanel: "Agregar producto",
+    libraryPanel: "Biblioteca",
+    keysPanel: "Access Keys"
+  };
+  document.querySelectorAll(".admin-nav button").forEach(item => item.classList.toggle("active", item.dataset.panel === panelId));
+  document.querySelectorAll(".admin-panel").forEach(panel => panel.classList.toggle("active", panel.id === panelId));
+  document.getElementById("adminTitle").textContent = titles[panelId] || "MadeTech Control";
+  window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+}
 
-    button.classList.add("active");
-    document.getElementById(button.dataset.panel).classList.add("active");
-    document.getElementById("adminTitle").textContent =
-      button.dataset.panel === "productsPanel" ? "Productos" : "Access Keys";
-  });
+document.querySelectorAll(".admin-nav button").forEach(button => {
+  button.addEventListener("click", () => activateAdminPanel(button.dataset.panel));
 });
 
 /* ---------------- PRODUCTS ---------------- */
@@ -835,6 +850,7 @@ async function loadProducts() {
   const data = await api("/products");
   products = Array.isArray(data.products) ? data.products : [];
   productCount.textContent = String(products.length);
+  if (libraryNavCount) libraryNavCount.textContent = String(products.length);
 
   productsList.innerHTML = products.length
     ? products.map(product => `
@@ -873,6 +889,7 @@ function bindProductActions() {
 function editProduct(id) {
   const product = products.find(item => Number(item.id) === id);
   if (!product) return;
+  activateAdminPanel("productsPanel");
 
   document.getElementById("productId").value = product.id;
   document.getElementById("productCategory").value = product.category || "Mouse";
@@ -884,6 +901,7 @@ function editProduct(id) {
   document.getElementById("productPrice").value = product.price || "";
   document.getElementById("productDate").value = product.date || "";
   document.getElementById("productImageUrl").value = product.imageUrl || "";
+  renderMainImagePreview();
   document.getElementById("productOfficialUrl").value = product.officialUrl || "";
   document.getElementById("productFeatured").value = product.featured === true ? "true" : "false";
   renderTrustedStores(product.trustedStores || []);
@@ -913,6 +931,7 @@ function resetProductForm() {
   setConnections([]);
   setProductImages([]);
   renderCategoryFields("Mouse", {});
+  renderMainImagePreview();
 }
 
 resetProduct.addEventListener("click", resetProductForm);
@@ -953,6 +972,8 @@ productForm.addEventListener("submit", async event => {
   saveButton.disabled = true;
   saveButton.textContent = "GUARDANDO...";
 
+  const wasEditing = Boolean(id);
+
   try {
     if (id) {
       await api(`/products/${id}`, {
@@ -968,6 +989,7 @@ productForm.addEventListener("submit", async event => {
 
     resetProductForm();
     await loadProducts();
+    showAdminToast(wasEditing ? "El producto ha sido actualizado correctamente" : "Este producto ha sido agregado correctamente");
   } catch (error) {
     alert(`No se pudo guardar: ${error.code || error.message}`);
   } finally {
@@ -1024,6 +1046,19 @@ async function removeProduct(id) {
   } catch {
     alert("No se pudo eliminar el producto.");
   }
+}
+
+function showAdminToast(message) {
+  if (!adminToast || !adminToastText) return;
+  adminToastText.textContent = message;
+  adminToast.hidden = false;
+  adminToast.classList.remove("show");
+  requestAnimationFrame(() => adminToast.classList.add("show"));
+  clearTimeout(showAdminToast.timer);
+  showAdminToast.timer = setTimeout(() => {
+    adminToast.classList.remove("show");
+    setTimeout(() => { adminToast.hidden = true; }, 220);
+  }, 3600);
 }
 
 /* ---------------- KEYS ---------------- */
@@ -1308,5 +1343,5 @@ function escapeAttr(value) {
 }
 
 renderConnectionPicker();
-renderAdminProductImages([]);
+renderMainImagePreview();
 restoreAdminSession();

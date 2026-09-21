@@ -24,6 +24,11 @@ const mobileNav = document.getElementById("mobileNav");
 const reviewsGrid = document.getElementById("reviewsGrid");
 const searchInput = document.getElementById("searchInput");
 const categorySelect = document.getElementById("categorySelect");
+const colorFilter = document.getElementById("colorFilter");
+const connectionFilter = document.getElementById("connectionFilter");
+const priceSort = document.getElementById("priceSort");
+const brandFilter = document.getElementById("brandFilter");
+const clearFilters = document.getElementById("clearFilters");
 const emptyMessage = document.getElementById("emptyMessage");
 const modal = document.getElementById("reviewModal");
 const modalCard = modal.querySelector(".modal-card");
@@ -371,6 +376,7 @@ async function loadReviews() {
   try {
     const data = await api("/products");
     reviews = Array.isArray(data.products) ? data.products : [];
+    populateProductFilters();
     renderReviews();
     updateFeatured();
   } catch (error) {
@@ -382,7 +388,9 @@ async function loadReviews() {
 function cardTemplate(review) {
   const score = Number(review.score || 0);
   const category = review.category || "Producto";
-  const image = safeUrl(review.imageUrl);
+  const image = safeUrl(review.imageUrl) || safeUrl(Array.isArray(review.images) ? review.images[0] : "");
+  const connections = Array.isArray(review.connections) ? review.connections.filter(Boolean).slice(0, 3) : [];
+  const price = review.price || "Precio no disponible";
 
   return `
     <article class="review-card" data-category="${escapeHtml(category)}"
@@ -391,40 +399,113 @@ function cardTemplate(review) {
       <div class="review-visual">
         ${
           image
-            ? `<img src="${image}" alt="${escapeHtml(review.name || "Producto")}"
-                 style="position:absolute;inset:12%;width:76%;height:76%;object-fit:contain;z-index:2;filter:drop-shadow(0 22px 35px rgba(0,0,0,.45));">`
+            ? `<img src="${image}" alt="${escapeHtml(review.name || "Producto")}" class="review-product-image">`
             : `<div class="visual-shape"></div>`
         }
-        <div class="score-badge">${score.toFixed(1)}</div>
+        ${score > 0 ? `<div class="score-badge">${score.toFixed(1)}</div>` : ""}
       </div>
 
-      <div class="review-content">
+      <div class="review-content compact-product-card">
         <div class="review-meta">
           <span>${escapeHtml(category)}</span>
-          <span>${escapeHtml(review.date || "")}</span>
+          <span>${escapeHtml(review.brand || "")}</span>
         </div>
 
-        <h3>${escapeHtml(review.brand || "")}<br>${escapeHtml(review.name || "")}</h3>
-        <p>${escapeHtml(review.summary || "")}</p>
+        <h3>${escapeHtml(review.name || "Producto")}</h3>
 
-        <div class="review-read">
+        <div class="card-data-block">
+          <span class="card-data-label">Conexión</span>
+          <div class="card-connection-list">
+            ${connections.length
+              ? connections.map(item => `<span class="card-connection-chip">${connectionIcon(item)}${escapeHtml(item)}</span>`).join("")
+              : `<span class="card-data-empty">No disponible</span>`}
+          </div>
+        </div>
+
+        <div class="review-read product-card-footer">
           <span>VER PRODUCTO</span>
-          <span>${escapeHtml(review.price || "")} ↗</span>
+          <strong>${escapeHtml(price)}</strong>
         </div>
       </div>
     </article>
   `;
 }
 
+function populateProductFilters() {
+  const currentBrand = brandFilter?.value || "Todos";
+  const currentColor = colorFilter?.value || "Todos";
+  const currentConnection = connectionFilter?.value || "Todos";
+
+  const brands = [...new Set(reviews.map(item => String(item.brand || "").trim()).filter(Boolean))]
+    .sort((a,b) => a.localeCompare(b, "es"));
+  const colors = [...new Set(reviews.flatMap(item =>
+    Array.isArray(item.colors) ? item.colors.map(color => String(color?.name || color?.hex || "").trim()).filter(Boolean) : []
+  ))].sort((a,b) => a.localeCompare(b, "es"));
+  const connections = [...new Set(reviews.flatMap(item =>
+    Array.isArray(item.connections) ? item.connections.map(value => String(value || "").trim()).filter(Boolean) : []
+  ))].sort((a,b) => a.localeCompare(b, "es"));
+
+  fillFilterSelect(brandFilter, "Todas", brands, currentBrand);
+  fillFilterSelect(colorFilter, "Todos", colors, currentColor);
+  fillFilterSelect(connectionFilter, "Todas", connections, currentConnection);
+}
+
+function fillFilterSelect(select, allLabel, values, previousValue) {
+  if (!select) return;
+  select.innerHTML = `<option value="Todos">${allLabel}</option>` +
+    values.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("");
+  select.value = values.includes(previousValue) ? previousValue : "Todos";
+}
+
+function parsePriceValue(value) {
+  const raw = String(value || "").replace(/,/g, "");
+  const match = raw.match(/\d+(?:\.\d+)?/);
+  return match ? Number(match[0]) : Number.POSITIVE_INFINITY;
+}
+
+function reviewHasColor(review, selected) {
+  if (selected === "Todos") return true;
+  return Array.isArray(review.colors) && review.colors.some(color =>
+    String(color?.name || color?.hex || "").toLowerCase() === selected.toLowerCase()
+  );
+}
+
+function reviewHasConnection(review, selected) {
+  if (selected === "Todos") return true;
+  return Array.isArray(review.connections) && review.connections.some(connection =>
+    String(connection || "").toLowerCase() === selected.toLowerCase()
+  );
+}
+
 function renderReviews() {
   const text = searchInput.value.trim().toLowerCase();
   const category = categorySelect.value;
+  const color = colorFilter?.value || "Todos";
+  const connection = connectionFilter?.value || "Todos";
+  const brand = brandFilter?.value || "Todos";
+  const sort = priceSort?.value || "default";
 
-  const filtered = reviews.filter(review => {
+  let filtered = reviews.filter(review => {
     const categoryOK = category === "Todos" || review.category === category;
-    const haystack = `${review.brand || ""} ${review.name || ""} ${review.model || ""} ${review.category || ""} ${review.summary || ""}`.toLowerCase();
-    return categoryOK && (!text || haystack.includes(text));
+    const brandOK = brand === "Todos" || String(review.brand || "").toLowerCase() === brand.toLowerCase();
+    const colorOK = reviewHasColor(review, color);
+    const connectionOK = reviewHasConnection(review, connection);
+    const haystack = `${review.brand || ""} ${review.name || ""} ${review.model || ""} ${review.category || ""}`.toLowerCase();
+    return categoryOK && brandOK && colorOK && connectionOK && (!text || haystack.includes(text));
   });
+
+  if (sort === "low-high") {
+    filtered = [...filtered].sort((a, b) => parsePriceValue(a.price) - parsePriceValue(b.price));
+  } else if (sort === "high-low") {
+    filtered = [...filtered].sort((a, b) => {
+      const av = parsePriceValue(a.price);
+      const bv = parsePriceValue(b.price);
+      if (!Number.isFinite(av) && !Number.isFinite(bv)) return 0;
+      if (!Number.isFinite(av)) return 1;
+      if (!Number.isFinite(bv)) return -1;
+      return bv - av;
+    });
+  }
 
   reviewsGrid.innerHTML = filtered.map(cardTemplate).join("");
   emptyMessage.hidden = filtered.length > 0;
@@ -491,12 +572,12 @@ async function openReview(id) {
             ${review.model ? ` · Modelo ${escapeHtml(review.model)}` : ""}
           </p>
 
-          <div class="product-editor-score">
+          ${Number(review.score || 0) > 0 ? `<div class="product-editor-score">
             <strong>${Number(review.score || 0).toFixed(1)}</strong>
             <span>/10 MadeTech Score</span>
-          </div>
+          </div>` : ""}
 
-          <p class="product-detail-summary">${escapeHtml(review.summary || "")}</p>
+          <p class="product-detail-summary">${escapeHtml(displaySummary(review))}</p>
         </div>
       </section>
 
@@ -573,7 +654,6 @@ async function openReview(id) {
       </div>
     `;
 
-    bindProductGallery();
     if (currentRole === "user") bindRatingButtons(id, Number(rating.mine || 0));
 
     modal.classList.add("open");
@@ -586,68 +666,83 @@ async function openReview(id) {
 }
 
 function productImageHtml(review) {
-  const images = [...new Set([
-    ...(Array.isArray(review.images) ? review.images : []),
-    review.imageUrl
-  ].map(safeUrl).filter(Boolean))].slice(0, 5);
+  const image = safeUrl(review.imageUrl) || safeUrl(Array.isArray(review.images) ? review.images[0] : "");
+  if (!image) return `<div class="product-detail-placeholder" aria-label="Imagen no disponible"></div>`;
+  return `<div class="product-single-image"><img class="product-detail-image" src="${image}" alt="${escapeHtml(review.name || "Producto")}"></div>`;
+}
 
-  if (!images.length) {
-    return `<div class="product-detail-placeholder" aria-label="Imagen no disponible"></div>`;
+function displaySummary(review) {
+  const original = String(review.summary || "").trim();
+  if (original && !looksMostlyEnglish(original)) return original;
+
+  const s = review.specs || {};
+  const name = `${review.brand || ""} ${review.name || ""}`.trim() || "Este producto";
+  const connections = Array.isArray(review.connections) && review.connections.length
+    ? ` Ofrece conexión ${review.connections.join(", ")}.`
+    : "";
+  const polling = Array.isArray(s.pollingRate) ? s.pollingRate.join(", ") : s.pollingRate;
+
+  if (review.category === "Teclados") {
+    return `${name} es un teclado${s.layout ? ` de formato ${s.layout}` : ""}${s.switchTechnology ? ` con tecnología ${s.switchTechnology}` : ""}.${connections}${polling ? ` Admite tasas de sondeo de ${polling}.` : ""} Consulta abajo sus especificaciones técnicas completas.`;
   }
-
-  return `
-    <div class="product-gallery" data-product-gallery>
-      <div class="product-gallery-main">
-        <img class="product-detail-image" data-gallery-main src="${images[0]}" alt="${escapeHtml(review.name || "Producto")}">
-      </div>
-      ${images.length > 1 ? `
-        <div class="product-gallery-thumbs" aria-label="Galería de imágenes">
-          ${images.map((url, index) => `
-            <button type="button" class="product-gallery-thumb ${index === 0 ? "active" : ""}"
-              data-gallery-image="${escapeHtml(url)}" aria-label="Ver imagen ${index + 1}">
-              <img src="${url}" alt="Miniatura ${index + 1}">
-            </button>
-          `).join("")}
-        </div>` : ""}
-      ${renderGalleryColors(review.colors)}
-    </div>`;
+  if (review.category === "Mouse") {
+    return `${name} es un mouse${s.sensor ? ` equipado con sensor ${s.sensor}` : ""}${s.weight ? ` y un peso aproximado de ${s.weight} g` : ""}.${connections}${polling ? ` Admite tasas de sondeo de ${polling}.` : ""} Consulta abajo sus especificaciones técnicas completas.`;
+  }
+  return `${name} pertenece a la categoría ${review.category || "tecnología"}.${connections} Consulta abajo sus especificaciones, conexiones y opciones de compra.`;
 }
 
-function bindProductGallery() {
-  const gallery = document.querySelector("[data-product-gallery]");
-  if (!gallery) return;
-  const main = gallery.querySelector("[data-gallery-main]");
-  gallery.querySelectorAll("[data-gallery-image]").forEach(button => {
-    button.addEventListener("click", () => {
-      const url = safeUrl(button.dataset.galleryImage);
-      if (!url || !main) return;
-      main.src = url;
-      gallery.querySelectorAll("[data-gallery-image]").forEach(item => item.classList.remove("active"));
-      button.classList.add("active");
-    });
-  });
+function looksMostlyEnglish(text) {
+  const value = ` ${String(text || "").toLowerCase()} `;
+  const english = [" the ", " and ", " with ", " features ", " supports ", " has ", " includes ", " available ", " keyboard ", " mouse "];
+  return english.filter(word => value.includes(word)).length >= 2;
 }
 
-function renderGalleryColors(colors) {
-  if (!Array.isArray(colors) || !colors.length) return "";
-  return `
-    <div class="product-gallery-colors">
-      <span>Colores</span>
-      <div>${colors.slice(0, 8).map(color => `
-        <span class="gallery-color-dot" title="${escapeHtml(color.name || "Color")}" style="background:${safeColor(color.hex)}"></span>
-      `).join("")}</div>
-    </div>`;
+function cleanSpecDisplayValue(value) {
+  if (Array.isArray(value)) {
+    return value.map(cleanSpecDisplayValue).filter(item => item !== "");
+  }
+  if (value === true || value === false || value === null || value === undefined) return value;
+  const text = String(value).trim();
+  if (!text) return "";
+  if (text.length > 90) return "";
+  if (/^[,.;:]/.test(text)) return "";
+  if (/\b(supports?|features?|includes?|has a|available in|polling rate of)\b/i.test(text) && text.split(/\s+/).length > 6) return "";
+  return text;
+}
+
+function specIcon(label) {
+  const value = String(label || "").toLowerCase();
+  if (value.includes("sensor")) return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path></svg>`;
+  if (value.includes("peso")) return `<svg viewBox="0 0 24 24"><path d="M6 20h12l-1.5-11h-9z"></path><path d="M9 9a3 3 0 0 1 6 0"></path></svg>`;
+  if (value.includes("switch")) return `<svg viewBox="0 0 24 24"><rect x="6" y="5" width="12" height="14" rx="3"></rect><path d="M9 9h6M9 13h6"></path></svg>`;
+  if (value.includes("polling")) return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 7v5l3 2"></path></svg>`;
+  if (value.includes("bater") || value.includes("autonom")) return `<svg viewBox="0 0 24 24"><rect x="4" y="7" width="15" height="10" rx="2"></rect><path d="M19 10h2v4h-2M7 12h7"></path></svg>`;
+  if (value.includes("dimens")) return `<svg viewBox="0 0 24 24"><path d="M4 7h16M4 17h16M7 4v6M17 14v6"></path></svg>`;
+  if (value.includes("formato") || value.includes("layout")) return `<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"></rect><path d="M6 10h2M10 10h2M14 10h2M6 14h12"></path></svg>`;
+  if (value.includes("hot-swap") || value.includes("rapid")) return `<svg viewBox="0 0 24 24"><path d="m13 2-7 11h6l-1 9 7-12h-6z"></path></svg>`;
+  if (value.includes("keycap")) return `<svg viewBox="0 0 24 24"><path d="M6 8h12l2 9H4z"></path><path d="M9 12h6"></path></svg>`;
+  if (value.includes("montaje")) return `<svg viewBox="0 0 24 24"><path d="M4 6h16v12H4zM8 10h8M8 14h8"></path></svg>`;
+  if (value.includes("driver")) return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="3"></circle></svg>`;
+  if (value.includes("impedancia") || value.includes("sensibilidad")) return `<svg viewBox="0 0 24 24"><path d="M3 12h3l2-5 4 10 3-8 2 3h4"></path></svg>`;
+  if (value.includes("frecuencia")) return `<svg viewBox="0 0 24 24"><path d="M3 12c2-7 4-7 6 0s4 7 6 0 4-7 6 0"></path></svg>`;
+  if (value.includes("micrófono")) return `<svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M6 11a6 6 0 0 0 12 0M12 17v4"></path></svg>`;
+  if (value.includes("codec") || value.includes("bluetooth")) return `<svg viewBox="0 0 24 24"><path d="M7 7l10 10-5 4V3l5 4L7 17"></path></svg>`;
+  if (value.includes("entrada") || value.includes("salida") || value.includes("plug") || value.includes("conector")) return `<svg viewBox="0 0 24 24"><path d="M8 4v6M16 4v6M6 10h12v4a6 6 0 0 1-12 0z"></path></svg>`;
+  return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4M12 16h.01"></path></svg>`;
 }
 
 function coreSpec(label, value) {
-  const available = value !== undefined && value !== null && String(value).trim() !== "";
+  const cleaned = cleanSpecDisplayValue(value);
+  const available = Array.isArray(cleaned) ? cleaned.length > 0 : cleaned !== undefined && cleaned !== null && String(cleaned).trim() !== "";
   return `
     <article class="product-spec-card ${available ? "" : "spec-unavailable"}">
-      <span>${escapeHtml(label)}</span>
-      <strong>${available ? escapeHtml(formatValue(value)) : "No disponible"}</strong>
+      <div class="product-spec-label"><span class="product-spec-icon">${specIcon(label)}</span><span>${escapeHtml(label)}</span></div>
+      <strong>${available ? escapeHtml(formatValue(cleaned)) : "No disponible"}</strong>
     </article>
   `;
 }
+
+
 
 function renderSpecCard(item) {
   if (item.type === "grips") return renderGripSpec(item.value);
@@ -659,7 +754,7 @@ function renderGripSpec(grips) {
   const all = ["Palm", "Claw", "Fingertip"];
   return `
     <article class="product-spec-card grip-spec-card ${selected.length ? "" : "spec-unavailable"}">
-      <span>Tipos de agarre</span>
+      <div class="product-spec-label"><span class="product-spec-icon">${specIcon("Agarre")}</span><span>Tipos de agarre</span></div>
       ${selected.length ? `
         <div class="grip-visual-list">
           ${all.filter(type => selected.includes(type)).map(type => `
@@ -983,6 +1078,19 @@ document.addEventListener("keydown", e => {
 
 searchInput.addEventListener("input", renderReviews);
 categorySelect.addEventListener("change", renderReviews);
+colorFilter?.addEventListener("change", renderReviews);
+connectionFilter?.addEventListener("change", renderReviews);
+priceSort?.addEventListener("change", renderReviews);
+brandFilter?.addEventListener("change", renderReviews);
+clearFilters?.addEventListener("click", () => {
+  searchInput.value = "";
+  categorySelect.value = "Todos";
+  if (colorFilter) colorFilter.value = "Todos";
+  if (connectionFilter) connectionFilter.value = "Todos";
+  if (priceSort) priceSort.value = "default";
+  if (brandFilter) brandFilter.value = "Todos";
+  renderReviews();
+});
 
 document.querySelectorAll("[data-filter]").forEach(button => {
   button.addEventListener("click", () => {
