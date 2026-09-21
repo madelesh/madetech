@@ -22,6 +22,7 @@ const productImagesJson = document.getElementById("productImagesJson");
 const productImageUrlInput = document.getElementById("productImageUrl");
 const productImagePreview = document.getElementById("productImagePreview");
 const libraryNavCount = document.getElementById("libraryNavCount");
+const libraryCategoryFilter = document.getElementById("libraryCategoryFilter");
 const adminToast = document.getElementById("adminToast");
 const adminToastText = document.getElementById("adminToastText");
 
@@ -849,32 +850,67 @@ document.querySelectorAll(".admin-nav button").forEach(button => {
 async function loadProducts() {
   const data = await api("/products");
   products = Array.isArray(data.products) ? data.products : [];
-  productCount.textContent = String(products.length);
-  if (libraryNavCount) libraryNavCount.textContent = String(products.length);
 
-  productsList.innerHTML = products.length
-    ? products.map(product => `
-      <article class="admin-list-item">
-        <div>
-          <h3>${escapeHtml(product.brand || "")} ${escapeHtml(product.name || "")}</h3>
-          <p>
-            ${escapeHtml(product.category || "")}
-            ${product.model ? ` · ${escapeHtml(product.model)}` : ""}
-            · ${Number(product.score || 0).toFixed(1)}/10
-            · <span class="${product.status === "draft" ? "draft-badge" : "published-badge"}">
-              ${product.status === "draft" ? "BORRADOR" : "PUBLICADO"}
-            </span>
-          </p>
-        </div>
-        <div class="item-actions">
-          <button data-edit-product="${product.id}">EDITAR</button>
-          <button class="danger" data-delete-product="${product.id}">ELIMINAR</button>
-        </div>
-      </article>`).join("")
-    : `<p style="color:#777">Todavía no hay productos.</p>`;
+  if (libraryNavCount) libraryNavCount.textContent = String(products.length);
+  renderLibraryProducts();
+}
+
+function renderLibraryProducts() {
+  const category = libraryCategoryFilter?.value || "Todos";
+  const visibleProducts = category === "Todos"
+    ? products
+    : products.filter(product => product.category === category);
+
+  productCount.textContent = String(visibleProducts.length);
+
+  productsList.innerHTML = visibleProducts.length
+    ? visibleProducts.map(product => {
+        const image = safeExternalUrl(product.imageUrl) ||
+          safeExternalUrl(Array.isArray(product.images) ? product.images[0] : "");
+
+        return `
+          <article class="admin-list-item admin-product-library-item">
+            <div class="admin-product-thumb">
+              ${
+                image
+                  ? `<img src="${escapeAttr(image)}" alt="${escapeAttr(product.name || "Producto")}" loading="lazy">`
+                  : `<div class="admin-product-thumb-empty" aria-label="Sin imagen">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+                        <circle cx="9" cy="10" r="2"></circle>
+                        <path d="m5 18 5-5 3 3 2-2 4 4"></path>
+                      </svg>
+                    </div>`
+              }
+            </div>
+
+            <div class="admin-library-product-copy">
+              <h3>${escapeHtml(product.brand || "")} ${escapeHtml(product.name || "")}</h3>
+              <p>
+                ${escapeHtml(product.category || "")}
+                ${product.model ? ` · ${escapeHtml(product.model)}` : ""}
+                · ${Number(product.score || 0).toFixed(1)}/10
+                · <span class="${product.status === "draft" ? "draft-badge" : "published-badge"}">
+                  ${product.status === "draft" ? "BORRADOR" : "PUBLICADO"}
+                </span>
+              </p>
+            </div>
+
+            <div class="item-actions">
+              <button data-edit-product="${product.id}">EDITAR</button>
+              <button class="danger" data-delete-product="${product.id}">ELIMINAR</button>
+            </div>
+          </article>`;
+      }).join("")
+    : `<div class="library-empty-state">
+        <strong>No hay productos en esta categoría.</strong>
+        <span>Cambia el filtro o agrega un producto nuevo.</span>
+      </div>`;
 
   bindProductActions();
 }
+
+libraryCategoryFilter?.addEventListener("change", renderLibraryProducts);
 
 function bindProductActions() {
   document.querySelectorAll("[data-edit-product]").forEach(button =>
@@ -1038,11 +1074,20 @@ async function removeProduct(id) {
   const product = products.find(item => Number(item.id) === id);
   const name = product ? `${product.brand || ""} ${product.name || ""}`.trim() : "este producto";
 
-  if (!confirm(`¿Eliminar ${name}? Esta acción no se puede deshacer.`)) return;
+  const firstConfirm = confirm(
+    `¿Quieres eliminar "${name}"?\n\nEsta acción borrará el producto de MadeTech.`
+  );
+  if (!firstConfirm) return;
+
+  const secondConfirm = confirm(
+    `ÚLTIMA CONFIRMACIÓN\n\nEstás a punto de eliminar definitivamente "${name}".\n\n¿Deseas continuar?`
+  );
+  if (!secondConfirm) return;
 
   try {
     await api(`/products/${id}`, { method: "DELETE" });
     await loadProducts();
+    showAdminToast("El producto ha sido eliminado correctamente");
   } catch {
     alert("No se pudo eliminar el producto.");
   }

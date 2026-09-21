@@ -281,38 +281,43 @@
               <input id="searchInput" type="search" placeholder="Buscar producto" />
             </label>
 
-            <label class="filter-control">
+            <div class="filter-control multi-filter" data-multi-filter="category">
               <span class="filter-control-label">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"></path></svg>
                 <span>Categoría</span>
               </span>
-              <select id="categorySelect" aria-label="Filtrar por categoría">
-                <option value="Todos">Todas</option>
-                <option value="Mouse">Mouse</option>
-                <option value="Teclados">Teclados</option>
-                <option value="IEM">IEM / In-Ears</option>
-                <option value="Headsets">Headsets</option>
-                <option value="DAC">DACs</option>
-              </select>
-            </label>
+              <button class="multi-filter-trigger" id="categoryFilterTrigger" type="button" aria-expanded="false">
+                <span id="categoryFilterText">Todas</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"></path></svg>
+              </button>
+              <div class="multi-filter-menu" id="categoryFilterMenu" hidden></div>
+            </div>
 
-            <label class="filter-control">
+            <div class="filter-control multi-filter" data-multi-filter="color">
               <span class="filter-control-label">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"></circle><path d="M16.5 7.5 7.5 16.5"></path></svg>
                 <span>Color</span>
               </span>
-              <select id="colorFilter" aria-label="Filtrar por color"><option value="Todos">Todos</option></select>
-            </label>
+              <button class="multi-filter-trigger" id="colorFilterTrigger" type="button" aria-expanded="false">
+                <span id="colorFilterText">Todos</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"></path></svg>
+              </button>
+              <div class="multi-filter-menu" id="colorFilterMenu" hidden></div>
+            </div>
 
-            <label class="filter-control">
+            <div class="filter-control multi-filter" data-multi-filter="connection">
               <span class="filter-control-label">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9a10 10 0 0 1 14 0M8 12a6 6 0 0 1 8 0M11 15a2 2 0 0 1 2 0"></path><circle cx="12" cy="18" r="1"></circle></svg>
                 <span>Conexión</span>
               </span>
-              <select id="connectionFilter" aria-label="Filtrar por conexión"><option value="Todos">Todas</option></select>
-            </label>
+              <button class="multi-filter-trigger" id="connectionFilterTrigger" type="button" aria-expanded="false">
+                <span id="connectionFilterText">Todas</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"></path></svg>
+              </button>
+              <div class="multi-filter-menu" id="connectionFilterMenu" hidden></div>
+            </div>
 
-            <label class="filter-control">
+            <label class="filter-control price-filter-control">
               <span class="filter-control-label">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16M7 15l3-3 3 2 4-6"></path></svg>
                 <span>Precio</span>
@@ -324,13 +329,17 @@
               </select>
             </label>
 
-            <label class="filter-control">
+            <div class="filter-control multi-filter" data-multi-filter="brand">
               <span class="filter-control-label">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v10H4zM8 7V4h8v3"></path></svg>
                 <span>Marca</span>
               </span>
-              <select id="brandFilter" aria-label="Filtrar por marca"><option value="Todos">Todas</option></select>
-            </label>
+              <button class="multi-filter-trigger" id="brandFilterTrigger" type="button" aria-expanded="false">
+                <span id="brandFilterText">Todas</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"></path></svg>
+              </button>
+              <div class="multi-filter-menu" id="brandFilterMenu" hidden></div>
+            </div>
 
             <button class="clear-filters-btn" id="clearFilters" type="button" title="Limpiar filtros">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5 5 19"></path></svg>

@@ -23,11 +23,19 @@ const menuToggle = document.getElementById("menuToggle");
 const mobileNav = document.getElementById("mobileNav");
 const reviewsGrid = document.getElementById("reviewsGrid");
 const searchInput = document.getElementById("searchInput");
-const categorySelect = document.getElementById("categorySelect");
-const colorFilter = document.getElementById("colorFilter");
-const connectionFilter = document.getElementById("connectionFilter");
+const categoryFilterTrigger = document.getElementById("categoryFilterTrigger");
+const categoryFilterText = document.getElementById("categoryFilterText");
+const categoryFilterMenu = document.getElementById("categoryFilterMenu");
+const colorFilterTrigger = document.getElementById("colorFilterTrigger");
+const colorFilterText = document.getElementById("colorFilterText");
+const colorFilterMenu = document.getElementById("colorFilterMenu");
+const connectionFilterTrigger = document.getElementById("connectionFilterTrigger");
+const connectionFilterText = document.getElementById("connectionFilterText");
+const connectionFilterMenu = document.getElementById("connectionFilterMenu");
 const priceSort = document.getElementById("priceSort");
-const brandFilter = document.getElementById("brandFilter");
+const brandFilterTrigger = document.getElementById("brandFilterTrigger");
+const brandFilterText = document.getElementById("brandFilterText");
+const brandFilterMenu = document.getElementById("brandFilterMenu");
 const clearFilters = document.getElementById("clearFilters");
 const emptyMessage = document.getElementById("emptyMessage");
 const modal = document.getElementById("reviewModal");
@@ -40,6 +48,40 @@ let currentToken = null;
 let currentProfileName = "";
 let currentKeyExpiresAt = null;
 let keyCountdownTimer = null;
+
+const selectedProductFilters = {
+  category: new Set(),
+  color: new Set(),
+  connection: new Set(),
+  brand: new Set()
+};
+
+const multiFilterConfig = {
+  category: {
+    trigger: categoryFilterTrigger,
+    text: categoryFilterText,
+    menu: categoryFilterMenu,
+    allLabel: "Todas"
+  },
+  color: {
+    trigger: colorFilterTrigger,
+    text: colorFilterText,
+    menu: colorFilterMenu,
+    allLabel: "Todos"
+  },
+  connection: {
+    trigger: connectionFilterTrigger,
+    text: connectionFilterText,
+    menu: connectionFilterMenu,
+    allLabel: "Todas"
+  },
+  brand: {
+    trigger: brandFilterTrigger,
+    text: brandFilterText,
+    menu: brandFilterMenu,
+    allLabel: "Todas"
+  }
+};
 
 document.getElementById("year").textContent = new Date().getFullYear();
 
@@ -432,29 +474,129 @@ function cardTemplate(review) {
 }
 
 function populateProductFilters() {
-  const currentBrand = brandFilter?.value || "Todos";
-  const currentColor = colorFilter?.value || "Todos";
-  const currentConnection = connectionFilter?.value || "Todos";
-
+  const categories = ["Mouse", "Teclados", "IEM", "Headsets", "DAC"];
   const brands = [...new Set(reviews.map(item => String(item.brand || "").trim()).filter(Boolean))]
     .sort((a,b) => a.localeCompare(b, "es"));
   const colors = [...new Set(reviews.flatMap(item =>
-    Array.isArray(item.colors) ? item.colors.map(color => String(color?.name || color?.hex || "").trim()).filter(Boolean) : []
+    Array.isArray(item.colors)
+      ? item.colors.map(color => String(color?.name || color?.hex || "").trim()).filter(Boolean)
+      : []
   ))].sort((a,b) => a.localeCompare(b, "es"));
   const connections = [...new Set(reviews.flatMap(item =>
-    Array.isArray(item.connections) ? item.connections.map(value => String(value || "").trim()).filter(Boolean) : []
+    Array.isArray(item.connections)
+      ? item.connections.map(value => String(value || "").trim()).filter(Boolean)
+      : []
   ))].sort((a,b) => a.localeCompare(b, "es"));
 
-  fillFilterSelect(brandFilter, "Todas", brands, currentBrand);
-  fillFilterSelect(colorFilter, "Todos", colors, currentColor);
-  fillFilterSelect(connectionFilter, "Todas", connections, currentConnection);
+  buildMultiFilterMenu("category", categories);
+  buildMultiFilterMenu("brand", brands);
+  buildMultiFilterMenu("color", colors);
+  buildMultiFilterMenu("connection", connections);
 }
 
-function fillFilterSelect(select, allLabel, values, previousValue) {
-  if (!select) return;
-  select.innerHTML = `<option value="Todos">${allLabel}</option>` +
-    values.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("");
-  select.value = values.includes(previousValue) ? previousValue : "Todos";
+function buildMultiFilterMenu(type, values) {
+  const config = multiFilterConfig[type];
+  if (!config?.menu) return;
+
+  const selected = selectedProductFilters[type];
+
+  // Elimina selecciones que ya no existen en los productos disponibles.
+  for (const value of [...selected]) {
+    if (!values.includes(value)) selected.delete(value);
+  }
+
+  config.menu.innerHTML = values.length
+    ? values.map(value => {
+        const checked = selected.has(value);
+        return `
+          <label class="multi-filter-option">
+            <input type="checkbox" value="${escapeHtml(value)}" ${checked ? "checked" : ""}>
+            <span class="multi-filter-check" aria-hidden="true">✓</span>
+            <span>${escapeHtml(value)}</span>
+          </label>`;
+      }).join("")
+    : `<div class="multi-filter-empty">Sin opciones disponibles</div>`;
+
+  config.menu.querySelectorAll('input[type="checkbox"]').forEach(input => {
+    input.addEventListener("change", () => {
+      if (input.checked) selected.add(input.value);
+      else selected.delete(input.value);
+
+      updateMultiFilterTrigger(type);
+      renderReviews();
+    });
+  });
+
+  updateMultiFilterTrigger(type);
+}
+
+function updateMultiFilterTrigger(type) {
+  const config = multiFilterConfig[type];
+  if (!config) return;
+
+  const values = [...selectedProductFilters[type]];
+  if (!values.length) {
+    config.text.textContent = config.allLabel;
+    config.trigger.classList.remove("has-selection");
+    return;
+  }
+
+  config.trigger.classList.add("has-selection");
+  config.text.textContent = values.length <= 2
+    ? values.join(", ")
+    : `${values.length} seleccionados`;
+}
+
+function closeAllMultiFilters(exceptType = "") {
+  Object.entries(multiFilterConfig).forEach(([type, config]) => {
+    if (!config?.menu || type === exceptType) return;
+    config.menu.hidden = true;
+    config.trigger?.setAttribute("aria-expanded", "false");
+  });
+}
+
+function setupMultiFilterMenus() {
+  Object.entries(multiFilterConfig).forEach(([type, config]) => {
+    if (!config?.trigger || !config.menu) return;
+
+    config.trigger.addEventListener("click", event => {
+      event.stopPropagation();
+      const willOpen = config.menu.hidden;
+      closeAllMultiFilters(type);
+      config.menu.hidden = !willOpen;
+      config.trigger.setAttribute("aria-expanded", String(willOpen));
+    });
+
+    config.menu.addEventListener("click", event => event.stopPropagation());
+  });
+
+  document.addEventListener("click", () => closeAllMultiFilters());
+}
+
+function productMatchesSelectedValue(value, selectedSet) {
+  if (!selectedSet.size) return true;
+  const normalized = String(value || "").toLowerCase();
+  return [...selectedSet].some(selected => normalized === selected.toLowerCase());
+}
+
+function reviewMatchesAnyColor(review, selectedSet) {
+  if (!selectedSet.size) return true;
+  if (!Array.isArray(review.colors)) return false;
+
+  return review.colors.some(color => {
+    const value = String(color?.name || color?.hex || "").toLowerCase();
+    return [...selectedSet].some(selected => value === selected.toLowerCase());
+  });
+}
+
+function reviewMatchesAnyConnection(review, selectedSet) {
+  if (!selectedSet.size) return true;
+  if (!Array.isArray(review.connections)) return false;
+
+  return review.connections.some(connection => {
+    const value = String(connection || "").toLowerCase();
+    return [...selectedSet].some(selected => value === selected.toLowerCase());
+  });
 }
 
 function parsePriceValue(value) {
@@ -463,33 +605,15 @@ function parsePriceValue(value) {
   return match ? Number(match[0]) : Number.POSITIVE_INFINITY;
 }
 
-function reviewHasColor(review, selected) {
-  if (selected === "Todos") return true;
-  return Array.isArray(review.colors) && review.colors.some(color =>
-    String(color?.name || color?.hex || "").toLowerCase() === selected.toLowerCase()
-  );
-}
-
-function reviewHasConnection(review, selected) {
-  if (selected === "Todos") return true;
-  return Array.isArray(review.connections) && review.connections.some(connection =>
-    String(connection || "").toLowerCase() === selected.toLowerCase()
-  );
-}
-
 function renderReviews() {
   const text = searchInput.value.trim().toLowerCase();
-  const category = categorySelect.value;
-  const color = colorFilter?.value || "Todos";
-  const connection = connectionFilter?.value || "Todos";
-  const brand = brandFilter?.value || "Todos";
   const sort = priceSort?.value || "default";
 
   let filtered = reviews.filter(review => {
-    const categoryOK = category === "Todos" || review.category === category;
-    const brandOK = brand === "Todos" || String(review.brand || "").toLowerCase() === brand.toLowerCase();
-    const colorOK = reviewHasColor(review, color);
-    const connectionOK = reviewHasConnection(review, connection);
+    const categoryOK = productMatchesSelectedValue(review.category, selectedProductFilters.category);
+    const brandOK = productMatchesSelectedValue(review.brand, selectedProductFilters.brand);
+    const colorOK = reviewMatchesAnyColor(review, selectedProductFilters.color);
+    const connectionOK = reviewMatchesAnyConnection(review, selectedProductFilters.connection);
     const haystack = `${review.brand || ""} ${review.name || ""} ${review.model || ""} ${review.category || ""}`.toLowerCase();
     return categoryOK && brandOK && colorOK && connectionOK && (!text || haystack.includes(text));
   });
@@ -1077,28 +1201,40 @@ document.addEventListener("keydown", e => {
 });
 
 searchInput.addEventListener("input", renderReviews);
-categorySelect.addEventListener("change", renderReviews);
-colorFilter?.addEventListener("change", renderReviews);
-connectionFilter?.addEventListener("change", renderReviews);
 priceSort?.addEventListener("change", renderReviews);
-brandFilter?.addEventListener("change", renderReviews);
 clearFilters?.addEventListener("click", () => {
   searchInput.value = "";
-  categorySelect.value = "Todos";
-  if (colorFilter) colorFilter.value = "Todos";
-  if (connectionFilter) connectionFilter.value = "Todos";
   if (priceSort) priceSort.value = "default";
-  if (brandFilter) brandFilter.value = "Todos";
+
+  Object.keys(selectedProductFilters).forEach(type => {
+    selectedProductFilters[type].clear();
+    multiFilterConfig[type]?.menu
+      ?.querySelectorAll('input[type="checkbox"]')
+      .forEach(input => { input.checked = false; });
+    updateMultiFilterTrigger(type);
+  });
+
+  closeAllMultiFilters();
   renderReviews();
 });
 
 document.querySelectorAll("[data-filter]").forEach(button => {
   button.addEventListener("click", () => {
-    categorySelect.value = button.dataset.filter;
+    const category = button.dataset.filter;
+    selectedProductFilters.category.clear();
+    if (category) selectedProductFilters.category.add(category);
+
+    categoryFilterMenu
+      ?.querySelectorAll('input[type="checkbox"]')
+      .forEach(input => { input.checked = selectedProductFilters.category.has(input.value); });
+
+    updateMultiFilterTrigger("category");
     renderReviews();
     document.getElementById("reviews").scrollIntoView({ behavior: "smooth" });
   });
 });
+
+setupMultiFilterMenus();
 
 function escapeHtml(value) {
   return String(value ?? "")

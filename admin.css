@@ -1170,3 +1170,172 @@ body.admin-authenticated #adminApp {
 
 @media(max-width:1050px){.admin-nav{grid-template-columns:repeat(3,1fr)}.admin-import-grid{grid-template-columns:1fr}.admin-main-image-field{grid-template-columns:1fr 220px}}
 @media(max-width:700px){.admin-nav{grid-template-columns:1fr}.admin-main-image-field{grid-template-columns:1fr}.admin-image-preview-card img{height:190px}.primary-admin-btn{position:static}}
+
+
+/* ==========================================================
+   MADETECH V5.10 — BIBLIOTECA VISUAL
+   ========================================================== */
+.library-category-filter {
+  margin: 0 0 16px;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) minmax(220px,320px);
+  align-items: center;
+  gap: 14px;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 14px;
+  background: #181819;
+}
+
+.library-category-filter label {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+
+.library-filter-icon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 11px;
+  background: rgba(238,255,0,.09);
+  color: #eeff00;
+}
+
+.library-filter-icon svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.library-category-filter label > span:last-child {
+  display: grid;
+  gap: 2px;
+}
+
+.library-category-filter small {
+  color: #6e6e75;
+  font-size: .61rem;
+  letter-spacing: .08em;
+}
+
+.library-category-filter strong {
+  color: #fff;
+  font-size: .86rem;
+}
+
+.library-category-filter select {
+  width: 100%;
+  height: 44px;
+  padding: 0 38px 0 12px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 11px;
+  background-color: #111113;
+  color: #fff;
+  color-scheme: dark;
+}
+
+.library-category-filter select option {
+  background: #151517;
+  color: #fff;
+}
+
+.admin-product-library-item {
+  grid-template-columns: 78px minmax(0,1fr) auto;
+  min-height: 92px;
+  padding: 10px 13px;
+}
+
+.admin-product-thumb {
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 55% 30%, rgba(238,255,0,.08), transparent 40%),
+    #101012;
+}
+
+.admin-product-thumb img {
+  width: 100%;
+  height: 100%;
+  padding: 7px;
+  object-fit: contain;
+}
+
+.admin-product-thumb-empty {
+  display: grid;
+  place-items: center;
+  color: #56565d;
+}
+
+.admin-product-thumb-empty svg {
+  width: 30px;
+  height: 30px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.admin-library-product-copy {
+  min-width: 0;
+}
+
+.admin-library-product-copy h3 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.library-empty-state {
+  min-height: 150px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 6px;
+  padding: 24px;
+  border: 1px dashed rgba(255,255,255,.12);
+  border-radius: 15px;
+  color: #777;
+  text-align: center;
+}
+
+.library-empty-state strong {
+  color: #cfcfd3;
+}
+
+.library-empty-state span {
+  font-size: .78rem;
+}
+
+@media (max-width: 760px) {
+  .library-category-filter {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-product-library-item {
+    grid-template-columns: 64px minmax(0,1fr);
+  }
+
+  .admin-product-thumb {
+    width: 58px;
+    height: 58px;
+  }
+
+  .admin-product-library-item .item-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+}

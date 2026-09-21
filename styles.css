@@ -2244,3 +2244,137 @@ body.session-authenticated #appRoot {
 
 @media (max-width:1250px){.reviews-toolbar{align-items:flex-start;flex-direction:column}.product-filter-toolbar{grid-template-columns:repeat(3,minmax(150px,1fr));width:100%}.filter-search{grid-column:span 2}}
 @media (max-width:760px){.product-filter-toolbar{grid-template-columns:1fr 1fr}.filter-search{grid-column:1/-1}.clear-filters-btn{min-height:54px}.reviews-grid{grid-template-columns:1fr}.product-single-image{min-height:280px}.product-single-image .product-detail-image{max-height:280px}}
+
+
+/* ==========================================================
+   MADETECH V5.10 — MULTIFILTROS LEGIBLES
+   ========================================================== */
+.multi-filter {
+  position: relative;
+}
+
+.multi-filter-trigger {
+  width: 100%;
+  min-width: 0;
+  height: 27px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+  text-align: left;
+  font: inherit;
+  font-size: .76rem;
+  cursor: pointer;
+}
+
+.multi-filter-trigger > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.multi-filter-trigger > svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform .16s ease;
+}
+
+.multi-filter-trigger[aria-expanded="true"] > svg {
+  transform: rotate(180deg);
+}
+
+.multi-filter-trigger.has-selection {
+  color: var(--accent, #eeff00);
+}
+
+.multi-filter-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 80;
+  width: max(220px, 100%);
+  max-width: 300px;
+  max-height: 290px;
+  overflow-y: auto;
+  padding: 7px;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 14px;
+  background: #151517;
+  color: #fff;
+  box-shadow: 0 20px 55px rgba(0,0,0,.55);
+}
+
+.multi-filter-option {
+  min-height: 40px;
+  display: grid;
+  grid-template-columns: 19px minmax(0,1fr);
+  align-items: center;
+  gap: 9px;
+  padding: 7px 9px;
+  border-radius: 9px;
+  color: #e7e7eb;
+  font-size: .76rem;
+  cursor: pointer;
+}
+
+.multi-filter-option:hover {
+  background: rgba(255,255,255,.07);
+}
+
+.multi-filter-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.multi-filter-check {
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.23);
+  border-radius: 6px;
+  color: transparent;
+  font-size: .7rem;
+  font-weight: 900;
+}
+
+.multi-filter-option input:checked + .multi-filter-check {
+  border-color: #eeff00;
+  background: #eeff00;
+  color: #090909;
+}
+
+.multi-filter-empty {
+  padding: 12px;
+  color: rgba(255,255,255,.5);
+  font-size: .75rem;
+}
+
+.price-filter-control select {
+  color: #fff !important;
+  background-color: transparent !important;
+  color-scheme: dark;
+}
+
+.price-filter-control select option {
+  background: #151517;
+  color: #fff;
+}
+
+@media (max-width:760px) {
+  .multi-filter-menu {
+    width: min(280px, calc(100vw - 32px));
+  }
+}
