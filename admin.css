@@ -1481,3 +1481,144 @@ body.admin-authenticated #adminApp {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* ==========================================================
+   MADETECH V5.12 — IMPORTADOR UNIVERSAL POR URL
+   ========================================================== */
+.url-importer {
+  margin: 0;
+  padding: 20px;
+  border: 1px solid rgba(238,255,0,.30);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top right, rgba(238,255,0,.09), transparent 36%),
+    #171719;
+  height: 100%;
+}
+
+.url-importer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.url-importer h3 {
+  margin: 4px 0 0;
+  font-size: 21px;
+  line-height: 1.05;
+}
+
+.url-importer > p {
+  margin: 0 0 16px;
+  color: #9b9ba2;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.url-source-badge {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #eeff00;
+  color: #080808;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.url-import-row {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  gap: 10px;
+}
+
+.url-import-row input {
+  min-width: 0;
+  height: 49px;
+  padding: 0 13px;
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: 12px;
+  background: #111113;
+  color: #fff;
+  outline: none;
+}
+
+.url-import-row input:focus {
+  border-color: #eeff00;
+}
+
+.url-import-row button {
+  min-height: 49px;
+  padding: 0 17px;
+  border: 0;
+  border-radius: 12px;
+  background: #eeff00;
+  color: #080808;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.url-import-row button:disabled {
+  opacity: .55;
+  cursor: wait;
+}
+
+.url-import-status {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid #343438;
+  border-radius: 12px;
+  color: #c9c9ce;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.url-import-status.success {
+  border-color: rgba(238,255,0,.42);
+}
+
+.url-import-status.error {
+  border-color: rgba(255,84,84,.46);
+  color: #ff9292;
+}
+
+.url-import-status ul {
+  margin: 7px 0 0 18px;
+  padding: 0;
+}
+
+.url-source-link {
+  margin-top: 10px;
+}
+
+.url-source-link a {
+  color: #eeff00;
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.url-import-note {
+  display: block;
+  margin-top: 10px;
+  color: #717178;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+/* Con URL + búsqueda web visibles, el área queda equilibrada. */
+.admin-import-grid {
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 900px) {
+  .admin-import-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .url-import-row {
+    grid-template-columns: 1fr;
+  }
+}

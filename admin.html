@@ -90,6 +90,29 @@
             </div>
 
             <div class="admin-import-grid">
+            <section class="url-importer" aria-labelledby="urlImporterTitle">
+              <div class="url-importer-head">
+                <div>
+                  <span class="admin-eyebrow">MÉTODO PRINCIPAL</span>
+                  <h3 id="urlImporterTitle">Extraer producto desde URL</h3>
+                </div>
+                <span class="url-source-badge">AUTO</span>
+              </div>
+
+              <p>Pega el enlace directo del producto. MadeTech detectará si es EloShapes, MechKeys, una web oficial u otra tienda y usará el extractor más adecuado.</p>
+
+              <div class="url-import-row">
+                <input id="universalProductUrl" type="url" inputmode="url"
+                  placeholder="https://www.eloshapes.com/mouse/compare?p=zowie-ec3-dw" />
+                <button id="universalImportButton" type="button">🔗 EXTRAER FICHA</button>
+              </div>
+
+              <div class="url-import-status" id="universalImportStatus" hidden></div>
+              <div class="url-source-link" id="universalSourceLink" hidden></div>
+
+              <small class="url-import-note">Compatible de forma especial con EloShapes y MechKeys. Otras páginas se procesan con Tavily. La ficha queda como borrador para revisión.</small>
+            </section>
+
             <section class="web-importer" aria-labelledby="webImporterTitle">
               <div class="web-importer-head">
                 <div>
@@ -132,7 +155,7 @@
               <small class="web-import-note">La búsqueda no publica nada automáticamente. Revisa los campos antes de guardar.</small>
             </section>
 
-            <section class="eloshapes-importer" aria-labelledby="eloshapesImporterTitle">
+            <section class="eloshapes-importer" aria-labelledby="eloshapesImporterTitle" hidden>
               <div class="eloshapes-importer-head">
                 <div>
                   <span class="admin-eyebrow">MOUSE · DATOS TÉCNICOS</span>
@@ -161,7 +184,7 @@
               <small class="eloshapes-import-note">No modifica el precio ni la imagen. Solo completa la ficha técnica del mouse y la deja para revisión.</small>
             </section>
 
-            <section class="mechkeys-importer" aria-labelledby="mechkeysImporterTitle">
+            <section class="mechkeys-importer" aria-labelledby="mechkeysImporterTitle" hidden>
               <div class="mechkeys-importer-head">
                 <div>
                   <span class="admin-eyebrow">AUTOCOMPLETAR</span>

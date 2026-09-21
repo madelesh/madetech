@@ -32,6 +32,11 @@ const storeAmazon = document.getElementById("storeAmazon");
 const storeAliExpress = document.getElementById("storeAliExpress");
 const extraStores = document.getElementById("extraStores");
 const addStoreButton = document.getElementById("addStoreButton");
+const universalProductUrl = document.getElementById("universalProductUrl");
+const universalImportButton = document.getElementById("universalImportButton");
+const universalImportStatus = document.getElementById("universalImportStatus");
+const universalSourceLink = document.getElementById("universalSourceLink");
+
 const webSearchCategory = document.getElementById("webSearchCategory");
 const webSearchBrand = document.getElementById("webSearchBrand");
 const webSearchModel = document.getElementById("webSearchModel");
@@ -553,6 +558,149 @@ function collectTrustedStores() {
 
 renderColorPicker([]);
 renderTrustedStores([]);
+
+
+/* ---------------- UNIVERSAL URL AUTO-IMPORT ---------------- */
+
+universalImportButton.addEventListener("click", importFromUniversalUrl);
+
+universalProductUrl.addEventListener("keydown", event => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    importFromUniversalUrl();
+  }
+});
+
+async function importFromUniversalUrl() {
+  const url = universalProductUrl.value.trim();
+
+  if (!url) {
+    showUniversalImportStatus("Pega primero la URL del producto.", "error");
+    universalProductUrl.focus();
+    return;
+  }
+
+  const oldText = universalImportButton.textContent;
+  universalImportButton.disabled = true;
+  universalImportButton.textContent = "EXTRAYENDO FICHA...";
+  universalSourceLink.hidden = true;
+  universalSourceLink.innerHTML = "";
+  showUniversalImportStatus("Leyendo la página y detectando la fuente...", "loading");
+
+  try {
+    const result = await api("/admin/import/url", {
+      method: "POST",
+      body: JSON.stringify({ url })
+    });
+
+    applyUniversalImportedProduct(result.product || {}, result.source || "");
+
+    const detected = Array.isArray(result.detected) ? result.detected : [];
+    const warnings = Array.isArray(result.warnings) ? result.warnings : [];
+
+    const detectedText = detected.length
+      ? `<strong>Encontrado:</strong> ${detected.map(escapeHtml).join(", ")}.`
+      : "La página respondió, pero pocos campos pudieron reconocerse automáticamente.";
+
+    const warningsHtml = warnings.length
+      ? `<ul>${warnings.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
+      : "";
+
+    showUniversalImportStatus(
+      `✓ Ficha extraída desde ${escapeHtml(result.source || "la URL")}. ${detectedText}${warningsHtml}`,
+      "success",
+      true
+    );
+
+    const sourceUrl = safeExternalUrl(result.sourceUrl || url);
+    if (sourceUrl) {
+      universalSourceLink.hidden = false;
+      universalSourceLink.innerHTML = `
+        <a href="${escapeAttr(sourceUrl)}" target="_blank" rel="noopener noreferrer">
+          Ver página utilizada como fuente ↗
+        </a>`;
+    }
+
+    productForm.scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (error) {
+    const messages = {
+      product_url_required: "Pega la URL del producto.",
+      invalid_product_url: "La URL no es válida.",
+      private_url_not_allowed: "Esa dirección no se puede usar.",
+      invalid_eloshapes_product_url: "Pega una ficha individual de mouse de EloShapes.",
+      eloshapes_not_found: "No pude reconocer la ficha de EloShapes.",
+      mechkeys_product_url_required: "Pega el enlace individual del producto de MechKeys.",
+      mechkeys_fetch_failed: "No pude leer MechKeys en este momento.",
+      tavily_not_configured: "Falta TAVILY_API_KEY en Cloudflare.",
+      url_extract_failed: "No pude leer esa página. Prueba con otra URL del mismo producto.",
+      url_product_not_found: "La página no tiene suficiente información para generar una ficha."
+    };
+
+    showUniversalImportStatus(
+      messages[error.code] || `No se pudo extraer la ficha: ${error.message}`,
+      "error"
+    );
+  } finally {
+    universalImportButton.disabled = false;
+    universalImportButton.textContent = oldText;
+  }
+}
+
+function applyUniversalImportedProduct(product, sourceName = "") {
+  document.getElementById("productId").value = "";
+  document.getElementById("productStatus").value = "draft";
+  productFormTitle.textContent = `Nuevo producto · importado desde ${sourceName || "URL"}`;
+
+  const allowedCategories = ["Mouse", "Teclados", "IEM", "Headsets", "DAC"];
+  if (allowedCategories.includes(product.category)) {
+    productCategory.value = product.category;
+    if (webSearchCategory) webSearchCategory.value = product.category;
+  }
+
+  document.getElementById("productBrand").value = product.brand || "";
+  document.getElementById("productName").value = product.name || product.model || "";
+  document.getElementById("productModel").value = product.model || "";
+  document.getElementById("productScore").value =
+    Number.isFinite(Number(product.score)) ? Number(product.score) : 0;
+  document.getElementById("productPrice").value = product.price || "";
+  document.getElementById("productDate").value = "";
+  document.getElementById("productImageUrl").value = product.imageUrl || "";
+  renderMainImagePreview();
+  document.getElementById("productOfficialUrl").value = product.officialUrl || "";
+  document.getElementById("productFeatured").value = "false";
+
+  setConnections(Array.isArray(product.connections) ? product.connections : []);
+  setProductImages(
+    Array.isArray(product.images) && product.images.length
+      ? product.images
+      : (product.imageUrl ? [product.imageUrl] : [])
+  );
+
+  document.getElementById("productYoutube").value = product.reviewLinks?.youtube || "";
+  document.getElementById("productTiktok").value = product.reviewLinks?.tiktok || "";
+  document.getElementById("productSummary").value = product.summary || "";
+  document.getElementById("productPros").value =
+    Array.isArray(product.pros) ? product.pros.join("\n") : "";
+  document.getElementById("productCons").value =
+    Array.isArray(product.cons) ? product.cons.join("\n") : "";
+
+  renderTrustedStores(Array.isArray(product.trustedStores) ? product.trustedStores : []);
+  renderColorPicker(Array.isArray(product.colors) ? product.colors : []);
+  renderCategoryFields(productCategory.value, product.specs || {});
+
+  if (product.category === "Mouse") {
+    if (eloshapesBrand) eloshapesBrand.value = product.brand || "";
+    if (eloshapesModel) eloshapesModel.value = product.model || product.name || "";
+  }
+}
+
+function showUniversalImportStatus(message, type = "", allowHtml = false) {
+  universalImportStatus.hidden = false;
+  universalImportStatus.className = `url-import-status ${type}`.trim();
+
+  if (allowHtml) universalImportStatus.innerHTML = message;
+  else universalImportStatus.textContent = message;
+}
 
 
 /* ---------------- INTERNET AUTO-IMPORT ---------------- */
