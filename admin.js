@@ -1,4 +1,4 @@
-console.info("MadeLesh Admin build 5.20");
+console.info("MadeLesh Admin build 5.21");
 import { API_BASE } from "./config.js";
 
 const adminLogin = document.getElementById("adminLogin");
@@ -106,6 +106,8 @@ const generatedKeyValue = document.getElementById("generatedKeyValue");
 const copyGeneratedKey = document.getElementById("copyGeneratedKey");
 const keysList = document.getElementById("keysList");
 const keysCount = document.getElementById("keysCount");
+const archivedKeysList = document.getElementById("archivedKeysList");
+const archivedKeysCount = document.getElementById("archivedKeysCount");
 
 let adminToken = localStorage.getItem("madetech_admin_token") || "";
 let products = [];
@@ -116,6 +118,26 @@ let brandingFaviconLightDataUrl = "";
 let brandingFaviconDarkDataUrl = "";
 let contactIconDataUrls = { discord:"", steam:"", x:"", youtube:"", tiktok:"", email:"" };
 let colorImagesByHex = {};
+const ADMIN_BUILD_RELEASE = {
+  version: "5.21",
+  title: "Interfaz, notificaciones y Access Keys",
+  date: "2026-09-21",
+  changes: {
+    added: [
+      "Audio para teclados por enlace o archivo.",
+      "Extensión rápida de tiempo para Access Keys.",
+      "Archivo separado para keys vencidas."
+    ],
+    removed: [
+      "Productos antiguos del contador de notificaciones."
+    ],
+    fixed: [
+      "Vista de notificaciones y galería de imágenes.",
+      "Organización de la pestaña Agregar producto.",
+      "Perfil compacto con expiración de la key."
+    ]
+  }
+};
 
 const PRESET_COLORS = [
   { name: "Negro", hex: "#111111" },
@@ -1445,7 +1467,8 @@ function updateReleaseAutoPreview() {
 }
 
 function fillReleaseSettings(release = {}) {
-  if (releaseVersion) releaseVersion.value = String(release.version || "5.20").replace(/^v/i, "");
+  if (String(release.version || "") !== ADMIN_BUILD_RELEASE.version) release = ADMIN_BUILD_RELEASE;
+  if (releaseVersion) releaseVersion.value = String(release.version || "5.21").replace(/^v/i, "");
   if (releaseDate) releaseDate.value = String(release.date || "");
   if (releaseTitle) releaseTitle.value = String(release.title || "");
 
@@ -1842,18 +1865,22 @@ copyGeneratedKey.addEventListener("click", async () => {
 });
 
 async function loadKeys() {
-  const data = await api("/admin/keys");
-  const keys = Array.isArray(data.keys) ? data.keys : [];
+  const [activeData, archiveData] = await Promise.all([
+    api("/admin/keys"),
+    api("/admin/keys/archive")
+  ]);
+
+  const keys = Array.isArray(activeData.keys) ? activeData.keys : [];
+  const archived = Array.isArray(archiveData.keys) ? archiveData.keys : [];
 
   keysCount.textContent = String(keys.length);
+  if (archivedKeysCount) archivedKeysCount.textContent = String(archived.length);
 
   keysList.innerHTML = keys.length
     ? keys.map(key => {
       const active = Number(key.active) === 1;
       const canReveal = Number(key.can_reveal) === 1;
-      const expiryText = key.expires_at
-        ? formatKeyExpiry(key.expires_at)
-        : "SIN EXPIRACIÓN CONFIGURADA";
+      const expiryText = key.expires_at ? formatKeyExpiry(key.expires_at) : "SIN EXPIRACIÓN CONFIGURADA";
 
       return `
         <article class="admin-list-item key-admin-card" data-key-card="${key.id}">
@@ -1891,39 +1918,69 @@ async function loadKeys() {
               </label>
               <button class="key-save-btn" type="button" data-save-key="${key.id}">GUARDAR DATOS</button>
             </div>
+
+            ${active ? `
+              <div class="key-extension-row">
+                <span>EXTENDER TIEMPO</span>
+                <button type="button" data-extend-key="${key.id}" data-days="1">+1 día</button>
+                <button type="button" data-extend-key="${key.id}" data-days="7">+7 días</button>
+                <button type="button" data-extend-key="${key.id}" data-days="30">+30 días</button>
+              </div>` : ""}
           </div>
 
           <div class="item-actions key-admin-actions">
             ${active ? `<button class="danger" data-revoke-key="${key.id}">REVOCAR</button>` : ""}
           </div>
-        </article>`;
+        </article>
+      `;
     }).join("")
-    : `<p style="color:#777">Todavía no has generado ninguna key.</p>`;
+    : `<div class="empty-admin-state">No hay access keys activas.</div>`;
 
-  bindKeyActions();
-}
+  if (archivedKeysList) {
+    archivedKeysList.innerHTML = archived.length
+      ? archived.map(key => `
+          <article class="admin-list-item archived-key-card">
+            <div>
+              <span class="key-owner-caption">KEY VENCIDA</span>
+              <h3>${escapeHtml(key.label || "Sin nombre")}</h3>
+              <p class="key-meta-line">
+                venció ${escapeHtml(key.expired_at ? new Date(key.expired_at).toLocaleString("es-EC") : "sin fecha")}
+                · ${Number(key.uses || 0)} usos
+              </p>
+            </div>
+            <button class="danger" type="button" data-delete-archived-key="${key.archive_id}">ELIMINAR</button>
+          </article>
+        `).join("")
+      : `<div class="empty-admin-state">No hay keys vencidas archivadas.</div>`;
+  }
 
-function bindKeyActions() {
   document.querySelectorAll("[data-reveal-key]").forEach(button => {
-    button.addEventListener("click", () => revealAccessKey(Number(button.dataset.revealKey), button));
+    button.addEventListener("click", () => revealAccessKey(Number(button.dataset.revealKey)));
   });
-
   document.querySelectorAll("[data-copy-key]").forEach(button => {
     button.addEventListener("click", () => copyRevealedKey(Number(button.dataset.copyKey), button));
   });
-
   document.querySelectorAll("[data-save-key]").forEach(button => {
     button.addEventListener("click", () => saveKeyData(Number(button.dataset.saveKey), button));
   });
-
   document.querySelectorAll("[data-regenerate-key]").forEach(button => {
     button.addEventListener("click", () => regenerateAccessKey(Number(button.dataset.regenerateKey)));
   });
-
   document.querySelectorAll("[data-revoke-key]").forEach(button => {
     button.addEventListener("click", () => revokeAccessKey(Number(button.dataset.revokeKey)));
   });
+  document.querySelectorAll("[data-extend-key]").forEach(button => {
+    button.addEventListener("click", () => extendAccessKeyTime(
+      Number(button.dataset.extendKey),
+      Number(button.dataset.days),
+      button
+    ));
+  });
+  document.querySelectorAll("[data-delete-archived-key]").forEach(button => {
+    button.addEventListener("click", () => deleteArchivedKey(Number(button.dataset.deleteArchivedKey), button));
+  });
 }
+
 
 async function revealAccessKey(id, button) {
   const output = document.getElementById(`keyRevealValue_${id}`);
@@ -1998,6 +2055,43 @@ async function saveKeyData(id, button) {
     await loadKeys();
   } catch (error) {
     alert(`No se pudieron guardar los datos: ${error.code || error.message}`);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function extendAccessKeyTime(id, days, button) {
+  const ownerInput = document.querySelector(`[data-key-owner="${id}"]`);
+  const expiryInput = document.querySelector(`[data-key-expiry="${id}"]`);
+  const label = ownerInput?.value.trim() || "";
+  const current = expiryInput?.value ? new Date(expiryInput.value) : new Date();
+  const base = Number.isNaN(current.getTime()) || current.getTime() < Date.now() ? new Date() : current;
+  const next = new Date(base.getTime() + days * 86400000);
+
+  try {
+    button.disabled = true;
+    await api(`/admin/keys/${id}`, {
+      method: "PUT",
+      body: JSON.stringify({ label, expiresAt: next.toISOString() })
+    });
+    showAdminToast(`Key extendida ${days === 1 ? "1 día" : `${days} días`}`);
+    await loadKeys();
+  } catch (error) {
+    alert(`No se pudo extender la key: ${error.code || error.message}`);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function deleteArchivedKey(archiveId, button) {
+  if (!confirm("¿Eliminar definitivamente esta key vencida del archivo?")) return;
+  try {
+    button.disabled = true;
+    await api(`/admin/keys/archive/${archiveId}`, { method: "DELETE" });
+    showAdminToast("Key vencida eliminada del archivo");
+    await loadKeys();
+  } catch (error) {
+    alert(`No se pudo eliminar la key archivada: ${error.code || error.message}`);
   } finally {
     button.disabled = false;
   }

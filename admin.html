@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es" data-theme="dark">
 <head>
-  <meta name="madelesh-admin-build" content="5.20" />
+  <meta name="madelesh-admin-build" content="5.21" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0b0b0c" />
@@ -10,8 +10,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link id="siteFavicon" rel="icon" type="image/png" href="" />
-  <link rel="stylesheet" href="styles.css?v=5.20" />
-  <link rel="stylesheet" href="admin.css?v=5.20" />
+  <link rel="stylesheet" href="styles.css?v=5.21" />
+  <link rel="stylesheet" href="admin.css?v=5.21" />
 </head>
 <body class="admin-body">
 
@@ -39,7 +39,7 @@
 
       <p class="admin-error" id="adminLoginError" hidden></p>
       <a class="back-site" href="index.html">← Volver a MadeLesh</a>
-      <small class="admin-build-marker">build 5.20</small>
+      <small class="admin-build-marker">build 5.21</small>
     </div>
   </section>
 
@@ -85,7 +85,7 @@
       <div class="admin-sidebar-footer">
         <span id="adminIdentity"></span>
         <button id="adminLogout">Cerrar sesión</button>
-        <small class="admin-build-marker">build 5.20</small>
+        <small class="admin-build-marker">build 5.21</small>
       </div>
     </aside>
 
@@ -153,7 +153,8 @@
             </section>
             </div>
 
-            <form id="productForm" class="product-form">
+            <form id="productForm" class="product-form product-form-organized">
+              <div class="product-form-section-title"><span>01</span><div><strong>Información principal</strong><small>Datos básicos del producto</small></div></div>
               <input type="hidden" id="productId" />
 
               <div class="form-row">
@@ -210,7 +211,11 @@
                 </label>
               </div>
 
+              <div class="product-form-section-title product-media-section-title"><span>02</span><div><strong>Multimedia</strong><small>Imagen principal, galería, video y audio</small></div></div>
               <div class="admin-main-image-field">
+                <div class="media-manager-head">
+                  <div><strong>Imagen principal</strong><small>Se usa en las tarjetas y como primera imagen de la ficha.</small></div>
+                </div>
                 <label>
                   IMAGEN DEL PRODUCTO
                   <input id="productImageUrl" type="text" placeholder="https://... o sube una imagen desde tu PC" />
@@ -261,7 +266,7 @@
               <div class="visual-field-block keyboard-sound-admin" id="keyboardSoundBlock" hidden>
                 <div class="visual-field-heading">
                   <div>
-                    <span class="visual-field-label">SONIDO DEL TECLADO</span>
+                    <span class="visual-field-label">SONIDO DEL TECLADO · 5–10 S</span>
                     <small>Audio recomendado de 5–10 segundos. Se reproducirá desde un icono sobre la foto.</small>
                   </div>
                 </div>
@@ -275,6 +280,7 @@
                 <div id="keyboardSoundPreview" class="keyboard-sound-preview-admin"><span>Sin audio cargado.</span></div>
               </div>
 
+              <div class="product-form-section-title"><span>03</span><div><strong>Referencias y descargas</strong><small>Jugadores, drivers, software y tiendas</small></div></div>
               <div class="visual-field-block pro-players-admin-block">
                 <div class="visual-field-heading">
                   <div>
@@ -378,6 +384,7 @@
                 <small class="image-size-hint">Imagen por color: 1000 × 1000 px recomendado. Puedes pegar una URL o subir PNG/JPG/WEBP. Máx. 180 KB por imagen subida.</small>
               </div>
 
+              <div class="product-form-section-title"><span>04</span><div><strong>Ficha técnica</strong><small>Conexiones y especificaciones por categoría</small></div></div>
               <div class="visual-field-block">
                 <div class="visual-field-heading">
                   <div>
@@ -517,6 +524,18 @@
             </div>
 
             <div class="admin-list" id="keysList"></div>
+
+            <div class="archived-keys-panel">
+              <div class="archived-keys-head">
+                <div>
+                  <span class="admin-eyebrow">ARCHIVO</span>
+                  <h3>Keys vencidas</h3>
+                  <p>Las keys vencidas se mueven automáticamente aquí y ya no aparecen entre las activas.</p>
+                </div>
+                <span class="count-pill" id="archivedKeysCount">0</span>
+              </div>
+              <div class="admin-list archived-keys-list" id="archivedKeysList"></div>
+            </div>
           </div>
         </div>
       </section>
@@ -721,7 +740,7 @@
   </div>
 
   <script type="module">
-console.info("MadeLesh Admin build 5.20");
+console.info("MadeLesh Admin build 5.21");
 import { API_BASE } from "./config.js";
 
 const adminLogin = document.getElementById("adminLogin");
@@ -829,6 +848,8 @@ const generatedKeyValue = document.getElementById("generatedKeyValue");
 const copyGeneratedKey = document.getElementById("copyGeneratedKey");
 const keysList = document.getElementById("keysList");
 const keysCount = document.getElementById("keysCount");
+const archivedKeysList = document.getElementById("archivedKeysList");
+const archivedKeysCount = document.getElementById("archivedKeysCount");
 
 let adminToken = localStorage.getItem("madetech_admin_token") || "";
 let products = [];
@@ -839,6 +860,26 @@ let brandingFaviconLightDataUrl = "";
 let brandingFaviconDarkDataUrl = "";
 let contactIconDataUrls = { discord:"", steam:"", x:"", youtube:"", tiktok:"", email:"" };
 let colorImagesByHex = {};
+const ADMIN_BUILD_RELEASE = {
+  version: "5.21",
+  title: "Interfaz, notificaciones y Access Keys",
+  date: "2026-09-21",
+  changes: {
+    added: [
+      "Audio para teclados por enlace o archivo.",
+      "Extensión rápida de tiempo para Access Keys.",
+      "Archivo separado para keys vencidas."
+    ],
+    removed: [
+      "Productos antiguos del contador de notificaciones."
+    ],
+    fixed: [
+      "Vista de notificaciones y galería de imágenes.",
+      "Organización de la pestaña Agregar producto.",
+      "Perfil compacto con expiración de la key."
+    ]
+  }
+};
 
 const PRESET_COLORS = [
   { name: "Negro", hex: "#111111" },
@@ -2168,7 +2209,8 @@ function updateReleaseAutoPreview() {
 }
 
 function fillReleaseSettings(release = {}) {
-  if (releaseVersion) releaseVersion.value = String(release.version || "5.20").replace(/^v/i, "");
+  if (String(release.version || "") !== ADMIN_BUILD_RELEASE.version) release = ADMIN_BUILD_RELEASE;
+  if (releaseVersion) releaseVersion.value = String(release.version || "5.21").replace(/^v/i, "");
   if (releaseDate) releaseDate.value = String(release.date || "");
   if (releaseTitle) releaseTitle.value = String(release.title || "");
 
@@ -2565,18 +2607,22 @@ copyGeneratedKey.addEventListener("click", async () => {
 });
 
 async function loadKeys() {
-  const data = await api("/admin/keys");
-  const keys = Array.isArray(data.keys) ? data.keys : [];
+  const [activeData, archiveData] = await Promise.all([
+    api("/admin/keys"),
+    api("/admin/keys/archive")
+  ]);
+
+  const keys = Array.isArray(activeData.keys) ? activeData.keys : [];
+  const archived = Array.isArray(archiveData.keys) ? archiveData.keys : [];
 
   keysCount.textContent = String(keys.length);
+  if (archivedKeysCount) archivedKeysCount.textContent = String(archived.length);
 
   keysList.innerHTML = keys.length
     ? keys.map(key => {
       const active = Number(key.active) === 1;
       const canReveal = Number(key.can_reveal) === 1;
-      const expiryText = key.expires_at
-        ? formatKeyExpiry(key.expires_at)
-        : "SIN EXPIRACIÓN CONFIGURADA";
+      const expiryText = key.expires_at ? formatKeyExpiry(key.expires_at) : "SIN EXPIRACIÓN CONFIGURADA";
 
       return `
         <article class="admin-list-item key-admin-card" data-key-card="${key.id}">
@@ -2614,39 +2660,69 @@ async function loadKeys() {
               </label>
               <button class="key-save-btn" type="button" data-save-key="${key.id}">GUARDAR DATOS</button>
             </div>
+
+            ${active ? `
+              <div class="key-extension-row">
+                <span>EXTENDER TIEMPO</span>
+                <button type="button" data-extend-key="${key.id}" data-days="1">+1 día</button>
+                <button type="button" data-extend-key="${key.id}" data-days="7">+7 días</button>
+                <button type="button" data-extend-key="${key.id}" data-days="30">+30 días</button>
+              </div>` : ""}
           </div>
 
           <div class="item-actions key-admin-actions">
             ${active ? `<button class="danger" data-revoke-key="${key.id}">REVOCAR</button>` : ""}
           </div>
-        </article>`;
+        </article>
+      `;
     }).join("")
-    : `<p style="color:#777">Todavía no has generado ninguna key.</p>`;
+    : `<div class="empty-admin-state">No hay access keys activas.</div>`;
 
-  bindKeyActions();
-}
+  if (archivedKeysList) {
+    archivedKeysList.innerHTML = archived.length
+      ? archived.map(key => `
+          <article class="admin-list-item archived-key-card">
+            <div>
+              <span class="key-owner-caption">KEY VENCIDA</span>
+              <h3>${escapeHtml(key.label || "Sin nombre")}</h3>
+              <p class="key-meta-line">
+                venció ${escapeHtml(key.expired_at ? new Date(key.expired_at).toLocaleString("es-EC") : "sin fecha")}
+                · ${Number(key.uses || 0)} usos
+              </p>
+            </div>
+            <button class="danger" type="button" data-delete-archived-key="${key.archive_id}">ELIMINAR</button>
+          </article>
+        `).join("")
+      : `<div class="empty-admin-state">No hay keys vencidas archivadas.</div>`;
+  }
 
-function bindKeyActions() {
   document.querySelectorAll("[data-reveal-key]").forEach(button => {
-    button.addEventListener("click", () => revealAccessKey(Number(button.dataset.revealKey), button));
+    button.addEventListener("click", () => revealAccessKey(Number(button.dataset.revealKey)));
   });
-
   document.querySelectorAll("[data-copy-key]").forEach(button => {
     button.addEventListener("click", () => copyRevealedKey(Number(button.dataset.copyKey), button));
   });
-
   document.querySelectorAll("[data-save-key]").forEach(button => {
     button.addEventListener("click", () => saveKeyData(Number(button.dataset.saveKey), button));
   });
-
   document.querySelectorAll("[data-regenerate-key]").forEach(button => {
     button.addEventListener("click", () => regenerateAccessKey(Number(button.dataset.regenerateKey)));
   });
-
   document.querySelectorAll("[data-revoke-key]").forEach(button => {
     button.addEventListener("click", () => revokeAccessKey(Number(button.dataset.revokeKey)));
   });
+  document.querySelectorAll("[data-extend-key]").forEach(button => {
+    button.addEventListener("click", () => extendAccessKeyTime(
+      Number(button.dataset.extendKey),
+      Number(button.dataset.days),
+      button
+    ));
+  });
+  document.querySelectorAll("[data-delete-archived-key]").forEach(button => {
+    button.addEventListener("click", () => deleteArchivedKey(Number(button.dataset.deleteArchivedKey), button));
+  });
 }
+
 
 async function revealAccessKey(id, button) {
   const output = document.getElementById(`keyRevealValue_${id}`);
@@ -2721,6 +2797,43 @@ async function saveKeyData(id, button) {
     await loadKeys();
   } catch (error) {
     alert(`No se pudieron guardar los datos: ${error.code || error.message}`);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function extendAccessKeyTime(id, days, button) {
+  const ownerInput = document.querySelector(`[data-key-owner="${id}"]`);
+  const expiryInput = document.querySelector(`[data-key-expiry="${id}"]`);
+  const label = ownerInput?.value.trim() || "";
+  const current = expiryInput?.value ? new Date(expiryInput.value) : new Date();
+  const base = Number.isNaN(current.getTime()) || current.getTime() < Date.now() ? new Date() : current;
+  const next = new Date(base.getTime() + days * 86400000);
+
+  try {
+    button.disabled = true;
+    await api(`/admin/keys/${id}`, {
+      method: "PUT",
+      body: JSON.stringify({ label, expiresAt: next.toISOString() })
+    });
+    showAdminToast(`Key extendida ${days === 1 ? "1 día" : `${days} días`}`);
+    await loadKeys();
+  } catch (error) {
+    alert(`No se pudo extender la key: ${error.code || error.message}`);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function deleteArchivedKey(archiveId, button) {
+  if (!confirm("¿Eliminar definitivamente esta key vencida del archivo?")) return;
+  try {
+    button.disabled = true;
+    await api(`/admin/keys/archive/${archiveId}`, { method: "DELETE" });
+    showAdminToast("Key vencida eliminada del archivo");
+    await loadKeys();
+  } catch (error) {
+    alert(`No se pudo eliminar la key archivada: ${error.code || error.message}`);
   } finally {
     button.disabled = false;
   }

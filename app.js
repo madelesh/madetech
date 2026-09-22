@@ -15,6 +15,9 @@ const profileRole = document.getElementById("profileRole");
 const profileButtonLabel = document.getElementById("profileButtonLabel");
 const profileSessionLabel = document.getElementById("profileSessionLabel");
 const profileExpiryText = document.getElementById("profileExpiryText");
+const profileSettingsButton = document.getElementById("profileSettingsButton");
+const profileSettingsMini = document.getElementById("profileSettingsMini");
+const profileThemeShortcut = document.getElementById("profileThemeShortcut");
 
 const root = document.documentElement;
 const themeToggle = document.getElementById("themeToggle");
@@ -88,6 +91,26 @@ let publicContacts = {};
 let publicAnnouncements = [];
 let publicAppVersion = "5.18";
 let publicRelease = { version: "5.18", title: "", date: "", notes: [] };
+const CURRENT_BUILD_RELEASE = {
+  version: "5.21",
+  title: "Interfaz, notificaciones y Access Keys",
+  date: "2026-09-21",
+  changes: {
+    added: [
+      "Audio para teclados por enlace o archivo.",
+      "Extensión rápida de tiempo para Access Keys.",
+      "Archivo separado para keys vencidas."
+    ],
+    removed: [
+      "Productos antiguos del contador de notificaciones."
+    ],
+    fixed: [
+      "Vista de notificaciones y galería de imágenes.",
+      "Organización de la pestaña Agregar producto.",
+      "Perfil compacto con expiración de la key."
+    ]
+  }
+};
 
 const selectedProductFilters = {
   category: new Set(),
@@ -166,9 +189,9 @@ async function loadPublicSettings() {
     publicContacts = data.contacts || {};
     publicAnnouncements = Array.isArray(data.announcements) ? data.announcements : [];
     publicAppVersion = String(data.appVersion || data.release?.version || "5.18");
-    publicRelease = data.release && typeof data.release === "object"
+    publicRelease = data.release && typeof data.release === "object" && String(data.release.version || "") === CURRENT_BUILD_RELEASE.version
       ? data.release
-      : { version: publicAppVersion, title: "", date: "", notes: [] };
+      : CURRENT_BUILD_RELEASE;
     applyPublicBranding(publicBranding);
     renderPublicContacts(publicContacts);
     renderHeaderAnnouncements(publicAnnouncements);
@@ -485,45 +508,66 @@ function updateKeyCountdown() {
   profileExpiryText.textContent = `Expira en ${hours} h ${minutes} min`;
 }
 
+let profileHoverTimer = null;
+
 function closeProfileMenu() {
   profilePopover.hidden = true;
   profileButton.setAttribute("aria-expanded", "false");
+  if (profileSettingsMini) profileSettingsMini.hidden = true;
 }
 
-function toggleProfileMenu() {
-  const willOpen = profilePopover.hidden;
-  profilePopover.hidden = !willOpen;
-  profileButton.setAttribute("aria-expanded", String(willOpen));
+async function refreshProfileSession() {
+  if (!currentToken) return true;
+  try {
+    const me = await api("/session/me", { method: "GET" }, currentToken);
+    applySessionProfile(me);
+    updateProfileMenu();
+    return true;
+  } catch {
+    localStorage.removeItem("madetech_user_token");
+    localStorage.removeItem("madetech_admin_token");
+    currentToken = null;
+    currentRole = null;
+    showGate("Tu sesión expiró. Ingresa nuevamente.");
+    return false;
+  }
 }
+
+async function openProfileMenu() {
+  clearTimeout(profileHoverTimer);
+  if (!await refreshProfileSession()) return;
+  profilePopover.hidden = false;
+  profileButton.setAttribute("aria-expanded", "true");
+}
+
+function scheduleProfileClose() {
+  clearTimeout(profileHoverTimer);
+  profileHoverTimer = setTimeout(closeProfileMenu, 220);
+}
+
+profileMenuWrap.addEventListener("mouseenter", openProfileMenu);
+profileMenuWrap.addEventListener("mouseleave", scheduleProfileClose);
+profileMenuWrap.addEventListener("focusin", openProfileMenu);
+profileMenuWrap.addEventListener("focusout", event => {
+  if (!profileMenuWrap.contains(event.relatedTarget)) scheduleProfileClose();
+});
 
 profileButton.addEventListener("click", async event => {
   event.stopPropagation();
-
-  // Cada vez que se abre el perfil consultamos D1 otra vez.
-  // Así el nombre del dueño y la expiración siempre son los actuales.
-  if (profilePopover.hidden && currentToken) {
-    try {
-      const me = await api("/session/me", { method: "GET" }, currentToken);
-      applySessionProfile(me);
-      updateProfileMenu();
-    } catch {
-      // Si la sesión dejó de ser válida, volvemos al acceso por key.
-      localStorage.removeItem("madetech_user_token");
-      localStorage.removeItem("madetech_admin_token");
-      currentToken = null;
-      currentRole = null;
-      showGate("Tu sesión expiró. Ingresa nuevamente.");
-      return;
-    }
-  }
-
-  toggleProfileMenu();
+  if (profilePopover.hidden) await openProfileMenu();
+  else closeProfileMenu();
 });
 
 profilePopover.addEventListener("click", event => event.stopPropagation());
 
-// Protección adicional: aunque alguien manipule el HTML, una sesión por key
-// no puede usar el acceso del perfil al panel administrativo.
+profileSettingsButton?.addEventListener("click", () => {
+  if (profileSettingsMini) profileSettingsMini.hidden = !profileSettingsMini.hidden;
+});
+
+profileThemeShortcut?.addEventListener("click", () => {
+  themeToggle?.click();
+});
+
 adminShortcut.addEventListener("click", event => {
   if (currentRole !== "admin") {
     event.preventDefault();
@@ -667,29 +711,58 @@ async function loadReviews() {
   }
 }
 
+const PRODUCT_SEEN_STORAGE = "madelesh_seen_product_ids_v2";
+let currentNewProducts = [];
+
+function storedSeenProductIds() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(PRODUCT_SEEN_STORAGE) || "null");
+    return Array.isArray(parsed) ? parsed.map(String) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveSeenProductIds(ids) {
+  localStorage.setItem(PRODUCT_SEEN_STORAGE, JSON.stringify([...new Set(ids.map(String))]));
+}
+
 function renderProductNotifications() {
   if (!productNotificationBadge || !productNotificationList || !productNotificationCount) return;
-  const total = reviews.length;
+
+  const allIds = reviews.map(product => String(product.id));
+  let seen = storedSeenProductIds();
+
+  // Primera visita con esta versión: los productos ya existentes son la base.
+  if (seen === null) {
+    saveSeenProductIds(allIds);
+    seen = allIds;
+  }
+
+  const seenSet = new Set(seen);
+  currentNewProducts = reviews
+    .filter(product => !seenSet.has(String(product.id)))
+    .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+
+  const total = currentNewProducts.length;
   productNotificationBadge.textContent = String(total);
   productNotificationBadge.hidden = total === 0;
-  productNotificationCount.textContent = `${total} ${total === 1 ? "producto" : "productos"}`;
+  productNotificationCount.textContent = total
+    ? `${total} ${total === 1 ? "nuevo" : "nuevos"}`
+    : "Sin novedades";
 
-  const recent = [...reviews]
-    .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))
-    .slice(0, 6);
-
-  productNotificationList.innerHTML = recent.length
-    ? recent.map(product => `
+  productNotificationList.innerHTML = total
+    ? currentNewProducts.map(product => `
         <button type="button" data-notification-product="${product.id}">
           <img src="${escapeHtml(comparisonImage(product))}" alt="">
           <span>
             <strong>${escapeHtml(product.name || "Producto")}</strong>
-            <small>${escapeHtml(product.category || "")}</small>
+            <small>${escapeHtml(product.category || "")} · Nuevo</small>
           </span>
           <b>↗</b>
         </button>
       `).join("")
-    : `<div class="notification-empty">No hay productos publicados.</div>`;
+    : `<div class="notification-empty">No hay productos nuevos desde tu última revisión.</div>`;
 
   productNotificationList.querySelectorAll("[data-notification-product]").forEach(button => {
     button.addEventListener("click", () => {
@@ -700,11 +773,24 @@ function renderProductNotifications() {
   });
 }
 
+function markCurrentNotificationsSeen() {
+  if (!currentNewProducts.length) return;
+  const existing = storedSeenProductIds() || [];
+  const next = [...existing, ...currentNewProducts.map(product => String(product.id))];
+  saveSeenProductIds(next);
+  productNotificationBadge.hidden = true;
+  productNotificationBadge.textContent = "0";
+}
+
 productNotificationButton?.addEventListener("click", event => {
   event.stopPropagation();
   const open = productNotificationPopover.hidden;
   productNotificationPopover.hidden = !open;
   productNotificationButton.setAttribute("aria-expanded", String(open));
+
+  if (open && currentNewProducts.length) {
+    setTimeout(markCurrentNotificationsSeen, 700);
+  }
 });
 
 document.addEventListener("click", event => {
@@ -713,6 +799,7 @@ document.addEventListener("click", event => {
     productNotificationButton?.setAttribute("aria-expanded", "false");
   }
 });
+
 
 function cardTemplate(review) {
   const image = safeImageSrc(review.imageUrl) || safeImageSrc(Array.isArray(review.images) ? review.images[0] : "") || categoryPlaceholderDataUrl(review.category);

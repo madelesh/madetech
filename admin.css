@@ -1872,3 +1872,127 @@ body.admin-authenticated #adminApp {
 
 @media(max-width:900px){.product-gallery-list-admin{grid-template-columns:repeat(4,minmax(0,1fr))!important}.pro-player-admin-row{grid-template-columns:42px 1fr}.pro-player-admin-row label:last-child{grid-column:2}.release-auto-preview{grid-template-columns:1fr}}
 @media(max-width:600px){.product-gallery-actions{grid-template-columns:1fr!important}.product-gallery-list-admin{grid-template-columns:repeat(2,minmax(0,1fr))!important}.pro-player-admin-row{grid-template-columns:1fr}.pro-player-number{margin-bottom:3px}.pro-player-admin-row label:last-child{grid-column:auto}}
+
+
+/* ==========================================================
+   MADELESH V5.21 — EDITOR A PANTALLA COMPLETA / KEYS
+   ========================================================== */
+#productsPanel .admin-grid-editor{
+  width:100%!important;
+  max-width:none!important;
+  grid-template-columns:minmax(0,1fr)!important;
+}
+#productsPanel .product-editor{
+  width:100%!important;
+  max-width:none!important;
+  padding:clamp(18px,2vw,30px)!important;
+}
+#productsPanel .product-form{
+  width:100%!important;
+  max-width:none!important;
+}
+#productsPanel .admin-import-grid{
+  width:100%!important;
+  max-width:none!important;
+}
+.admin-main{
+  width:100%;
+  max-width:none!important;
+  padding:24px clamp(18px,2.4vw,38px)!important;
+}
+.admin-top{
+  min-height:92px!important;
+}
+.admin-top h1{
+  font-size:clamp(2.2rem,4vw,4rem)!important;
+}
+
+/* Organización por bloques. */
+.product-form-organized{gap:14px!important}
+.product-form-section-title{
+  grid-column:1/-1;
+  margin:20px 0 2px;
+  padding:12px 0 9px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  border-bottom:1px solid rgba(255,255,255,.09)
+}
+.product-form-section-title>span{
+  width:34px;height:34px;display:grid;place-items:center;border-radius:10px;
+  background:rgba(238,255,0,.08);color:#eeff00;font-size:.62rem;font-weight:900
+}
+.product-form-section-title>div{display:grid;gap:2px}
+.product-form-section-title strong{font-size:.9rem;color:#fff}
+.product-form-section-title small{font-size:.66rem;color:#6f6f77}
+.product-media-section-title{margin-top:26px}
+
+/* Gestor de imágenes limpio y de ancho completo. */
+.admin-main-image-field{
+  grid-column:1/-1!important;
+  width:100%!important;
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  gap:10px!important;
+  padding:16px!important;
+}
+.media-manager-head{display:flex;justify-content:space-between;gap:12px}
+.media-manager-head>div{display:grid;gap:3px}
+.media-manager-head strong{font-size:.82rem}
+.media-manager-head small{font-size:.64rem;color:#74747c}
+.admin-image-preview-card{
+  min-height:250px!important;
+  height:250px!important;
+  display:grid!important;place-items:center!important;
+  overflow:hidden!important;
+}
+.admin-image-preview-card img{width:100%!important;height:230px!important;object-fit:contain!important}
+.product-gallery-admin{width:100%!important}
+.product-gallery-actions{
+  width:100%!important;
+  display:grid!important;
+  grid-template-columns:auto minmax(240px,1fr) auto!important;
+}
+.product-gallery-list-admin{
+  width:100%!important;
+  display:grid!important;
+  grid-template-columns:repeat(auto-fill,minmax(120px,1fr))!important;
+  gap:10px!important;
+}
+.gallery-admin-item{min-height:130px!important}
+.gallery-admin-item img{height:130px!important}
+
+/* Audio destacado y visible dentro de Multimedia. */
+.keyboard-sound-admin{
+  grid-column:1/-1!important;
+  padding:16px!important;
+  border-color:rgba(238,255,0,.18)!important;
+  background:linear-gradient(135deg,rgba(238,255,0,.045),#121213)!important;
+}
+.keyboard-sound-admin-grid{grid-template-columns:minmax(0,1fr) auto!important}
+
+/* Keys: extensión + archivo. */
+.key-extension-row{
+  margin-top:12px;padding-top:12px;
+  display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+  border-top:1px solid rgba(255,255,255,.08)
+}
+.key-extension-row>span{margin-right:4px;color:#73737b;font-size:.58rem;letter-spacing:.09em}
+.key-extension-row button{
+  min-height:32px;padding:0 10px;border:1px solid rgba(255,255,255,.11);border-radius:9px;
+  background:#18181a;color:#fff;font-size:.64rem;cursor:pointer
+}
+.key-extension-row button:hover{border-color:#eeff00;color:#eeff00}
+.archived-keys-panel{
+  margin-top:20px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1)
+}
+.archived-keys-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;margin-bottom:12px}
+.archived-keys-head h3{margin:4px 0 3px;font-size:1.15rem}.archived-keys-head p{margin:0;color:#777780;font-size:.7rem}
+.archived-key-card{opacity:.76;display:flex!important;justify-content:space-between!important;align-items:center!important;gap:14px!important}
+.archived-key-card h3{margin:4px 0 5px}
+.empty-admin-state{padding:18px;border:1px dashed rgba(255,255,255,.1);border-radius:12px;color:#6f6f77;font-size:.72rem;text-align:center}
+
+@media(max-width:900px){
+  .product-gallery-actions{grid-template-columns:1fr!important}
+  .keyboard-sound-admin-grid{grid-template-columns:1fr!important}
+}
