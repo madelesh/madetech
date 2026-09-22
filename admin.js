@@ -136,6 +136,7 @@ async function api(path, options = {}, token = adminToken) {
     const error = new Error(data.message || data.error || `HTTP ${response.status}`);
     error.code = data.error || "request_failed";
     error.status = response.status;
+    error.path = path;
     throw error;
   }
 
@@ -1086,28 +1087,71 @@ contactsSettingsForm?.addEventListener("submit", async event => {
 
 async function restoreAdminSession() {
   if (!adminToken) {
-    document.body.classList.remove("admin-authenticated");
-    adminLogin.hidden = false;
-    adminApp.hidden = true;
+    showAdminLogin();
     return;
   }
 
+  // IMPORTANTE:
+  // Solo invalidamos la sesión si /session/me dice que el token no sirve.
+  // Un fallo al cargar productos, keys o configuración NO debe cerrar al admin.
   try {
     const me = await api("/session/me");
-    if (me.role !== "admin") throw new Error("not admin");
+    if (me.role !== "admin") {
+      throw Object.assign(new Error("not admin"), { status: 403 });
+    }
 
-    adminIdentity.textContent = "Administrador";
-    adminLogin.hidden = true;
-    adminApp.hidden = false;
-    document.body.classList.add("admin-authenticated");
-    renderCategoryFields(productCategory.value, {});
-    await Promise.all([loadProducts(), loadKeys(), loadBrandingSettings()]);
-  } catch {
+    showAdminDashboard(me.profileName || "Administrador");
+    await loadAdminDashboardData();
+  } catch (error) {
+    console.warn("Sesión admin no válida:", error);
     localStorage.removeItem("madetech_admin_token");
     adminToken = "";
-    document.body.classList.remove("admin-authenticated");
-    adminLogin.hidden = false;
-    adminApp.hidden = true;
+    showAdminLogin("Tu sesión de administrador expiró. Inicia sesión nuevamente.");
+  }
+}
+
+function showAdminLogin(message = "") {
+  document.body.classList.remove("admin-authenticated");
+  adminLogin.hidden = false;
+  adminApp.hidden = true;
+
+  if (message) {
+    adminLoginError.textContent = message;
+    adminLoginError.hidden = false;
+  }
+}
+
+function showAdminDashboard(identity = "Administrador") {
+  adminIdentity.textContent = identity;
+  adminLogin.hidden = true;
+  adminApp.hidden = false;
+  adminLoginError.hidden = true;
+  document.body.classList.add("admin-authenticated");
+
+  if (productCategory) {
+    renderCategoryFields(productCategory.value, {});
+  }
+}
+
+async function loadAdminDashboardData() {
+  const tasks = [
+    ["productos", loadProducts],
+    ["access keys", loadKeys],
+    ["apariencia y configuración", loadBrandingSettings]
+  ];
+
+  const results = await Promise.allSettled(
+    tasks.map(([, task]) => Promise.resolve().then(() => task()))
+  );
+
+  const failures = results
+    .map((result, index) => ({ result, label: tasks[index][0] }))
+    .filter(item => item.result.status === "rejected");
+
+  if (failures.length) {
+    console.warn("El panel abrió, pero algunas secciones fallaron:", failures);
+    const labels = failures.map(item => item.label).join(", ");
+    showAdminToast(`Sesión iniciada. No se pudo cargar: ${labels}`);
   }
 }
 
@@ -1117,26 +1161,52 @@ adminLoginForm?.addEventListener("submit", async event => {
 
   const email = document.getElementById("adminEmail").value.trim();
   const password = document.getElementById("adminPassword").value;
+  const submitButton = adminLoginForm.querySelector('button[type="submit"]');
+  const originalText = submitButton?.textContent || "INICIAR SESIÓN";
+
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "ENTRANDO...";
+  }
 
   try {
+    // La autenticación y la carga del dashboard están separadas.
+    // Si una sección secundaria falla, la sesión NO se destruye.
     const result = await api("/admin/login", {
       method: "POST",
       body: JSON.stringify({ email, password })
     }, null);
 
+    if (!result?.token || result.role !== "admin") {
+      throw Object.assign(new Error("invalid admin login response"), { code: "invalid_login_response" });
+    }
+
     adminToken = result.token;
     localStorage.setItem("madetech_admin_token", result.token);
 
-    adminIdentity.textContent = email;
-    adminLogin.hidden = true;
-    adminApp.hidden = false;
-    document.body.classList.add("admin-authenticated");
+    showAdminDashboard(email || "Administrador");
+    await loadAdminDashboardData();
+  } catch (error) {
+    console.error("Error de login admin:", error);
 
-    renderCategoryFields(productCategory.value, {});
-    await Promise.all([loadProducts(), loadKeys(), loadBrandingSettings()]);
-  } catch {
-    adminLoginError.textContent = "Correo o contraseña incorrectos.";
-    adminLoginError.hidden = false;
+    // Solo quitamos el token cuando la autenticación realmente falló.
+    if (!adminToken) {
+      localStorage.removeItem("madetech_admin_token");
+      showAdminLogin(
+        error?.code === "invalid_credentials"
+          ? "Correo o contraseña incorrectos."
+          : `No se pudo iniciar sesión: ${error?.message || "error desconocido"}`
+      );
+    } else {
+      // Si el token ya fue creado, mantenemos el panel abierto aunque una
+      // sección secundaria tenga problemas.
+      showAdminDashboard(email || "Administrador");
+    }
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = originalText;
+    }
   }
 });
 
@@ -1144,9 +1214,7 @@ adminLogout?.addEventListener("click", async () => {
   try { await api("/session/logout", { method: "POST" }); } catch {}
   localStorage.removeItem("madetech_admin_token");
   adminToken = "";
-  document.body.classList.remove("admin-authenticated");
-  adminApp.hidden = true;
-  adminLogin.hidden = false;
+  showAdminLogin();
 });
 
 
