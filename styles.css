@@ -2945,3 +2945,348 @@ html[data-theme="light"] .product-spec-icon { color:#697300; background:rgba(130
   width:32px; height:32px; padding:5px; object-fit:contain; border-radius:10px;
   background:color-mix(in srgb,var(--accent) 10%, transparent);
 }
+
+
+/* ==========================================================
+   MADELESH V5.17 — FULL WIDTH + NEWS + VIEWS + UPLOADS
+   ========================================================== */
+
+/* Usa prácticamente todo el ancho disponible del monitor. */
+.site-shell {
+  width: calc(100% - 20px) !important;
+  max-width: none !important;
+  margin: 10px auto !important;
+}
+.compact-category-inner,
+.monthly-banner-track {
+  max-width: none !important;
+  width: 100% !important;
+}
+.section,
+.monthly-banner,
+.compact-category-strip {
+  max-width: none !important;
+}
+main { width: 100%; }
+
+/* Barra superior con espacio de noticias entre logo y navegación. */
+.topbar {
+  grid-template-columns: auto minmax(140px, 1fr) auto auto !important;
+  gap: 14px !important;
+}
+.header-news-ticker {
+  min-width: 0;
+  height: 36px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  mask-image: linear-gradient(90deg, transparent 0, #000 6%, #000 94%, transparent 100%);
+}
+.header-news-track {
+  width: max-content;
+  display: flex;
+  align-items: center;
+  animation: headerNewsScroll 24s linear infinite;
+}
+.header-news-group {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding-right: 24px;
+  white-space: nowrap;
+}
+.header-news-item {
+  font-size: .72rem;
+  font-weight: 650;
+  letter-spacing: .015em;
+  color: var(--text);
+}
+.header-news-separator { color: var(--accent); font-weight: 900; }
+@keyframes headerNewsScroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.header-news-ticker:hover .header-news-track { animation-play-state: paused; }
+
+/* Banner completo clicable, manteniendo tamaño fijo. */
+.monthly-banner-track { cursor: pointer; }
+.monthly-banner-description { max-width: 650px; }
+.banner-read-more {
+  display: inline-flex;
+  margin-top: 7px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: .72rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+@media (min-width: 761px) {
+  .monthly-banner p {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    max-height: 4.5em;
+    overflow: hidden;
+  }
+  .monthly-banner-track.description-expanded p {
+    display: block;
+    max-height: 7.1em;
+    overflow-y: auto;
+    padding-right: 8px;
+  }
+}
+.store-custom-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+/* Vistas separadas. El atributo hidden manda sobre estilos previos. */
+[data-view][hidden] { display: none !important; }
+.desktop-nav .nav-link.active { color: var(--accent); }
+
+/* Panel admin: búsqueda general ocupa el ancho completo. */
+.admin-import-grid.general-search-only { grid-template-columns: 1fr !important; }
+
+/* Subida local de imagen de producto. */
+.product-image-upload-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.product-image-file-button {
+  min-height: 40px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 11px;
+  background: #eeff00;
+  color: #080808;
+  font-size: .72rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+.product-image-file-button input,
+.store-icon-upload input { display: none; }
+
+/* Tiendas con icono propio. */
+.store-row {
+  grid-template-columns: 42px minmax(105px,.7fr) minmax(180px,1.6fr) auto auto !important;
+  align-items: center;
+}
+.store-icon-slot {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 10px;
+  background: #101012;
+  color: #eeff00;
+  font-size: .72rem;
+  font-weight: 900;
+}
+.store-icon-slot img {
+  width: 100%;
+  height: 100%;
+  padding: 5px;
+  object-fit: contain;
+}
+.store-icon-upload {
+  min-height: 36px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 9px;
+  color: #c7c7cc;
+  font-size: .62rem;
+  cursor: pointer;
+}
+.store-row-extra { grid-template-columns: 42px minmax(120px,.7fr) minmax(180px,1.6fr) auto auto !important; }
+
+/* Mensajes / noticias en admin. */
+.announcements-settings-form {
+  display: grid;
+  gap: 14px;
+}
+.announcements-settings-form label {
+  display: grid;
+  gap: 7px;
+  color: #85858d;
+  font-size: .64rem;
+  letter-spacing: .08em;
+}
+.announcements-settings-form input {
+  min-height: 48px;
+  padding: 0 13px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  background: #171719;
+  color: #fff;
+}
+
+/* Fallback category images should remain contained. */
+.review-product-image,
+.product-detail-image {
+  object-fit: contain;
+}
+
+@media (max-width: 1180px) {
+  .topbar { grid-template-columns: auto 1fr auto !important; }
+  .header-news-ticker { display: none !important; }
+  .desktop-nav { grid-column: 1 / -1; justify-content: center; padding-bottom: 9px; }
+}
+@media (max-width: 760px) {
+  .site-shell { width: calc(100% - 10px) !important; margin: 5px auto !important; }
+  .store-row, .store-row-extra {
+    grid-template-columns: 42px 1fr !important;
+  }
+  .store-url-input { grid-column: 1 / -1; }
+}
+
+/* Tema claro para los nuevos elementos. */
+html[data-theme="light"] .header-news-separator,
+html[data-theme="light"] .banner-read-more {
+  color: #697300;
+}
+html[data-theme="light"] .store-icon-slot {
+  background: #f4f4f1;
+  border-color: rgba(0,0,0,.10);
+  color: #697300;
+}
+
+
+/* ==========================================================
+   MADELESH V5.18 — CHANGELOG + VERSION DISCRETA
+   ========================================================== */
+footer {
+  display: block !important;
+  min-height: 0 !important;
+  padding: 16px 22px 9px !important;
+}
+
+.footer-main-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 20px;
+  min-height: 64px;
+}
+
+.footer-main-row > p {
+  margin: 0;
+}
+
+.footer-main-row > p:last-child {
+  justify-self: end;
+}
+
+.footer-release-panel {
+  margin: 4px 0 9px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.footer-release-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.footer-release-heading > div {
+  display: grid;
+  gap: 3px;
+}
+
+.footer-release-heading span {
+  font-size: .56rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  color: var(--accent);
+}
+
+.footer-release-heading strong {
+  color: var(--text);
+  font-size: .78rem;
+  font-weight: 700;
+}
+
+.footer-release-heading time {
+  flex: 0 0 auto;
+  font-size: .62rem;
+  opacity: .7;
+}
+
+.footer-release-panel ul {
+  margin: 10px 0 0 15px;
+  padding: 0;
+  display: grid;
+  gap: 5px;
+  font-size: .68rem;
+  line-height: 1.45;
+}
+
+.footer-version-row {
+  min-height: 23px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  font-size: .56rem;
+  letter-spacing: .035em;
+  opacity: .58;
+}
+
+.footer-version-row button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.footer-version-row button:hover {
+  opacity: 1;
+  color: var(--text);
+}
+
+html[data-theme="light"] .footer-release-heading span {
+  color: #667000;
+}
+
+@media (max-width: 760px) {
+  .footer-main-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 8px 0;
+  }
+
+  .footer-main-row > p:last-child {
+    justify-self: start;
+  }
+
+  .footer-release-heading {
+    display: grid;
+  }
+
+  .footer-version-row {
+    justify-content: flex-start;
+  }
+}

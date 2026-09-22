@@ -58,6 +58,15 @@ const featuredBannerNav = document.getElementById("featuredBannerNav");
 const featuredPrev = document.getElementById("featuredPrev");
 const featuredNext = document.getElementById("featuredNext");
 const featuredDots = document.getElementById("featuredDots");
+const featuredBannerReadMore = document.getElementById("featuredBannerReadMore");
+const headerNewsTicker = document.getElementById("headerNewsTicker");
+const headerNewsTrack = document.getElementById("headerNewsTrack");
+const siteVersionLabel = document.getElementById("siteVersionLabel");
+const footerReleaseToggle = document.getElementById("footerReleaseToggle");
+const footerReleasePanel = document.getElementById("footerReleasePanel");
+const footerReleaseTitle = document.getElementById("footerReleaseTitle");
+const footerReleaseDate = document.getElementById("footerReleaseDate");
+const footerReleaseNotes = document.getElementById("footerReleaseNotes");
 
 let reviews = [];
 let currentRole = null;
@@ -70,6 +79,9 @@ let featuredIndex = 0;
 let featuredTimer = null;
 let publicBranding = {};
 let publicContacts = {};
+let publicAnnouncements = [];
+let publicAppVersion = "5.18";
+let publicRelease = { version: "5.18", title: "", date: "", notes: [] };
 
 const selectedProductFilters = {
   category: new Set(),
@@ -146,12 +158,59 @@ async function loadPublicSettings() {
     const data = await api("/settings", { method: "GET" }, null);
     publicBranding = data.branding || {};
     publicContacts = data.contacts || {};
+    publicAnnouncements = Array.isArray(data.announcements) ? data.announcements : [];
+    publicAppVersion = String(data.appVersion || data.release?.version || "5.18");
+    publicRelease = data.release && typeof data.release === "object"
+      ? data.release
+      : { version: publicAppVersion, title: "", date: "", notes: [] };
     applyPublicBranding(publicBranding);
     renderPublicContacts(publicContacts);
+    renderHeaderAnnouncements(publicAnnouncements);
+    renderPublicRelease(publicRelease, publicAppVersion);
   } catch (error) {
     console.warn("No se pudieron cargar los ajustes públicos de MadeLesh", error);
   }
 }
+
+
+function renderPublicRelease(release = {}, version = "5.18") {
+  if (siteVersionLabel) {
+    siteVersionLabel.textContent = `MadeLesh v${String(version || "5.18").replace(/^v/i, "")}`;
+  }
+
+  if (!footerReleasePanel || !footerReleaseToggle || !footerReleaseNotes) return;
+
+  const notes = Array.isArray(release.notes)
+    ? release.notes.map(item => String(item || "").trim()).filter(Boolean).slice(0, 6)
+    : [];
+
+  footerReleaseTitle.textContent = String(release.title || "Actualización de MadeLesh");
+  footerReleaseNotes.innerHTML = notes.map(note => `<li>${escapeHtml(note)}</li>`).join("");
+
+  const date = String(release.date || "").trim();
+  if (date) {
+    const parsed = new Date(`${date}T12:00:00`);
+    footerReleaseDate.textContent = Number.isNaN(parsed.getTime())
+      ? date
+      : new Intl.DateTimeFormat("es-EC", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric"
+        }).format(parsed);
+  } else {
+    footerReleaseDate.textContent = "";
+  }
+
+  footerReleaseToggle.hidden = notes.length === 0;
+  if (!notes.length) footerReleasePanel.hidden = true;
+}
+
+footerReleaseToggle?.addEventListener("click", () => {
+  const open = footerReleasePanel.hidden;
+  footerReleasePanel.hidden = !open;
+  footerReleaseToggle.setAttribute("aria-expanded", String(open));
+  footerReleaseToggle.textContent = open ? "Ocultar cambios" : "Ver cambios";
+});
 
 function applyPublicBranding(branding = publicBranding) {
   publicBranding = branding || {};
@@ -182,6 +241,25 @@ function applyPublicBranding(branding = publicBranding) {
     if (favicon) siteFavicon.href = favicon;
     else siteFavicon.removeAttribute("href");
   }
+}
+
+function renderHeaderAnnouncements(messages = []) {
+  if (!headerNewsTicker || !headerNewsTrack) return;
+  const clean = (Array.isArray(messages) ? messages : [])
+    .map(value => String(value || "").trim())
+    .filter(Boolean)
+    .slice(0, 3);
+
+  if (!clean.length) {
+    headerNewsTicker.hidden = true;
+    headerNewsTrack.innerHTML = "";
+    return;
+  }
+
+  const items = clean.map(message => `<span class="header-news-item">${escapeHtml(message)}</span>`).join('<span class="header-news-separator">•</span>');
+  // Duplicate once so the horizontal motion loops without a visible gap.
+  headerNewsTrack.innerHTML = `<div class="header-news-group">${items}</div><div class="header-news-group" aria-hidden="true">${items}</div>`;
+  headerNewsTicker.hidden = false;
 }
 
 function renderPublicContacts(contacts = {}) {
@@ -546,7 +624,7 @@ async function loadReviews() {
 }
 
 function cardTemplate(review) {
-  const image = safeUrl(review.imageUrl) || safeUrl(Array.isArray(review.images) ? review.images[0] : "");
+  const image = safeImageSrc(review.imageUrl) || safeImageSrc(Array.isArray(review.images) ? review.images[0] : "") || categoryPlaceholderDataUrl(review.category);
   const connections = Array.isArray(review.connections) ? review.connections.filter(Boolean).slice(0, 2) : [];
   const price = review.price || "Precio no disponible";
 
@@ -554,9 +632,7 @@ function cardTemplate(review) {
     <article class="review-card" data-category="${escapeHtml(review.category || "Producto")}" data-review="${review.id}"
              tabindex="0" role="button" aria-label="Abrir ${escapeHtml(review.name || "")}">
       <div class="review-visual">
-        ${image
-          ? `<img src="${image}" alt="${escapeHtml(review.name || "Producto")}" class="review-product-image">`
-          : `<div class="visual-shape"></div>`}
+        <img src="${image}" alt="${escapeHtml(review.name || "Producto")}" class="review-product-image">
       </div>
 
       <div class="review-content compact-product-card">
@@ -770,30 +846,36 @@ function updateFeatured() {
   featuredIndex = Math.min(featuredIndex, featuredProducts.length - 1);
   renderFeaturedBanner();
   startFeaturedRotation();
+  applyPageView();
 }
 
 function renderFeaturedBanner() {
   const product = featuredProducts[featuredIndex];
   if (!product) return;
 
-  const image = safeUrl(product.imageUrl) || safeUrl(Array.isArray(product.images) ? product.images[0] : "");
+  const image = safeImageSrc(product.imageUrl) || safeImageSrc(Array.isArray(product.images) ? product.images[0] : "") || categoryPlaceholderDataUrl(product.category);
   featuredBanner?.classList.add("is-changing");
 
   setTimeout(() => {
     featuredBannerBrand.textContent = product.brand || "MadeLesh";
     featuredBannerName.textContent = product.name || product.model || "Producto destacado";
-    featuredBannerText.textContent = product.summary || "Producto destacado del mes en MadeLesh.";
+    const summary = displaySummary(product) || "Producto destacado del mes en MadeLesh.";
+    featuredBannerText.textContent = summary;
     featuredBannerPrice.textContent = product.price || "";
-
-    if (image) {
-      featuredBannerImage.src = image;
-      featuredBannerImage.hidden = false;
-    } else {
-      featuredBannerImage.removeAttribute("src");
-      featuredBannerImage.hidden = true;
+    featuredBanner?.classList.remove("description-expanded");
+    if (featuredBannerReadMore) {
+      featuredBannerReadMore.hidden = summary.length <= 190;
+      featuredBannerReadMore.textContent = "Leer más";
     }
 
-    featuredBannerButton.onclick = () => openReview(Number(product.id));
+    featuredBannerImage.src = image;
+    featuredBannerImage.hidden = false;
+
+    featuredBanner.dataset.review = String(product.id);
+    featuredBannerButton.onclick = event => {
+      event.stopPropagation();
+      openReview(Number(product.id));
+    };
 
     const multiple = featuredProducts.length > 1;
     featuredBannerNav.hidden = !multiple;
@@ -829,11 +911,30 @@ featuredPrev?.addEventListener("click", () => {
   startFeaturedRotation();
 });
 
-featuredNext?.addEventListener("click", () => {
+featuredNext?.addEventListener("click", event => {
+  event.stopPropagation();
   if (!featuredProducts.length) return;
   featuredIndex = (featuredIndex + 1) % featuredProducts.length;
   renderFeaturedBanner();
   startFeaturedRotation();
+});
+
+featuredPrev?.addEventListener("click", event => {
+  event.stopPropagation();
+}, { capture: true });
+
+featuredDots?.addEventListener("click", event => event.stopPropagation());
+
+featuredBannerReadMore?.addEventListener("click", event => {
+  event.stopPropagation();
+  const expanded = featuredBanner?.classList.toggle("description-expanded");
+  featuredBannerReadMore.textContent = expanded ? "Leer menos" : "Leer más";
+});
+
+featuredBanner?.addEventListener("click", event => {
+  if (event.target.closest("button")) return;
+  const id = Number(featuredBanner.dataset.review || 0);
+  if (id) openReview(id);
 });
 
 /* ---------------- PRODUCT COMPARISON ---------------- */
@@ -1017,8 +1118,7 @@ async function openReview(id) {
 
 function productImageHtml(review) {
   const firstColorImage = Array.isArray(review?.specs?.colorImages) ? review.specs.colorImages.map(item => safeImageSrc(item?.image || "")).find(Boolean) : "";
-  const image = safeImageSrc(review.imageUrl) || safeImageSrc(Array.isArray(review.images) ? review.images[0] : "") || firstColorImage;
-  if (!image) return `<div class="product-detail-placeholder" aria-label="Imagen no disponible"></div>`;
+  const image = safeImageSrc(review.imageUrl) || safeImageSrc(Array.isArray(review.images) ? review.images[0] : "") || firstColorImage || categoryPlaceholderDataUrl(review.category);
   return `<div class="product-single-image"><img class="product-detail-image" src="${image}" alt="${escapeHtml(review.name || "Producto")}"></div>`;
 }
 
@@ -1301,9 +1401,10 @@ function renderPurchaseLinks(product) {
         ${stores.map(store => {
           const url = safeUrl(store.url);
           if (!url) return "";
+          const customIcon = safeImageSrc(store.icon || "");
           return `
             <a class="purchase-card" href="${url}" target="_blank" rel="noopener noreferrer">
-              <div><span class="link-icon">${storeIcon()}</span><span class="link-copy"><span>TIENDA DE CONFIANZA</span><strong>${escapeHtml(store.name || "Tienda")}</strong></span></div><span>↗</span>
+              <div><span class="link-icon">${customIcon ? `<img class="store-custom-icon" src="${escapeHtml(customIcon)}" alt="">` : storeIcon()}</span><span class="link-copy"><span>TIENDA DE CONFIANZA</span><strong>${escapeHtml(store.name || "Tienda")}</strong></span></div><span>↗</span>
             </a>`;
         }).join("")}
       </div>
@@ -1444,6 +1545,28 @@ function formatValue(value) {
   return value;
 }
 
+function categoryPlaceholderDataUrl(category) {
+  const defs = {
+    Mouse: { label: "MOUSE", symbol: "⌁" },
+    Teclados: { label: "TECLADO", symbol: "⌨" },
+    IEM: { label: "IEM", symbol: "◔" },
+    Headsets: { label: "HEADSET", symbol: "◉" },
+    DAC: { label: "DAC", symbol: "◫" }
+  };
+  const item = defs[category] || { label: "PRODUCTO", symbol: "◇" };
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="900" viewBox="0 0 900 900">
+    <defs>
+      <radialGradient id="r"><stop stop-color="#34370a"/><stop offset="1" stop-color="#1a1a1c"/></radialGradient>
+    </defs>
+    <rect width="900" height="900" rx="64" fill="url(#r)"/>
+    <circle cx="450" cy="360" r="170" fill="none" stroke="#eeff00" stroke-width="7" opacity=".28"/>
+    <text x="450" y="410" text-anchor="middle" font-family="Arial,sans-serif" font-size="150" fill="#eeff00">${item.symbol}</text>
+    <text x="450" y="625" text-anchor="middle" font-family="Arial,sans-serif" font-size="44" font-weight="700" fill="#ffffff">${item.label}</text>
+    <text x="450" y="680" text-anchor="middle" font-family="Arial,sans-serif" font-size="24" fill="#96969d">IMAGEN NO DISPONIBLE</text>
+  </svg>`;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
 function safeImageSrc(value) {
   const text = String(value || "").trim();
   if (!text) return "";
@@ -1529,4 +1652,36 @@ function escapeHtml(value) {
 }
 
 loadPublicSettings();
+
+function currentPageView() {
+  const requested = new URLSearchParams(window.location.search).get("view") || "home";
+  return ["home", "categorias", "comparacion", "contacto"].includes(requested) ? requested : "home";
+}
+
+function applyPageView() {
+  const view = currentPageView();
+  document.querySelectorAll("[data-view]").forEach(section => {
+    const views = String(section.dataset.view || "").split(/\s+/).filter(Boolean);
+    section.hidden = !views.includes(view);
+  });
+
+  // Contacto permanece al final de todas las vistas.
+  const contact = document.querySelector('[data-always-visible="true"]');
+  if (contact) contact.hidden = false;
+
+  document.querySelectorAll(".desktop-nav .nav-link").forEach(link => {
+    const url = new URL(link.href, window.location.href);
+    link.classList.toggle("active", (url.searchParams.get("view") || "home") === view);
+  });
+
+  if (view === "contacto") {
+    document.querySelectorAll("[data-view]").forEach(section => { section.hidden = true; });
+    requestAnimationFrame(() => document.getElementById("contacto")?.scrollIntoView({ block: "start" }));
+  } else {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }
+}
+
+applyPageView();
+
 restoreSession();

@@ -53,20 +53,24 @@
         <span class="brand-fallback"><span class="brand-dot"></span><span>MADELESH</span></span>
       </a>
 
+      <div class="header-news-ticker" id="headerNewsTicker" hidden aria-label="Noticias">
+        <div class="header-news-track" id="headerNewsTrack"></div>
+      </div>
+
       <nav class="desktop-nav">
-        <a href="#home" class="nav-link">
+        <a href="index.html?view=home" class="nav-link">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"></path><path d="M5.5 10.5V20h13v-9.5M9 20v-6h6v6"></path></svg>
           <span>Home</span>
         </a>
-        <a href="#categorias" class="nav-link">
+        <a href="index.html?view=categorias" class="nav-link">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg>
           <span>Categoría</span>
         </a>
-        <a href="#comparacion" class="nav-link">
+        <a href="index.html?view=comparacion" class="nav-link">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16M17 4v16M4 7h6M14 17h6"></path><path d="m8 5-1-1-1 1M16 19l1 1 1-1"></path></svg>
           <span>Comparación</span>
         </a>
-        <a href="#contacto" class="nav-link">
+        <a href="index.html?view=contacto" class="nav-link">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m4 7 8 6 8-6"></path></svg>
           <span>Contactos</span>
         </a>
@@ -136,16 +140,16 @@
       </div>
 
       <nav class="mobile-nav" id="mobileNav">
-        <a href="#home">⌂ Home</a>
-        <a href="#categorias">▦ Categoría</a>
-        <a href="#comparacion">⇄ Comparación</a>
-        <a href="#contacto">✉ Contactos</a>
+        <a href="index.html?view=home">⌂ Home</a>
+        <a href="index.html?view=categorias">▦ Categoría</a>
+        <a href="index.html?view=comparacion">⇄ Comparación</a>
+        <a href="index.html?view=contacto">✉ Contactos</a>
       </nav>
     </header>
 
     <main>
 
-      <section class="compact-category-strip" id="categorias" aria-label="Categorías">
+      <section class="compact-category-strip" id="categorias" data-view="categorias" aria-label="Categorías">
         <div class="compact-category-inner">
           <div class="compact-category-heading">
             <span>Categorías</span>
@@ -176,13 +180,16 @@
         </div>
       </section>
 
-      <section class="monthly-banner" id="destacado" hidden>
+      <section class="monthly-banner" id="destacado" data-view="home" hidden>
         <div class="monthly-banner-track" id="featuredBanner">
           <div class="monthly-banner-copy">
             <span class="monthly-banner-kicker">DESTACADO DEL MES</span>
             <span class="monthly-banner-brand" id="featuredBannerBrand">MadeLesh</span>
             <h2 id="featuredBannerName">Producto destacado</h2>
-            <p id="featuredBannerText">El producto recomendado del mes.</p>
+            <div class="monthly-banner-description">
+              <p id="featuredBannerText">El producto recomendado del mes.</p>
+              <button class="banner-read-more" id="featuredBannerReadMore" type="button" hidden>Leer más</button>
+            </div>
             <div class="monthly-banner-actions">
               <button id="featuredBannerButton" type="button">VER PRODUCTO</button>
               <strong id="featuredBannerPrice"></strong>
@@ -256,7 +263,7 @@
         </aside>
       </section>
 
-      <section class="section reviews-section" id="home">
+      <section class="section reviews-section" id="home" data-view="home categorias">
         <div class="reviews-toolbar">
           <div class="catalog-heading">
             <span>CATÁLOGO</span>
@@ -343,7 +350,7 @@
         <p class="empty-message" id="emptyMessage" hidden>No hay reviews que coincidan con tu búsqueda.</p>
       </section>
 
-      <section class="section compare-section compare-coming-soon" id="comparacion">
+      <section class="section compare-section compare-coming-soon" id="comparacion" data-view="comparacion">
         <div class="coming-soon-card">
           <span class="section-index">(03)</span>
           <div class="coming-soon-icon" aria-hidden="true">
@@ -358,7 +365,7 @@
         </div>
       </section>
 
-      <section class="section contact-section" id="contacto">
+      <section class="section contact-section" id="contacto" data-always-visible="true">
         <div>
           <span class="section-index">(04)</span>
           <h2>Contactos<br>y redes</h2>
@@ -371,12 +378,32 @@
     </main>
 
     <footer>
-      <a class="brand footer-brand" href="#home">
-        <img class="site-brand-logo" alt="MadeLesh" hidden />
-        <span class="brand-fallback"><span class="brand-dot"></span><span>MADELESH</span></span>
-      </a>
-      <p>Mouse · Teclados · IEM · Headsets · DACs</p>
-      <p>© <span id="year"></span> MadeLesh</p>
+      <div class="footer-main-row">
+        <a class="brand footer-brand" href="index.html?view=home">
+          <img class="site-brand-logo" alt="MadeLesh" hidden />
+          <span class="brand-fallback"><span class="brand-dot"></span><span>MADELESH</span></span>
+        </a>
+        <p>Mouse · Teclados · IEM · Headsets · DACs</p>
+        <p>© <span id="year"></span> MadeLesh</p>
+      </div>
+
+      <div class="footer-release-panel" id="footerReleasePanel" hidden>
+        <div class="footer-release-heading">
+          <div>
+            <span>ÚLTIMA ACTUALIZACIÓN</span>
+            <strong id="footerReleaseTitle">Actualización de MadeLesh</strong>
+          </div>
+          <time id="footerReleaseDate"></time>
+        </div>
+        <ul id="footerReleaseNotes"></ul>
+      </div>
+
+      <div class="footer-version-row">
+        <span id="siteVersionLabel">MadeLesh v5.18</span>
+        <button id="footerReleaseToggle" type="button" aria-expanded="false">
+          Ver cambios
+        </button>
+      </div>
     </footer>
   </div>
 

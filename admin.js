@@ -47,6 +47,21 @@ const productImagesPreview = document.getElementById("productImagesPreview");
 const productImagesJson = document.getElementById("productImagesJson");
 const productImageUrlInput = document.getElementById("productImageUrl");
 const productImagePreview = document.getElementById("productImagePreview");
+const productImageFile = document.getElementById("productImageFile");
+const clearProductImage = document.getElementById("clearProductImage");
+const storeAmazonIconFile = document.getElementById("storeAmazonIconFile");
+const storeAliExpressIconFile = document.getElementById("storeAliExpressIconFile");
+const storeAmazonIconPreview = document.getElementById("storeAmazonIconPreview");
+const storeAliExpressIconPreview = document.getElementById("storeAliExpressIconPreview");
+const announcementsSettingsForm = document.getElementById("announcementsSettingsForm");
+const announcementMessage1 = document.getElementById("announcementMessage1");
+const announcementMessage2 = document.getElementById("announcementMessage2");
+const announcementMessage3 = document.getElementById("announcementMessage3");
+const releaseSettingsForm = document.getElementById("releaseSettingsForm");
+const releaseVersion = document.getElementById("releaseVersion");
+const releaseDate = document.getElementById("releaseDate");
+const releaseTitle = document.getElementById("releaseTitle");
+const releaseNotes = document.getElementById("releaseNotes");
 const libraryNavCount = document.getElementById("libraryNavCount");
 const libraryCategoryFilter = document.getElementById("libraryCategoryFilter");
 const adminToast = document.getElementById("adminToast");
@@ -89,6 +104,7 @@ const keysCount = document.getElementById("keysCount");
 
 let adminToken = localStorage.getItem("madetech_admin_token") || "";
 let products = [];
+let fixedStoreIcons = { amazon: "", aliexpress: "" };
 let brandingLogoLightDataUrl = "";
 let brandingLogoDarkDataUrl = "";
 let brandingFaviconLightDataUrl = "";
@@ -363,7 +379,7 @@ function renderConnectionPicker() {
 /* ---------------- PRODUCT IMAGE PREVIEW ---------------- */
 
 function setProductImages(values = []) {
-  const images = [...new Set((Array.isArray(values) ? values : []).map(safeExternalUrl).filter(Boolean))].slice(0, 5);
+  const images = [...new Set((Array.isArray(values) ? values : []).map(safeImageSource).filter(Boolean))].slice(0, 5);
   productImagesJson.value = JSON.stringify(images);
   if (!productImageUrlInput.value && images[0]) productImageUrlInput.value = images[0];
   renderMainImagePreview();
@@ -379,7 +395,7 @@ function getProductImages() {
 }
 
 function renderMainImagePreview() {
-  const url = safeExternalUrl(productImageUrlInput?.value || "");
+  const url = safeImageSource(productImageUrlInput?.value || "");
   if (!url) {
     productImagePreview.innerHTML = `<div class="admin-image-preview-empty">
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"></rect><circle cx="9" cy="10" r="2"></circle><path d="m5 18 5-5 3 3 2-2 4 4"></path></svg>
@@ -390,7 +406,59 @@ function renderMainImagePreview() {
   productImagePreview.innerHTML = `<img src="${escapeAttr(url)}" alt="Vista previa del producto" onerror="this.parentElement.classList.add('image-error')">`;
 }
 
+
 productImageUrlInput?.addEventListener("input", renderMainImagePreview);
+
+async function imageFileToWebpDataUrl(file, { maxSize = 1200, quality = 0.84, maxChars = 850000 } = {}) {
+  if (!file || !String(file.type || "").startsWith("image/")) {
+    throw new Error("Selecciona una imagen válida.");
+  }
+
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, maxSize / Math.max(bitmap.width, bitmap.height));
+  const width = Math.max(1, Math.round(bitmap.width * scale));
+  const height = Math.max(1, Math.round(bitmap.height * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d", { alpha: true });
+  ctx.clearRect(0, 0, width, height);
+  ctx.drawImage(bitmap, 0, 0, width, height);
+  bitmap.close?.();
+
+  let q = quality;
+  let result = canvas.toDataURL("image/webp", q);
+  while (result.length > maxChars && q > 0.48) {
+    q -= 0.08;
+    result = canvas.toDataURL("image/webp", q);
+  }
+
+  if (result.length > maxChars) {
+    throw new Error("La imagen sigue siendo demasiado pesada. Usa una imagen más pequeña.");
+  }
+
+  return result;
+}
+
+productImageFile?.addEventListener("change", async () => {
+  try {
+    const dataUrl = await imageFileToWebpDataUrl(productImageFile.files?.[0]);
+    productImageUrlInput.value = dataUrl;
+    setProductImages([dataUrl]);
+    renderMainImagePreview();
+  } catch (error) {
+    alert(error.message);
+    productImageFile.value = "";
+  }
+});
+
+clearProductImage?.addEventListener("click", () => {
+  productImageUrlInput.value = "";
+  if (productImageFile) productImageFile.value = "";
+  setProductImages([]);
+  renderMainImagePreview();
+});
+
 
 /* ---------------- VISUAL PRODUCT EDITORS ---------------- */
 
@@ -581,6 +649,9 @@ function renderTrustedStores(stores = []) {
 
   storeAmazon.value = amazon?.url || "";
   storeAliExpress.value = aliexpress?.url || "";
+  fixedStoreIcons.amazon = safeImageSource(amazon?.icon || "");
+  fixedStoreIcons.aliexpress = safeImageSource(aliexpress?.icon || "");
+  renderFixedStoreIconPreviews();
 
   const extras = list.filter(item => {
     const name = normalizeStoreName(item?.name);
@@ -599,17 +670,60 @@ function normalizeStoreName(name) {
     .replace("ali-express", "aliexpress");
 }
 
+function renderFixedStoreIconPreviews() {
+  const render = (target, value, fallback) => {
+    if (!target) return;
+    target.innerHTML = value
+      ? `<img src="${escapeAttr(value)}" alt="">`
+      : `<span>${fallback}</span>`;
+  };
+  render(storeAmazonIconPreview, fixedStoreIcons.amazon, "A");
+  render(storeAliExpressIconPreview, fixedStoreIcons.aliexpress, "A");
+}
+
+async function readStoreIcon(file) {
+  return await imageFileToWebpDataUrl(file, { maxSize: 256, quality: .82, maxChars: 220000 });
+}
+
+storeAmazonIconFile?.addEventListener("change", async () => {
+  try {
+    fixedStoreIcons.amazon = await readStoreIcon(storeAmazonIconFile.files?.[0]);
+    renderFixedStoreIconPreviews();
+  } catch (error) { alert(error.message); storeAmazonIconFile.value = ""; }
+});
+
+storeAliExpressIconFile?.addEventListener("change", async () => {
+  try {
+    fixedStoreIcons.aliexpress = await readStoreIcon(storeAliExpressIconFile.files?.[0]);
+    renderFixedStoreIconPreviews();
+  } catch (error) { alert(error.message); storeAliExpressIconFile.value = ""; }
+});
+
 function addExtraStoreRow(store = {}) {
   const row = document.createElement("div");
   row.className = "store-row store-row-extra";
+  row.dataset.icon = safeImageSource(store.icon || "");
   row.innerHTML = `
+    <div class="store-icon-slot store-extra-icon-preview">${row.dataset.icon ? `<img src="${escapeAttr(row.dataset.icon)}" alt="">` : `<span>+</span>`}</div>
     <input class="store-name-input" type="text" placeholder="Nombre de la tienda"
            value="${escapeAttr(store.name || "")}" aria-label="Nombre de la tienda" />
     <input class="store-url-input" type="url" placeholder="https://..."
            value="${escapeAttr(store.url || "")}" aria-label="Link de la tienda" />
+    <label class="store-icon-upload"><input class="store-icon-file" type="file" accept="image/*" /><span>ICONO</span></label>
     <button class="remove-store-btn" type="button" title="Eliminar tienda" aria-label="Eliminar tienda">×</button>
   `;
+
   row.querySelector(".remove-store-btn").addEventListener("click", () => row.remove());
+  row.querySelector(".store-icon-file").addEventListener("change", async event => {
+    try {
+      row.dataset.icon = await readStoreIcon(event.currentTarget.files?.[0]);
+      const preview = row.querySelector(".store-extra-icon-preview");
+      preview.innerHTML = `<img src="${escapeAttr(row.dataset.icon)}" alt="">`;
+    } catch (error) {
+      alert(error.message);
+      event.currentTarget.value = "";
+    }
+  });
   extraStores.appendChild(row);
 }
 
@@ -623,17 +737,18 @@ function collectTrustedStores() {
   const stores = [];
 
   if (storeAmazon.value.trim()) {
-    stores.push({ name: "Amazon", url: storeAmazon.value.trim() });
+    stores.push({ name: "Amazon", url: storeAmazon.value.trim(), ...(fixedStoreIcons.amazon ? { icon: fixedStoreIcons.amazon } : {}) });
   }
 
   if (storeAliExpress.value.trim()) {
-    stores.push({ name: "AliExpress", url: storeAliExpress.value.trim() });
+    stores.push({ name: "AliExpress", url: storeAliExpress.value.trim(), ...(fixedStoreIcons.aliexpress ? { icon: fixedStoreIcons.aliexpress } : {}) });
   }
 
   extraStores.querySelectorAll(".store-row-extra").forEach(row => {
     const name = row.querySelector(".store-name-input").value.trim();
     const url = row.querySelector(".store-url-input").value.trim();
-    if (name && url) stores.push({ name, url });
+    const icon = safeImageSource(row.dataset.icon || "");
+    if (name && url) stores.push({ name, url, ...(icon ? { icon } : {}) });
   });
 
   return stores;
@@ -641,150 +756,6 @@ function collectTrustedStores() {
 
 renderColorPicker([]);
 renderTrustedStores([]);
-
-
-/* ---------------- UNIVERSAL URL AUTO-IMPORT ---------------- */
-
-universalImportButton.addEventListener("click", importFromUniversalUrl);
-
-universalProductUrl.addEventListener("keydown", event => {
-  if (event.key === "Enter") {
-    event.preventDefault();
-    importFromUniversalUrl();
-  }
-});
-
-async function importFromUniversalUrl() {
-  const url = universalProductUrl.value.trim();
-
-  if (!url) {
-    showUniversalImportStatus("Pega primero la URL del producto.", "error");
-    universalProductUrl.focus();
-    return;
-  }
-
-  const oldText = universalImportButton.textContent;
-  universalImportButton.disabled = true;
-  universalImportButton.textContent = "EXTRAYENDO FICHA...";
-  universalSourceLink.hidden = true;
-  universalSourceLink.innerHTML = "";
-  showUniversalImportStatus("Leyendo la página y detectando la fuente...", "loading");
-
-  try {
-    const result = await api("/admin/import/url", {
-      method: "POST",
-      body: JSON.stringify({ url })
-    });
-
-    applyUniversalImportedProduct(result.product || {}, result.source || "");
-
-    const detected = Array.isArray(result.detected) ? result.detected : [];
-    const warnings = Array.isArray(result.warnings) ? result.warnings : [];
-
-    const detectedText = detected.length
-      ? `<strong>Encontrado:</strong> ${detected.map(escapeHtml).join(", ")}.`
-      : "La página respondió, pero pocos campos pudieron reconocerse automáticamente.";
-
-    const warningsHtml = warnings.length
-      ? `<ul>${warnings.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
-      : "";
-
-    showUniversalImportStatus(
-      `✓ Ficha extraída desde ${escapeHtml(result.source || "la URL")}. ${detectedText}${warningsHtml}`,
-      "success",
-      true
-    );
-
-    const sourceUrl = safeExternalUrl(result.sourceUrl || url);
-    if (sourceUrl) {
-      universalSourceLink.hidden = false;
-      universalSourceLink.innerHTML = `
-        <a href="${escapeAttr(sourceUrl)}" target="_blank" rel="noopener noreferrer">
-          Ver página utilizada como fuente ↗
-        </a>`;
-    }
-
-    productForm.scrollIntoView({ behavior: "smooth", block: "start" });
-  } catch (error) {
-    const messages = {
-      product_url_required: "Pega la URL del producto.",
-      invalid_product_url: "La URL no es válida.",
-      private_url_not_allowed: "Esa dirección no se puede usar.",
-      invalid_eloshapes_product_url: "Pega una ficha individual de mouse de EloShapes.",
-      eloshapes_not_found: "No pude reconocer la ficha de EloShapes.",
-      mechkeys_product_url_required: "Pega el enlace individual del producto de MechKeys.",
-      mechkeys_fetch_failed: "No pude leer MechKeys en este momento.",
-      tavily_not_configured: "Falta TAVILY_API_KEY en Cloudflare.",
-      url_extract_failed: "No pude leer esa página. Prueba con otra URL del mismo producto.",
-      url_product_not_found: "La página no tiene suficiente información para generar una ficha."
-    };
-
-    showUniversalImportStatus(
-      messages[error.code] || `No se pudo extraer la ficha: ${error.message}`,
-      "error"
-    );
-  } finally {
-    universalImportButton.disabled = false;
-    universalImportButton.textContent = oldText;
-  }
-}
-
-function applyUniversalImportedProduct(product, sourceName = "") {
-  document.getElementById("productId").value = "";
-  document.getElementById("productStatus").value = "draft";
-  productFormTitle.textContent = `Nuevo producto · importado desde ${sourceName || "URL"}`;
-
-  const allowedCategories = ["Mouse", "Teclados", "IEM", "Headsets", "DAC"];
-  if (allowedCategories.includes(product.category)) {
-    productCategory.value = product.category;
-    if (webSearchCategory) webSearchCategory.value = product.category;
-  }
-
-  document.getElementById("productBrand").value = product.brand || "";
-  document.getElementById("productName").value = product.name || product.model || "";
-  document.getElementById("productModel").value = product.model || "";
-  document.getElementById("productScore").value =
-    Number.isFinite(Number(product.score)) ? Number(product.score) : 0;
-  document.getElementById("productPrice").value = product.price || "";
-  document.getElementById("productDate").value = "";
-  document.getElementById("productImageUrl").value = product.imageUrl || "";
-  renderMainImagePreview();
-  document.getElementById("productOfficialUrl").value = product.officialUrl || "";
-  document.getElementById("productFeatured").value = "false";
-
-  setConnections(Array.isArray(product.connections) ? product.connections : []);
-  setProductImages(
-    Array.isArray(product.images) && product.images.length
-      ? product.images
-      : (product.imageUrl ? [product.imageUrl] : [])
-  );
-
-  document.getElementById("productYoutube").value = product.reviewLinks?.youtube || "";
-  document.getElementById("productTiktok").value = product.reviewLinks?.tiktok || "";
-  document.getElementById("productSummary").value = product.summary || "";
-  document.getElementById("productPros").value =
-    Array.isArray(product.pros) ? product.pros.join("\n") : "";
-  document.getElementById("productCons").value =
-    Array.isArray(product.cons) ? product.cons.join("\n") : "";
-
-  renderTrustedStores(Array.isArray(product.trustedStores) ? product.trustedStores : []);
-  setColorImages(product.specs?.colorImages || []);
-  renderColorPicker(Array.isArray(product.colors) ? product.colors : []);
-  renderCategoryFields(productCategory.value, product.specs || {});
-
-  if (product.category === "Mouse") {
-    if (eloshapesBrand) eloshapesBrand.value = product.brand || "";
-    if (eloshapesModel) eloshapesModel.value = product.model || product.name || "";
-  }
-}
-
-function showUniversalImportStatus(message, type = "", allowHtml = false) {
-  universalImportStatus.hidden = false;
-  universalImportStatus.className = `url-import-status ${type}`.trim();
-
-  if (allowHtml) universalImportStatus.innerHTML = message;
-  else universalImportStatus.textContent = message;
-}
 
 
 /* ---------------- INTERNET AUTO-IMPORT ---------------- */
@@ -944,132 +915,6 @@ function renderWebSources(sources) {
 }
 
 
-/* ---------------- ELOSHAPES MOUSE IMPORT ---------------- */
-
-eloshapesImportButton.addEventListener("click", importFromEloShapes);
-
-[eloshapesBrand, eloshapesModel].forEach(input => {
-  input.addEventListener("keydown", event => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      importFromEloShapes();
-    }
-  });
-});
-
-async function importFromEloShapes() {
-  const brand = eloshapesBrand.value.trim() || document.getElementById("productBrand").value.trim();
-  const model = eloshapesModel.value.trim() || document.getElementById("productModel").value.trim();
-
-  if (!brand) {
-    showEloShapesStatus("Escribe la marca del mouse.", "error");
-    eloshapesBrand.focus();
-    return;
-  }
-
-  if (!model) {
-    showEloShapesStatus("Escribe el modelo del mouse.", "error");
-    eloshapesModel.focus();
-    return;
-  }
-
-  eloshapesBrand.value = brand;
-  eloshapesModel.value = model;
-
-  const oldText = eloshapesImportButton.textContent;
-  eloshapesImportButton.disabled = true;
-  eloshapesImportButton.textContent = "CONSULTANDO ELOSHAPES...";
-  eloshapesSourceLink.hidden = true;
-  eloshapesSourceLink.innerHTML = "";
-  showEloShapesStatus("Buscando la ficha técnica exacta del mouse...", "loading");
-
-  try {
-    const result = await api("/admin/import/eloshapes", {
-      method: "POST",
-      body: JSON.stringify({ brand, model })
-    });
-
-    applyImportedEloShapesProduct(result.product || {});
-
-    const detected = Array.isArray(result.detected) ? result.detected : [];
-    const warnings = Array.isArray(result.warnings) ? result.warnings : [];
-    const detectedText = detected.length
-      ? `<strong>Datos encontrados:</strong> ${detected.map(escapeHtml).join(", ")}.`
-      : "La ficha fue encontrada, pero no pude reconocer muchos campos.";
-
-    const warningsHtml = warnings.length
-      ? `<ul>${warnings.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
-      : "";
-
-    showEloShapesStatus(`✓ EloShapes completó la ficha. ${detectedText}${warningsHtml}`, "success", true);
-
-    const sourceUrl = safeExternalUrl(result.sourceUrl);
-    if (sourceUrl) {
-      eloshapesSourceLink.hidden = false;
-      eloshapesSourceLink.innerHTML = `
-        <a href="${escapeAttr(sourceUrl)}" target="_blank" rel="noopener noreferrer">
-          Ver ficha original en EloShapes ↗
-        </a>`;
-    }
-
-    productForm.scrollIntoView({ behavior: "smooth", block: "start" });
-  } catch (error) {
-    const messages = {
-      tavily_not_configured: "Falta TAVILY_API_KEY en Cloudflare.",
-      eloshapes_not_found: "No encontré una ficha exacta de ese mouse en EloShapes.",
-      eloshapes_search_failed: "No pude consultar EloShapes en este momento.",
-      brand_required: "Escribe la marca del mouse.",
-      model_required: "Escribe el modelo del mouse."
-    };
-
-    showEloShapesStatus(messages[error.code] || `No se pudo consultar EloShapes: ${error.message}`, "error");
-  } finally {
-    eloshapesImportButton.disabled = false;
-    eloshapesImportButton.textContent = oldText;
-  }
-}
-
-function applyImportedEloShapesProduct(product) {
-  const previousMouseSpecs = productCategory.value === "Mouse"
-    ? collectCategorySpecs()
-    : {};
-
-  productCategory.value = "Mouse";
-  if (webSearchCategory) webSearchCategory.value = "Mouse";
-
-  document.getElementById("productBrand").value = product.brand || document.getElementById("productBrand").value;
-  document.getElementById("productName").value = product.name || document.getElementById("productName").value || product.model || "";
-  document.getElementById("productModel").value = product.model || document.getElementById("productModel").value;
-
-  const currentConnections = getConnections();
-  const importedConnections = Array.isArray(product.connections) ? product.connections : [];
-  setConnections([...new Set([...currentConnections, ...importedConnections])]);
-
-  const mergedSpecs = {
-    ...previousMouseSpecs,
-    ...(product.specs || {})
-  };
-  renderCategoryFields("Mouse", mergedSpecs);
-
-  const summaryInput = document.getElementById("productSummary");
-  if (!summaryInput.value.trim() && product.summary) {
-    summaryInput.value = product.summary;
-  }
-
-  if (!document.getElementById("productId").value) {
-    document.getElementById("productStatus").value = "draft";
-    productFormTitle.textContent = "Nuevo producto · ficha técnica de EloShapes";
-  }
-}
-
-function showEloShapesStatus(message, type = "", allowHtml = false) {
-  eloshapesImportStatus.hidden = false;
-  eloshapesImportStatus.className = `eloshapes-import-status ${type}`.trim();
-  if (allowHtml) eloshapesImportStatus.innerHTML = message;
-  else eloshapesImportStatus.textContent = message;
-}
-
-
 /* ---------------- MECHKEYS AUTO-IMPORT ---------------- */
 
 mechkeysImportButton.addEventListener("click", importFromMechKeys);
@@ -1186,6 +1031,8 @@ async function loadBrandingSettings() {
     renderBrandingPreviews();
     applyAdminBranding();
     fillContactsSettings(data.contacts || {});
+    fillAnnouncementSettings(data.announcements || []);
+    fillReleaseSettings(data.release || { version: data.appVersion || "5.18" });
   } catch (error) {
     console.warn("No se pudo cargar apariencia/contactos", error);
   }
@@ -1422,6 +1269,88 @@ adminLogout.addEventListener("click", async () => {
   adminLogin.hidden = false;
 });
 
+
+function fillAnnouncementSettings(messages = []) {
+  const values = Array.isArray(messages) ? messages : [];
+  if (announcementMessage1) announcementMessage1.value = values[0] || "";
+  if (announcementMessage2) announcementMessage2.value = values[1] || "";
+  if (announcementMessage3) announcementMessage3.value = values[2] || "";
+}
+
+announcementsSettingsForm?.addEventListener("submit", async event => {
+  event.preventDefault();
+  const button = announcementsSettingsForm.querySelector('button[type="submit"]');
+  const original = button?.textContent || "GUARDAR MENSAJES ↗";
+  if (button) { button.disabled = true; button.textContent = "GUARDANDO..."; }
+  try {
+    const data = await api("/admin/settings/announcements", {
+      method: "PUT",
+      body: JSON.stringify({
+        message1: announcementMessage1?.value.trim() || "",
+        message2: announcementMessage2?.value.trim() || "",
+        message3: announcementMessage3?.value.trim() || ""
+      })
+    });
+    fillAnnouncementSettings(data.announcements || []);
+    showAdminToast("Los mensajes del encabezado han sido actualizados");
+  } catch (error) {
+    alert(`No se pudieron guardar los mensajes: ${error.message}`);
+  } finally {
+    if (button) { button.disabled = false; button.textContent = original; }
+  }
+});
+
+
+function fillReleaseSettings(release = {}) {
+  if (releaseVersion) releaseVersion.value = String(release.version || "5.18").replace(/^v/i, "");
+  if (releaseDate) releaseDate.value = String(release.date || "");
+  if (releaseTitle) releaseTitle.value = String(release.title || "");
+  if (releaseNotes) {
+    releaseNotes.value = Array.isArray(release.notes)
+      ? release.notes.slice(0, 6).join("\n")
+      : "";
+  }
+}
+
+releaseSettingsForm?.addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const notes = String(releaseNotes?.value || "")
+    .split("\n")
+    .map(value => value.trim())
+    .filter(Boolean)
+    .slice(0, 6);
+
+  const button = releaseSettingsForm.querySelector('button[type="submit"]');
+  const original = button?.textContent || "GUARDAR ACTUALIZACIÓN ↗";
+  if (button) {
+    button.disabled = true;
+    button.textContent = "GUARDANDO...";
+  }
+
+  try {
+    const data = await api("/admin/settings/release", {
+      method: "PUT",
+      body: JSON.stringify({
+        version: releaseVersion?.value.trim() || "",
+        date: releaseDate?.value || "",
+        title: releaseTitle?.value.trim() || "",
+        notes
+      })
+    });
+
+    fillReleaseSettings(data.release || {});
+    showAdminToast(`MadeLesh v${String(data.appVersion || "").replace(/^v/i, "")} guardada correctamente`);
+  } catch (error) {
+    alert(`No se pudo guardar la actualización: ${error.message}`);
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = original;
+    }
+  }
+});
+
 /* ---------------- PANELS ---------------- */
 
 function activateAdminPanel(panelId) {
@@ -1430,7 +1359,9 @@ function activateAdminPanel(panelId) {
     libraryPanel: "Biblioteca",
     keysPanel: "Access Keys",
     brandingPanel: "Apariencia",
-    contactsPanel: "Contactos"
+    contactsPanel: "Contactos",
+    announcementsPanel: "Noticias",
+    updatesPanel: "Actualizaciones"
   };
   document.querySelectorAll(".admin-nav button").forEach(item => item.classList.toggle("active", item.dataset.panel === panelId));
   document.querySelectorAll(".admin-panel").forEach(panel => panel.classList.toggle("active", panel.id === panelId));
@@ -1462,22 +1393,15 @@ function renderLibraryProducts() {
 
   productsList.innerHTML = visibleProducts.length
     ? visibleProducts.map(product => {
-        const image = safeExternalUrl(product.imageUrl) ||
-          safeExternalUrl(Array.isArray(product.images) ? product.images[0] : "");
+        const image = safeImageSource(product.imageUrl) ||
+          safeImageSource(Array.isArray(product.images) ? product.images[0] : "");
+        const fallback = categoryPlaceholderDataUrl(product.category);
 
         return `
           <article class="admin-list-item admin-product-library-item">
             <div class="admin-product-thumb">
               ${
-                image
-                  ? `<img src="${escapeAttr(image)}" alt="${escapeAttr(product.name || "Producto")}" loading="lazy">`
-                  : `<div class="admin-product-thumb-empty" aria-label="Sin imagen">
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <rect x="3" y="4" width="18" height="16" rx="2"></rect>
-                        <circle cx="9" cy="10" r="2"></circle>
-                        <path d="m5 18 5-5 3 3 2-2 4 4"></path>
-                      </svg>
-                    </div>`
+                `<img src="${escapeAttr(image || fallback)}" alt="${escapeAttr(product.name || "Producto")}" loading="lazy">`
               }
             </div>
 
@@ -1562,6 +1486,9 @@ function editProduct(id) {
 
 function resetProductForm() {
   productForm.reset();
+  if (productImageFile) productImageFile.value = "";
+  fixedStoreIcons = { amazon: "", aliexpress: "" };
+  renderFixedStoreIconPreviews();
   document.getElementById("productId").value = "";
   productFormTitle.textContent = "Nuevo producto";
   productCategory.value = "Mouse";
@@ -1977,6 +1904,13 @@ function lines(value) {
   return String(value || "").split("\n").map(item => item.trim()).filter(Boolean);
 }
 
+function safeImageSource(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  if (/^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/=\s]+$/i.test(text)) return text;
+  return safeExternalUrl(text);
+}
+
 function safeExternalUrl(value) {
   try {
     const url = new URL(String(value || ""));
@@ -1984,6 +1918,26 @@ function safeExternalUrl(value) {
   } catch {
     return "";
   }
+}
+
+function categoryPlaceholderDataUrl(category) {
+  const labels = {
+    Mouse: ["MOUSE", "⌁"],
+    Teclados: ["TECLADO", "⌨"],
+    IEM: ["IEM", "◔"],
+    Headsets: ["HEADSET", "◉"],
+    DAC: ["DAC", "◫"]
+  };
+  const [label, icon] = labels[category] || ["PRODUCTO", "◇"];
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800">
+    <defs><linearGradient id="g" x1="0" x2="1"><stop stop-color="#18181b"/><stop offset="1" stop-color="#25270b"/></linearGradient></defs>
+    <rect width="800" height="800" rx="64" fill="url(#g)"/>
+    <circle cx="400" cy="340" r="150" fill="none" stroke="#eeff00" stroke-width="8" opacity=".28"/>
+    <text x="400" y="385" text-anchor="middle" font-family="Arial,sans-serif" font-size="120" fill="#eeff00">${icon}</text>
+    <text x="400" y="575" text-anchor="middle" font-family="Arial,sans-serif" font-size="38" font-weight="700" fill="#ffffff">${label}</text>
+    <text x="400" y="625" text-anchor="middle" font-family="Arial,sans-serif" font-size="22" fill="#92929a">IMAGEN NO DISPONIBLE</text>
+  </svg>`;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
 
 function escapeHtml(value) {

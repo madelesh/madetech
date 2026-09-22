@@ -70,6 +70,14 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"></path><path d="m5 7 7 5 7-5"></path></svg>
           <span>Contactos</span>
         </button>
+        <button data-panel="announcementsPanel">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10h3l8-4v12l-8-4H4z"></path><path d="M7 14v5"></path><path d="M18 9c1 1 1 5 0 6"></path></svg>
+          <span>Noticias</span>
+        </button>
+        <button data-panel="updatesPanel">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7v5l3 2"></path><circle cx="12" cy="12" r="8"></circle><path d="M4 12H2M22 12h-2"></path></svg>
+          <span>Actualizaciones</span>
+        </button>
       </nav>
 
       <div class="admin-sidebar-footer">
@@ -98,31 +106,8 @@
               <button class="ghost-btn" id="resetProduct" type="button">Limpiar</button>
             </div>
 
-            <div class="admin-import-grid">
-            <section class="url-importer" aria-labelledby="urlImporterTitle">
-              <div class="url-importer-head">
-                <div>
-                  <span class="admin-eyebrow">MÉTODO PRINCIPAL</span>
-                  <h3 id="urlImporterTitle">Extraer producto desde URL</h3>
-                </div>
-                <span class="url-source-badge">AUTO</span>
-              </div>
-
-              <p>Pega el enlace directo del producto. MadeLesh detectará si es EloShapes, MechKeys, una web oficial u otra tienda y usará el extractor más adecuado.</p>
-
-              <div class="url-import-row">
-                <input id="universalProductUrl" type="url" inputmode="url"
-                  placeholder="https://www.eloshapes.com/mouse/compare?p=zowie-ec3-dw" />
-                <button id="universalImportButton" type="button">🔗 EXTRAER FICHA</button>
-              </div>
-
-              <div class="url-import-status" id="universalImportStatus" hidden></div>
-              <div class="url-source-link" id="universalSourceLink" hidden></div>
-
-              <small class="url-import-note">Compatible de forma especial con EloShapes y MechKeys. Otras páginas se procesan con Tavily. La ficha queda como borrador para revisión.</small>
-            </section>
-
-            <section class="web-importer" aria-labelledby="webImporterTitle">
+            <div class="admin-import-grid general-search-only">
+<section class="web-importer" aria-labelledby="webImporterTitle">
               <div class="web-importer-head">
                 <div>
                   <span class="admin-eyebrow">AUTOCOMPLETAR</span>
@@ -162,56 +147,6 @@
               <div class="web-source-list" id="webSourceList" hidden></div>
 
               <small class="web-import-note">La búsqueda no publica nada automáticamente. Revisa los campos antes de guardar.</small>
-            </section>
-
-            <section class="eloshapes-importer" aria-labelledby="eloshapesImporterTitle" hidden>
-              <div class="eloshapes-importer-head">
-                <div>
-                  <span class="admin-eyebrow">MOUSE · DATOS TÉCNICOS</span>
-                  <h3 id="eloshapesImporterTitle">Completar con EloShapes</h3>
-                </div>
-                <span class="eloshapes-source-badge">ELOSHAPES</span>
-              </div>
-
-              <p>Usa EloShapes como fuente técnica para peso, forma, sensor, DPI, polling rate, switches, encoder, dimensiones y conectividad.</p>
-
-              <div class="eloshapes-import-grid">
-                <label>
-                  MARCA
-                  <input id="eloshapesBrand" type="text" autocomplete="off" placeholder="Ej. Zowie" />
-                </label>
-                <label>
-                  MODELO
-                  <input id="eloshapesModel" type="text" autocomplete="off" placeholder="Ej. EC3-DW" />
-                </label>
-              </div>
-
-              <button id="eloshapesImportButton" class="eloshapes-import-button" type="button">🖱 COMPLETAR ESPECIFICACIONES</button>
-              <div class="eloshapes-import-status" id="eloshapesImportStatus" hidden></div>
-              <div class="eloshapes-source-link" id="eloshapesSourceLink" hidden></div>
-
-              <small class="eloshapes-import-note">No modifica el precio ni la imagen. Solo completa la ficha técnica del mouse y la deja para revisión.</small>
-            </section>
-
-            <section class="mechkeys-importer" aria-labelledby="mechkeysImporterTitle" hidden>
-              <div class="mechkeys-importer-head">
-                <div>
-                  <span class="admin-eyebrow">AUTOCOMPLETAR</span>
-                  <h3 id="mechkeysImporterTitle">Importar desde MechKeys</h3>
-                </div>
-                <span class="mechkeys-source-badge">MECHKEYS.COM</span>
-              </div>
-
-              <p>Pega el enlace individual de un producto de MechKeys. MadeLesh leerá la ficha y rellenará automáticamente los campos que encuentre.</p>
-
-              <div class="mechkeys-import-row">
-                <input id="mechkeysProductUrl" type="url" inputmode="url"
-                  placeholder="https://mechkeys.com/products/zaopin-z2" />
-                <button id="mechkeysImportButton" type="button">⚡ EXTRAER DATOS</button>
-              </div>
-
-              <div class="mechkeys-import-status" id="mechkeysImportStatus" hidden></div>
-              <small class="mechkeys-import-note">La importación queda como borrador. Revisa la ficha antes de guardarla.</small>
             </section>
             </div>
 
@@ -274,10 +209,17 @@
 
               <div class="admin-main-image-field">
                 <label>
-                  URL DE IMAGEN DEL PRODUCTO
-                  <input id="productImageUrl" type="url" placeholder="https://..." />
+                  IMAGEN DEL PRODUCTO
+                  <input id="productImageUrl" type="text" placeholder="https://... o sube una imagen desde tu PC" />
                   <small class="image-size-hint">Recomendado: 1200 × 1200 px · PNG/WebP transparente · el producto debe ocupar 80–90% del lienzo.</small>
                 </label>
+                <div class="product-image-upload-actions">
+                  <label class="product-image-file-button">
+                    <input id="productImageFile" type="file" accept="image/*" />
+                    <span>SUBIR DESDE PC</span>
+                  </label>
+                  <button class="ghost-btn" id="clearProductImage" type="button">Quitar imagen</button>
+                </div>
                 <div class="admin-image-preview-card" id="productImagePreview">
                   <div class="admin-image-preview-empty">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"></rect><circle cx="9" cy="10" r="2"></circle><path d="m5 18 5-5 3 3 2-2 4 4"></path></svg>
@@ -311,14 +253,18 @@
                 </div>
 
                 <div class="store-editor" id="trustedStoresEditor">
-                  <div class="store-row store-row-fixed">
+                  <div class="store-row store-row-fixed" data-store-fixed="amazon">
+                    <div class="store-icon-slot" id="storeAmazonIconPreview">A</div>
                     <div class="store-brand-badge">Amazon</div>
                     <input id="storeAmazon" class="store-url-input" type="url" placeholder="https://amazon.com/..." aria-label="Link de Amazon" />
+                    <label class="store-icon-upload"><input id="storeAmazonIconFile" type="file" accept="image/*" /><span>ICONO</span></label>
                   </div>
 
-                  <div class="store-row store-row-fixed">
+                  <div class="store-row store-row-fixed" data-store-fixed="aliexpress">
+                    <div class="store-icon-slot" id="storeAliExpressIconPreview">A</div>
                     <div class="store-brand-badge">AliExpress</div>
                     <input id="storeAliExpress" class="store-url-input" type="url" placeholder="https://aliexpress.com/..." aria-label="Link de AliExpress" />
+                    <label class="store-icon-upload"><input id="storeAliExpressIconFile" type="file" accept="image/*" /><span>ICONO</span></label>
                   </div>
 
                   <div id="extraStores"></div>
@@ -585,6 +531,77 @@
               <div class="contacts-save-row">
                 <p>Iconos recomendados: 256 × 256 px, PNG/WebP transparente. Si no subes uno, MadeLesh usa el icono predeterminado.</p>
                 <button class="primary-admin-btn" id="saveContactsSettings" type="submit">GUARDAR CONTACTOS ↗</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-panel" id="announcementsPanel">
+        <div class="admin-grid">
+          <div class="admin-card announcements-admin-card">
+            <div class="card-heading">
+              <div>
+                <span class="admin-eyebrow">ENCABEZADO</span>
+                <h2>Mensajes de la página</h2>
+                <p>Puedes mostrar hasta 3 mensajes. Se desplazarán automáticamente en la barra superior.</p>
+              </div>
+            </div>
+            <form id="announcementsSettingsForm" class="announcements-settings-form">
+              <label>MENSAJE 1<input id="announcementMessage1" type="text" maxlength="180" placeholder="Ej. Nuevas reviews cada semana" /></label>
+              <label>MENSAJE 2<input id="announcementMessage2" type="text" maxlength="180" placeholder="Ej. Revisa el destacado del mes" /></label>
+              <label>MENSAJE 3<input id="announcementMessage3" type="text" maxlength="180" placeholder="Ej. Comparación próximamente" /></label>
+              <div class="contacts-save-row">
+                <p>Los campos vacíos no se mostrarán.</p>
+                <button class="primary-admin-btn" type="submit">GUARDAR MENSAJES ↗</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-panel" id="updatesPanel">
+        <div class="admin-grid">
+          <div class="admin-card updates-admin-card">
+            <div class="card-heading">
+              <div>
+                <span class="admin-eyebrow">CHANGELOG</span>
+                <h2>Actualización de la página</h2>
+                <p>Configura la versión actual y un resumen corto de lo que cambió. Se mostrará de forma discreta al final de la web.</p>
+              </div>
+            </div>
+
+            <form id="releaseSettingsForm" class="release-settings-form">
+              <div class="release-meta-grid">
+                <label>
+                  VERSIÓN
+                  <input id="releaseVersion" type="text" maxlength="24" placeholder="Ej. 5.18" />
+                </label>
+                <label>
+                  FECHA
+                  <input id="releaseDate" type="date" />
+                </label>
+              </div>
+
+              <label>
+                TÍTULO DE LA ACTUALIZACIÓN
+                <input id="releaseTitle" type="text" maxlength="100" placeholder="Ej. Mejoras de interfaz y correcciones" />
+              </label>
+
+              <div class="release-notes-editor">
+                <span>CAMBIOS DE ESTA VERSIÓN</span>
+                <textarea id="releaseNotes" rows="8" maxlength="1100" placeholder="Escribe un cambio por línea.&#10;Ej. Se corrigió el modo claro.&#10;Ej. Se añadió carga de imágenes desde PC."></textarea>
+                <small>Máximo 6 cambios. Un cambio por línea.</small>
+              </div>
+
+              <div class="release-preview-hint">
+                <span>Vista pública:</span>
+                <strong>v5.18 · Ver cambios</strong>
+              </div>
+
+              <div class="contacts-save-row">
+                <p>La versión aparecerá de forma muy discreta al final de la página.</p>
+                <button class="primary-admin-btn" type="submit">GUARDAR ACTUALIZACIÓN ↗</button>
               </div>
             </form>
           </div>

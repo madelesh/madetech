@@ -1716,3 +1716,94 @@ body.admin-authenticated #adminApp {
   .color-image-row{grid-template-columns:1fr 60px;}
   .color-image-url{grid-column:1/-1;}
 }
+
+
+/* ==========================================================
+   MADELESH V5.18 — EDITOR DE ACTUALIZACIONES
+   ========================================================== */
+.release-settings-form {
+  display: grid;
+  gap: 15px;
+}
+
+.release-settings-form > label,
+.release-meta-grid label {
+  display: grid;
+  gap: 7px;
+  color: #85858d;
+  font-size: .64rem;
+  letter-spacing: .08em;
+}
+
+.release-settings-form input,
+.release-settings-form textarea {
+  width: 100%;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  background: #171719;
+  color: #fff;
+  outline: none;
+}
+
+.release-settings-form input {
+  min-height: 48px;
+  padding: 0 13px;
+}
+
+.release-settings-form textarea {
+  min-height: 155px;
+  padding: 13px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.release-settings-form input:focus,
+.release-settings-form textarea:focus {
+  border-color: #eeff00;
+}
+
+.release-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.release-notes-editor {
+  display: grid;
+  gap: 7px;
+}
+
+.release-notes-editor > span {
+  color: #85858d;
+  font-size: .64rem;
+  letter-spacing: .08em;
+}
+
+.release-notes-editor small {
+  color: #696970;
+  font-size: .68rem;
+}
+
+.release-preview-hint {
+  min-height: 48px;
+  padding: 10px 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px dashed rgba(255,255,255,.12);
+  border-radius: 12px;
+  color: #77777f;
+  font-size: .72rem;
+}
+
+.release-preview-hint strong {
+  color: #a5a5ab;
+  font-size: .64rem;
+}
+
+@media (max-width: 700px) {
+  .release-meta-grid {
+    grid-template-columns: 1fr;
+  }
+}
