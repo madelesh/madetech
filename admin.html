@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es" data-theme="dark">
 <head>
-  <meta name="madelesh-admin-build" content="5.21" />
+  <meta name="madelesh-admin-build" content="5.22" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0b0b0c" />
@@ -10,8 +10,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link id="siteFavicon" rel="icon" type="image/png" href="" />
-  <link rel="stylesheet" href="styles.css?v=5.21" />
-  <link rel="stylesheet" href="admin.css?v=5.21" />
+  <link rel="stylesheet" href="styles.css?v=5.22" />
+  <link rel="stylesheet" href="admin.css?v=5.22" />
 </head>
 <body class="admin-body">
 
@@ -39,7 +39,7 @@
 
       <p class="admin-error" id="adminLoginError" hidden></p>
       <a class="back-site" href="index.html">← Volver a MadeLesh</a>
-      <small class="admin-build-marker">build 5.21</small>
+      <small class="admin-build-marker">build 5.22</small>
     </div>
   </section>
 
@@ -85,7 +85,7 @@
       <div class="admin-sidebar-footer">
         <span id="adminIdentity"></span>
         <button id="adminLogout">Cerrar sesión</button>
-        <small class="admin-build-marker">build 5.21</small>
+        <small class="admin-build-marker">build 5.22</small>
       </div>
     </aside>
 
@@ -740,7 +740,7 @@
   </div>
 
   <script type="module">
-console.info("MadeLesh Admin build 5.21");
+console.info("MadeLesh Admin build 5.22");
 import { API_BASE } from "./config.js";
 
 const adminLogin = document.getElementById("adminLogin");
@@ -861,22 +861,23 @@ let brandingFaviconDarkDataUrl = "";
 let contactIconDataUrls = { discord:"", steam:"", x:"", youtube:"", tiktok:"", email:"" };
 let colorImagesByHex = {};
 const ADMIN_BUILD_RELEASE = {
-  version: "5.21",
-  title: "Interfaz, notificaciones y Access Keys",
+  version: "5.22",
+  title: "Perfil compacto, footer social y galería",
   date: "2026-09-21",
   changes: {
     added: [
-      "Audio para teclados por enlace o archivo.",
-      "Extensión rápida de tiempo para Access Keys.",
-      "Archivo separado para keys vencidas."
+      "Redes sociales integradas discretamente en el pie de página.",
+      "Animación lateral del nombre de cuenta al pasar sobre el avatar."
     ],
     removed: [
-      "Productos antiguos del contador de notificaciones."
+      "Pestaña pública Nosotros.",
+      "Acceso al tema dentro del panel de perfil.",
+      "Nombre y categoría duplicados en la información del producto."
     ],
     fixed: [
-      "Vista de notificaciones y galería de imágenes.",
-      "Organización de la pestaña Agregar producto.",
-      "Perfil compacto con expiración de la key."
+      "Parpadeo de la pantalla de login al cambiar de pestaña.",
+      "Miniaturas de fotos debajo de la imagen principal.",
+      "Botón de tema reducido a solo icono."
     ]
   }
 };

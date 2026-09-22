@@ -1,4 +1,4 @@
-console.info("MadeLesh Admin build 5.21");
+console.info("MadeLesh Admin build 5.22");
 import { API_BASE } from "./config.js";
 
 const adminLogin = document.getElementById("adminLogin");
@@ -119,22 +119,23 @@ let brandingFaviconDarkDataUrl = "";
 let contactIconDataUrls = { discord:"", steam:"", x:"", youtube:"", tiktok:"", email:"" };
 let colorImagesByHex = {};
 const ADMIN_BUILD_RELEASE = {
-  version: "5.21",
-  title: "Interfaz, notificaciones y Access Keys",
+  version: "5.22",
+  title: "Perfil compacto, footer social y galería",
   date: "2026-09-21",
   changes: {
     added: [
-      "Audio para teclados por enlace o archivo.",
-      "Extensión rápida de tiempo para Access Keys.",
-      "Archivo separado para keys vencidas."
+      "Redes sociales integradas discretamente en el pie de página.",
+      "Animación lateral del nombre de cuenta al pasar sobre el avatar."
     ],
     removed: [
-      "Productos antiguos del contador de notificaciones."
+      "Pestaña pública Nosotros.",
+      "Acceso al tema dentro del panel de perfil.",
+      "Nombre y categoría duplicados en la información del producto."
     ],
     fixed: [
-      "Vista de notificaciones y galería de imágenes.",
-      "Organización de la pestaña Agregar producto.",
-      "Perfil compacto con expiración de la key."
+      "Parpadeo de la pantalla de login al cambiar de pestaña.",
+      "Miniaturas de fotos debajo de la imagen principal.",
+      "Botón de tema reducido a solo icono."
     ]
   }
 };

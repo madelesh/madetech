@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es" data-theme="light">
 <head>
-  <meta name="madelesh-build" content="5.21" />
+  <meta name="madelesh-build" content="5.22" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="MadeLesh — Reviews de mouse, teclados, IEM, headsets y DACs." />
@@ -11,10 +11,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link id="siteFavicon" rel="icon" type="image/png" href="" />
-  <link rel="stylesheet" href="styles.css?v=5.21" />
+  <link rel="stylesheet" href="styles.css?v=5.22" />
 </head>
 
-<body>
+<body class="auth-pending">
 
   <section class="access-gate" id="accessGate">
     <div class="gate-card">
@@ -71,10 +71,6 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16M17 4v16M4 7h6M14 17h6"></path><path d="m8 5-1-1-1 1M16 19l1 1 1-1"></path></svg>
           <span>Comparación</span>
         </a>
-        <a href="index.html?view=contacto" class="nav-link">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m4 7 8 6 8-6"></path></svg>
-          <span>Nosotros</span>
-        </a>
       </nav>
 
       <div class="header-actions">
@@ -104,18 +100,18 @@
           <svg class="moon-icon" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
           </svg>
-          <span id="themeLabel">Oscuro</span>
+          <span id="themeLabel" class="visually-hidden">Oscuro</span>
         </button>
 
         <div class="profile-menu-wrap" id="profileMenuWrap">
-          <button class="profile-button profile-icon-only" id="profileButton" type="button" aria-label="Abrir perfil" aria-expanded="false">
+          <button class="profile-button profile-slide-button" id="profileButton" type="button" aria-label="Abrir perfil" aria-expanded="false">
+            <span class="profile-button-label" id="profileButtonLabel">Perfil</span>
             <span class="profile-avatar" aria-hidden="true">
               <svg viewBox="0 0 24 24">
                 <circle cx="12" cy="8" r="4"></circle>
                 <path d="M4.5 21a7.5 7.5 0 0 1 15 0"></path>
               </svg>
             </span>
-            <span class="profile-button-label visually-hidden" id="profileButtonLabel">Perfil</span>
           </button>
 
           <div class="profile-popover" id="profilePopover" hidden>
@@ -142,14 +138,6 @@
               </div>
             </div>
 
-            <button class="profile-menu-item" id="profileSettingsButton" type="button">
-              <span>Ajustes</span><span>⚙</span>
-            </button>
-            <div class="profile-settings-mini" id="profileSettingsMini" hidden>
-              <span>PREFERENCIAS</span>
-              <button id="profileThemeShortcut" type="button">Cambiar tema</button>
-            </div>
-
             <a class="profile-menu-item admin-shortcut" id="adminShortcut" href="admin.html" hidden>
               <span>Panel de administrador</span><span>↗</span>
             </a>
@@ -169,7 +157,6 @@
         <a href="index.html?view=home">⌂ Home</a>
         <a href="index.html?view=categorias">▦ Categoría</a>
         <a href="index.html?view=comparacion">⇄ Comparación</a>
-        <a href="index.html?view=contacto">✉ Nosotros</a>
       </nav>
     </header>
 
@@ -416,16 +403,6 @@
         </div>
       </section>
 
-      <section class="section contact-section" id="contacto" data-always-visible="true">
-        <div>
-          <span class="section-index">(04)</span>
-          <h2>Nosotros</h2>
-          <p class="contact-intro">Conoce MadeLesh y encuentra nuestras redes oficiales.</p>
-        </div>
-        <div class="contact-socials" id="contactSocials" aria-live="polite">
-          <div class="contact-empty" id="contactEmpty">Aún no hay redes sociales configuradas.</div>
-        </div>
-      </section>
     </main>
 
     <footer>
@@ -436,6 +413,13 @@
         </a>
         <p>Mouse · Teclados · IEM · Headsets · DACs</p>
         <p>© <span id="year"></span> MadeLesh</p>
+      </div>
+
+      <div class="footer-social-row">
+        <span class="footer-social-label">SÍGUENOS</span>
+        <div class="contact-socials footer-socials" id="contactSocials" aria-live="polite">
+          <div class="contact-empty" id="contactEmpty">Aún no hay redes sociales configuradas.</div>
+        </div>
       </div>
 
       <div class="footer-release-panel" id="footerReleasePanel" hidden>
@@ -450,7 +434,7 @@
       </div>
 
       <div class="footer-version-row">
-        <span id="siteVersionLabel">MadeLesh v5.21</span>
+        <span id="siteVersionLabel">MadeLesh v5.22</span>
         <button id="footerReleaseToggle" type="button" aria-expanded="false">
           Ver cambios
         </button>
@@ -466,7 +450,7 @@
     </article>
   </div>
 
-  <script type="module" src="app.js?v=5.21"></script>
+  <script type="module" src="app.js?v=5.22"></script>
   </div>
 </body>
 </html>

@@ -15,9 +15,6 @@ const profileRole = document.getElementById("profileRole");
 const profileButtonLabel = document.getElementById("profileButtonLabel");
 const profileSessionLabel = document.getElementById("profileSessionLabel");
 const profileExpiryText = document.getElementById("profileExpiryText");
-const profileSettingsButton = document.getElementById("profileSettingsButton");
-const profileSettingsMini = document.getElementById("profileSettingsMini");
-const profileThemeShortcut = document.getElementById("profileThemeShortcut");
 
 const root = document.documentElement;
 const themeToggle = document.getElementById("themeToggle");
@@ -92,22 +89,23 @@ let publicAnnouncements = [];
 let publicAppVersion = "5.18";
 let publicRelease = { version: "5.18", title: "", date: "", notes: [] };
 const CURRENT_BUILD_RELEASE = {
-  version: "5.21",
-  title: "Interfaz, notificaciones y Access Keys",
+  version: "5.22",
+  title: "Perfil compacto, footer social y galería",
   date: "2026-09-21",
   changes: {
     added: [
-      "Audio para teclados por enlace o archivo.",
-      "Extensión rápida de tiempo para Access Keys.",
-      "Archivo separado para keys vencidas."
+      "Redes sociales integradas discretamente en el pie de página.",
+      "Animación lateral del nombre de cuenta al pasar sobre el avatar."
     ],
     removed: [
-      "Productos antiguos del contador de notificaciones."
+      "Pestaña pública Nosotros.",
+      "Acceso al tema dentro del panel de perfil.",
+      "Nombre y categoría duplicados en la información del producto."
     ],
     fixed: [
-      "Vista de notificaciones y galería de imágenes.",
-      "Organización de la pestaña Agregar producto.",
-      "Perfil compacto con expiración de la key."
+      "Parpadeo de la pantalla de login al cambiar de pestaña.",
+      "Miniaturas de fotos debajo de la imagen principal.",
+      "Botón de tema reducido a solo icono."
     ]
   }
 };
@@ -414,6 +412,7 @@ mobileNav.querySelectorAll("a").forEach(link => {
 /* ---------------- SESSION / KEY LOGIN ---------------- */
 
 function showGate(message = "") {
+  document.body.classList.remove("auth-pending");
   document.body.classList.remove("session-authenticated");
   appRoot.hidden = true;
   accessGate.hidden = false;
@@ -427,6 +426,7 @@ function showGate(message = "") {
 }
 
 function showApp() {
+  document.body.classList.remove("auth-pending");
   accessGate.hidden = true;
   appRoot.hidden = false;
   document.body.classList.add("session-authenticated");
@@ -508,12 +508,9 @@ function updateKeyCountdown() {
   profileExpiryText.textContent = `Expira en ${hours} h ${minutes} min`;
 }
 
-let profileHoverTimer = null;
-
 function closeProfileMenu() {
   profilePopover.hidden = true;
   profileButton.setAttribute("aria-expanded", "false");
-  if (profileSettingsMini) profileSettingsMini.hidden = true;
 }
 
 async function refreshProfileSession() {
@@ -534,23 +531,10 @@ async function refreshProfileSession() {
 }
 
 async function openProfileMenu() {
-  clearTimeout(profileHoverTimer);
   if (!await refreshProfileSession()) return;
   profilePopover.hidden = false;
   profileButton.setAttribute("aria-expanded", "true");
 }
-
-function scheduleProfileClose() {
-  clearTimeout(profileHoverTimer);
-  profileHoverTimer = setTimeout(closeProfileMenu, 220);
-}
-
-profileMenuWrap.addEventListener("mouseenter", openProfileMenu);
-profileMenuWrap.addEventListener("mouseleave", scheduleProfileClose);
-profileMenuWrap.addEventListener("focusin", openProfileMenu);
-profileMenuWrap.addEventListener("focusout", event => {
-  if (!profileMenuWrap.contains(event.relatedTarget)) scheduleProfileClose();
-});
 
 profileButton.addEventListener("click", async event => {
   event.stopPropagation();
@@ -559,14 +543,6 @@ profileButton.addEventListener("click", async event => {
 });
 
 profilePopover.addEventListener("click", event => event.stopPropagation());
-
-profileSettingsButton?.addEventListener("click", () => {
-  if (profileSettingsMini) profileSettingsMini.hidden = !profileSettingsMini.hidden;
-});
-
-profileThemeShortcut?.addEventListener("click", () => {
-  themeToggle?.click();
-});
 
 adminShortcut.addEventListener("click", event => {
   if (currentRole !== "admin") {
@@ -1505,11 +1481,9 @@ async function openReview(id) {
             <p>Datos principales</p>
           </div>
 
-          <div class="product-core-grid">
-            ${coreSpec("Nombre", review.name)}
+          <div class="product-core-grid product-core-grid-compact">
             ${coreSpec("Modelo", review.model)}
             ${coreSpec("Marca", review.brand)}
-            ${coreSpec("Categoría", review.category)}
           </div>
         </section>
 
@@ -1615,11 +1589,7 @@ function productImageHtml(review) {
       ` : ""}
 
       ${(images.length > 1 || video) ? `
-        <div class="product-photo-section-label">
-          <span>FOTOS DEL PRODUCTO</span>
-          <small>${images.length} ${images.length === 1 ? "imagen" : "imágenes"}${video ? " · 1 video" : ""}</small>
-        </div>
-        <div class="product-media-thumbs">
+        <div class="product-media-thumbs" aria-label="Fotos y video del producto">
           ${images.map((src,index) => `
             <button class="product-media-thumb ${index===0 ? "active" : ""}" type="button" data-media-image="${escapeHtml(src)}" aria-label="Imagen ${index+1}">
               <img src="${escapeHtml(src)}" alt="">
@@ -2302,7 +2272,7 @@ loadPublicSettings();
 
 function currentPageView() {
   const requested = new URLSearchParams(window.location.search).get("view") || "home";
-  return ["home", "categorias", "comparacion", "contacto"].includes(requested) ? requested : "home";
+  return ["home", "categorias", "comparacion"].includes(requested) ? requested : "home";
 }
 
 function applyPageView() {
@@ -2312,21 +2282,12 @@ function applyPageView() {
     section.hidden = !views.includes(view);
   });
 
-  // Contacto permanece al final de todas las vistas.
-  const contact = document.querySelector('[data-always-visible="true"]');
-  if (contact) contact.hidden = false;
-
   document.querySelectorAll(".desktop-nav .nav-link").forEach(link => {
     const url = new URL(link.href, window.location.href);
     link.classList.toggle("active", (url.searchParams.get("view") || "home") === view);
   });
 
-  if (view === "contacto") {
-    document.querySelectorAll("[data-view]").forEach(section => { section.hidden = true; });
-    requestAnimationFrame(() => document.getElementById("contacto")?.scrollIntoView({ block: "start" }));
-  } else {
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-  }
+  window.scrollTo({ top: 0, left: 0, behavior: "auto" });
 }
 
 applyPageView();
