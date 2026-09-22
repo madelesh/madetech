@@ -864,8 +864,12 @@ function renderFeaturedBanner() {
     featuredBannerPrice.textContent = product.price || "";
     featuredBanner?.classList.remove("description-expanded");
     if (featuredBannerReadMore) {
-      featuredBannerReadMore.hidden = summary.length <= 190;
+      featuredBannerReadMore.hidden = true;
       featuredBannerReadMore.textContent = "Leer más";
+      requestAnimationFrame(() => {
+        const needsMore = featuredBannerText.scrollHeight > featuredBannerText.clientHeight + 2;
+        featuredBannerReadMore.hidden = !needsMore;
+      });
     }
 
     featuredBannerImage.src = image;
@@ -942,12 +946,198 @@ featuredBanner?.addEventListener("click", event => {
 const compareProductA = document.getElementById("compareProductA");
 const compareProductB = document.getElementById("compareProductB");
 const compareResult = document.getElementById("compareResult");
+const compareCategoryLock = document.getElementById("compareCategoryLock");
+
+const COMPARISON_TEXT_SPECS = {
+  Mouse: [["Sensor","sensor"],["MCU","mcu"],["Switch","switchType"],["Material","material"],["Conexión","__connections"]],
+  Teclados: [["Switch","switchType"],["Tecnología","switchTechnology"],["Formato","layout"],["Hot-swap","hotSwap"],["Rapid Trigger","rapidTrigger"],["Keycaps","keycaps"],["Montaje","mount"],["Conexión","__connections"]],
+  IEM: [["Drivers","driverConfig"],["Firma sonora","soundSignature"],["Impedancia","impedance"],["Sensibilidad","sensitivity"],["Respuesta en frecuencia","frequencyResponse"],["Conector","cableConnector"],["Plug","plug"],["Conexión","__connections"]],
+  Headsets: [["Driver","driver"],["Micrófono","microphone"],["Codec","codec"],["Sonido espacial","spatialAudio"],["Impedancia","impedance"],["Respuesta en frecuencia","frequencyResponse"],["Almohadillas","earpads"],["Conexión","__connections"]],
+  DAC: [["Chip DAC","dacChip"],["Amplificador","ampChip"],["Entradas","inputs"],["Salidas","outputs"],["PCM máximo","maxPcm"],["DSD máximo","maxDsd"],["Bluetooth","bluetooth"],["Ganancia","gain"]]
+};
+
+function comparisonImage(product) {
+  return safeImageSrc(product?.imageUrl)
+    || safeImageSrc(Array.isArray(product?.images) ? product.images[0] : "")
+    || categoryPlaceholderDataUrl(product?.category);
+}
+
+function parseFirstNumber(value) {
+  if (Array.isArray(value)) {
+    const nums = value.map(parseFirstNumber).filter(Number.isFinite);
+    return nums.length ? Math.max(...nums) : NaN;
+  }
+  const match = String(value ?? "").replace(",", ".").match(/-?\d+(?:\.\d+)?/);
+  return match ? Number(match[0]) : NaN;
+}
+
+function parsePrice(value) {
+  const raw = String(value || "").replace(/[^\d.,-]/g, "").replace(",", ".");
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : NaN;
+}
+
+function maxPolling(product) {
+  const s = product?.specs || {};
+  const source = Array.isArray(s.pollingRate) ? s.pollingRate : [s.pollingRate || s.pollingRateMax];
+  const values = source.map(parseFirstNumber).filter(Number.isFinite);
+  return values.length ? Math.max(...values) : NaN;
+}
+
+function batteryHours(product) {
+  const s = product?.specs || {};
+  const direct = parseFirstNumber(s.batteryHours);
+  if (Number.isFinite(direct)) return direct;
+  const text = String(s.battery || "");
+  const hour = text.match(/(\d+(?:[.,]\d+)?)\s*(?:h|hora)/i);
+  return hour ? Number(hour[1].replace(",", ".")) : NaN;
+}
+
+function featureCount(product, keys) {
+  const s = product?.specs || {};
+  return keys.reduce((total, key) => total + (s[key] === true ? 1 : 0), 0);
+}
+
+function pcmRate(product) {
+  const text = String(product?.specs?.maxPcm || "");
+  const matches = [...text.matchAll(/(\d+(?:\.\d+)?)\s*(?:k?hz)/ig)].map(match => Number(match[1]));
+  return matches.length ? Math.max(...matches) : parseFirstNumber(text);
+}
+
+function dsdRate(product) {
+  const text = String(product?.specs?.maxDsd || "");
+  const match = text.match(/dsd\s*(\d+)/i);
+  return match ? Number(match[1]) : parseFirstNumber(text);
+}
+
+function powerOutput(product) {
+  const text = String(product?.specs?.powerOutput || "");
+  const value = parseFirstNumber(text);
+  if (!Number.isFinite(value)) return NaN;
+  return /\bw\b/i.test(text) && !/\bmw\b/i.test(text) ? value * 1000 : value;
+}
+
+function comparisonMetrics(category) {
+  const scoreMetric = {
+    key:"score", label:"MadeLesh Score", unit:"/10", direction:"high", weight:2,
+    value:p => Number(p?.score) > 0 ? Number(p.score) : NaN
+  };
+  const priceMetric = {
+    key:"price", label:"Precio de referencia", unit:"", direction:"low", weight:0,
+    value:p => parsePrice(p?.price), format:v => `$${v.toFixed(2)}`
+  };
+
+  const map = {
+    Mouse: [
+      {key:"polling",label:"Polling Rate",unit:" Hz",direction:"high",weight:1,value:maxPolling},
+      {key:"weight",label:"Peso",unit:" g",direction:"low",weight:1,value:p=>parseFirstNumber(p?.specs?.weight)},
+      {key:"battery",label:"Autonomía",unit:" h",direction:"high",weight:1,value:batteryHours},
+      scoreMetric, priceMetric
+    ],
+    Teclados: [
+      {key:"polling",label:"Polling Rate",unit:" Hz",direction:"high",weight:1,value:maxPolling},
+      {key:"battery",label:"Autonomía",unit:" h",direction:"high",weight:1,value:batteryHours},
+      {key:"features",label:"Funciones competitivas",unit:"/2",direction:"high",weight:1,value:p=>featureCount(p,["hotSwap","rapidTrigger"])},
+      scoreMetric, priceMetric
+    ],
+    IEM: [
+      {key:"weight",label:"Peso por lado",unit:" g",direction:"low",weight:1,value:p=>parseFirstNumber(p?.specs?.weightPerSide)},
+      {key:"detachable",label:"Cable desmontable",unit:"",direction:"high",weight:1,value:p=>p?.specs?.detachableCable===true?1:(p?.specs?.detachableCable===false?0:NaN),format:v=>v?"Sí":"No"},
+      scoreMetric, priceMetric
+    ],
+    Headsets: [
+      {key:"battery",label:"Autonomía",unit:" h",direction:"high",weight:1,value:batteryHours},
+      {key:"weight",label:"Peso",unit:" g",direction:"low",weight:1,value:p=>parseFirstNumber(p?.specs?.weight)},
+      {key:"detachableMic",label:"Micrófono desmontable",unit:"",direction:"high",weight:1,value:p=>p?.specs?.detachableMic===true?1:(p?.specs?.detachableMic===false?0:NaN),format:v=>v?"Sí":"No"},
+      scoreMetric, priceMetric
+    ],
+    DAC: [
+      {key:"power",label:"Potencia de salida",unit:" mW",direction:"high",weight:1,value:powerOutput},
+      {key:"pcm",label:"PCM máximo",unit:" kHz",direction:"high",weight:1,value:pcmRate},
+      {key:"dsd",label:"DSD máximo",unit:"",direction:"high",weight:1,value:dsdRate,format:v=>`DSD${Math.round(v)}`},
+      {key:"balanced",label:"Salida balanceada",unit:"",direction:"high",weight:1,value:p=>p?.specs?.balanced===true?1:(p?.specs?.balanced===false?0:NaN),format:v=>v?"Sí":"No"},
+      scoreMetric, priceMetric
+    ]
+  };
+  return map[category] || [scoreMetric, priceMetric];
+}
+
+function metricAdvantage(value, other, direction) {
+  if (!Number.isFinite(value) || !Number.isFinite(other)) return 0;
+  if (value === other) return 100;
+  if (direction === "low") {
+    const min = Math.min(value, other);
+    return Math.max(10, Math.min(100, (min / Math.max(value, .0001)) * 100));
+  }
+  const max = Math.max(value, other);
+  return max <= 0 ? 0 : Math.max(10, Math.min(100, (value / max) * 100));
+}
+
+function metricWinner(a,b,direction) {
+  if (!Number.isFinite(a) || !Number.isFinite(b) || a === b) return "tie";
+  return direction === "low" ? (a < b ? "a" : "b") : (a > b ? "a" : "b");
+}
+
+function formatMetricValue(metric,value) {
+  if (!Number.isFinite(value)) return "No disponible";
+  if (typeof metric.format === "function") return metric.format(value);
+  const digits = Number.isInteger(value) ? 0 : 1;
+  return `${value.toFixed(digits)}${metric.unit || ""}`;
+}
+
+function comparisonTextValue(product,key) {
+  if (key === "__connections") return arrayLabel(product?.connections) || "No disponible";
+  const value = product?.specs?.[key];
+  if (typeof value === "boolean") return value ? "Sí" : "No";
+  if (Array.isArray(value)) return arrayLabel(value) || "No disponible";
+  return value === undefined || value === null || value === "" ? "No disponible" : String(value);
+}
 
 function populateComparisonSelectors() {
   if (!compareProductA || !compareProductB) return;
-  const options = reviews.map(item => `<option value="${item.id}">${escapeHtml(`${item.brand || ""} ${item.name || ""}`.trim())}</option>`).join("");
-  compareProductA.innerHTML = `<option value="">Seleccionar producto</option>${options}`;
-  compareProductB.innerHTML = `<option value="">Seleccionar producto</option>${options}`;
+  const products = [...reviews].sort((a,b) =>
+    String(a.category||"").localeCompare(String(b.category||""))
+    || String(a.name||"").localeCompare(String(b.name||""))
+  );
+  compareProductA.innerHTML = `<option value="">Seleccionar producto</option>${products.map(item =>
+    `<option value="${item.id}">${escapeHtml(`${item.category} · ${item.brand||""} ${item.name||""}`.trim())}</option>`
+  ).join("")}`;
+  compareProductB.innerHTML = `<option value="">Primero elige el producto A</option>`;
+  compareProductB.disabled = true;
+}
+
+function refreshCompareProductB() {
+  if (!compareProductA || !compareProductB) return;
+  const selectedA = reviews.find(item => String(item.id) === String(compareProductA.value || ""));
+  if (!selectedA) {
+    compareProductB.innerHTML = `<option value="">Primero elige el producto A</option>`;
+    compareProductB.disabled = true;
+    if (compareCategoryLock) compareCategoryLock.textContent = "Solo se permiten comparaciones entre productos de la misma categoría.";
+    renderComparison();
+    return;
+  }
+
+  const sameCategory = reviews.filter(item => item.category === selectedA.category && String(item.id) !== String(selectedA.id));
+  compareProductB.innerHTML = `<option value="">Seleccionar ${escapeHtml(selectedA.category)}</option>${sameCategory.map(item =>
+    `<option value="${item.id}">${escapeHtml(`${item.brand||""} ${item.name||""}`.trim())}</option>`
+  ).join("")}`;
+  compareProductB.disabled = sameCategory.length === 0;
+  if (compareCategoryLock) {
+    compareCategoryLock.innerHTML = `<strong>${escapeHtml(selectedA.category)}</strong> bloqueado como categoría de comparación · ${sameCategory.length} alternativa${sameCategory.length===1?"":"s"} disponible${sameCategory.length===1?"":"s"}.`;
+  }
+  renderComparison();
+}
+
+function comparisonProductCard(product,isWinner) {
+  return `
+    <article class="compare-product-card ${isWinner ? "overall-winner" : ""}">
+      ${isWinner ? `<span class="compare-winner-badge">DESTACADO</span>` : ""}
+      <img src="${escapeHtml(comparisonImage(product))}" alt="${escapeHtml(product.name || "Producto")}">
+      <small>${escapeHtml(product.category || "")}</small>
+      <h3>${escapeHtml(`${product.brand||""} ${product.name||""}`.trim())}</h3>
+      <p>${escapeHtml(product.price || "Precio no disponible")}</p>
+      <button type="button" data-open-compare-product="${product.id}">Ver producto</button>
+    </article>`;
 }
 
 function renderComparison() {
@@ -956,33 +1146,94 @@ function renderComparison() {
   const b = reviews.find(item => String(item.id) === String(compareProductB?.value || ""));
 
   if (!a || !b) {
-    compareResult.textContent = "Selecciona dos productos para compararlos.";
+    compareResult.innerHTML = `<div class="compare-empty"><strong>Elige dos productos para empezar.</strong><span>Las estadísticas aparecerán aquí de forma automática.</span></div>`;
     return;
   }
 
-  const rows = [
-    ["Marca", a.brand, b.brand],
-    ["Categoría", a.category, b.category],
-    ["Precio", a.price || "No disponible", b.price || "No disponible"],
-    ["Conexión", arrayLabel(a.connections) || "No disponible", arrayLabel(b.connections) || "No disponible"]
-  ];
-
-  if (a.category === "Mouse" && b.category === "Mouse") {
-    rows.push(
-      ["Sensor", a.specs?.sensor || "No disponible", b.specs?.sensor || "No disponible"],
-      ["Peso", a.specs?.weight ? `${a.specs.weight} g` : "No disponible", b.specs?.weight ? `${b.specs.weight} g` : "No disponible"],
-      ["Polling Rate", arrayLabel(a.specs?.pollingRate) || a.specs?.pollingRateMax || "No disponible", arrayLabel(b.specs?.pollingRate) || b.specs?.pollingRateMax || "No disponible"]
-    );
+  if (a.category !== b.category) {
+    compareResult.innerHTML = `<div class="compare-empty compare-error"><strong>Comparación no permitida.</strong><span>Solo puedes comparar productos de la misma categoría.</span></div>`;
+    return;
   }
 
+  const metrics = comparisonMetrics(a.category);
+  let pointsA = 0, pointsB = 0, comparableMetrics = 0;
+
+  const metricCards = metrics.map(metric => {
+    const av = metric.value(a), bv = metric.value(b);
+    const winner = metricWinner(av,bv,metric.direction);
+
+    if (Number.isFinite(av) && Number.isFinite(bv) && metric.weight > 0) {
+      comparableMetrics++;
+      if (winner === "a") pointsA += metric.weight;
+      else if (winner === "b") pointsB += metric.weight;
+      else { pointsA += metric.weight/2; pointsB += metric.weight/2; }
+    }
+
+    return `
+      <article class="compare-stat-card">
+        <div class="compare-stat-head">
+          <strong>${escapeHtml(metric.label)}</strong>
+          <span>${metric.weight===0 ? "Referencia" : (winner==="tie" ? "Empate" : "Ventaja detectada")}</span>
+        </div>
+        <div class="compare-stat-side ${winner==="a" ? "metric-winner" : ""}">
+          <span>${escapeHtml(a.name || "Producto A")}</span>
+          <b>${escapeHtml(formatMetricValue(metric,av))}</b>
+          <div class="compare-stat-bar"><i style="width:${Number.isFinite(av) ? metricAdvantage(av,bv,metric.direction) : 0}%"></i></div>
+        </div>
+        <div class="compare-stat-side ${winner==="b" ? "metric-winner" : ""}">
+          <span>${escapeHtml(b.name || "Producto B")}</span>
+          <b>${escapeHtml(formatMetricValue(metric,bv))}</b>
+          <div class="compare-stat-bar"><i style="width:${Number.isFinite(bv) ? metricAdvantage(bv,av,metric.direction) : 0}%"></i></div>
+        </div>
+      </article>`;
+  }).join("");
+
+  let winnerProduct = null;
+  let winnerLabel = "Empate técnico";
+  let winnerNote = "Los datos objetivos disponibles no separan claramente a ninguno.";
+
+  if (comparableMetrics > 0 && pointsA !== pointsB) {
+    winnerProduct = pointsA > pointsB ? a : b;
+    winnerLabel = `${winnerProduct.brand||""} ${winnerProduct.name||""}`.trim();
+    winnerNote = `Es el producto más destacado de esta comparación según las métricas comparables disponibles (${Math.max(pointsA,pointsB)} vs ${Math.min(pointsA,pointsB)} puntos).`;
+  } else if (comparableMetrics === 0) {
+    winnerLabel = "Sin datos suficientes";
+    winnerNote = "Añade más especificaciones comparables para calcular un producto destacado.";
+  }
+
+  const textRows = (COMPARISON_TEXT_SPECS[a.category] || []).map(([label,key]) => `
+    <div class="compare-spec-row">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(comparisonTextValue(a,key))}</strong>
+      <strong>${escapeHtml(comparisonTextValue(b,key))}</strong>
+    </div>`).join("");
+
   compareResult.innerHTML = `
-    <div class="compare-table">
-      <div class="compare-table-head"><span>Dato</span><strong>${escapeHtml(a.name || "Producto A")}</strong><strong>${escapeHtml(b.name || "Producto B")}</strong></div>
-      ${rows.map(([label,av,bv]) => `<div class="compare-table-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(formatValue(av))}</strong><strong>${escapeHtml(formatValue(bv))}</strong></div>`).join("")}
+    <div class="compare-products-head">
+      ${comparisonProductCard(a,winnerProduct?.id===a.id)}
+      <div class="compare-score-summary">
+        <span>RESULTADO</span>
+        <strong>${escapeHtml(winnerLabel)}</strong>
+        <p>${escapeHtml(winnerNote)}</p>
+      </div>
+      ${comparisonProductCard(b,winnerProduct?.id===b.id)}
+    </div>
+    <div class="compare-stats-grid">${metricCards}</div>
+    <div class="compare-spec-table">
+      <div class="compare-spec-row compare-spec-header">
+        <span>Especificación</span>
+        <strong>${escapeHtml(a.name||"Producto A")}</strong>
+        <strong>${escapeHtml(b.name||"Producto B")}</strong>
+      </div>
+      ${textRows}
     </div>`;
+
+  compareResult.querySelectorAll("[data-open-compare-product]").forEach(button => {
+    button.addEventListener("click", () => openReview(Number(button.dataset.openCompareProduct)));
+  });
 }
 
-compareProductA?.addEventListener("change", renderComparison);
+compareProductA?.addEventListener("change", refreshCompareProductB);
 compareProductB?.addEventListener("change", renderComparison);
 
 function focusProductsHome() {
@@ -1047,6 +1298,7 @@ async function openReview(id) {
 
         ${renderColors(review.colors, review.specs?.colorImages)}
         ${renderConnections(review.connections)}
+        ${renderProPlayers(review)}
 
         <section class="product-info-section">
           <div class="product-section-head">
@@ -1105,6 +1357,7 @@ async function openReview(id) {
     `;
 
     if (currentRole === "user") bindRatingButtons(id, Number(rating.mine || 0));
+    bindProductMedia(review);
     bindProductColorImages(review);
 
     modal.classList.add("open");
@@ -1118,8 +1371,116 @@ async function openReview(id) {
 
 function productImageHtml(review) {
   const firstColorImage = Array.isArray(review?.specs?.colorImages) ? review.specs.colorImages.map(item => safeImageSrc(item?.image || "")).find(Boolean) : "";
-  const image = safeImageSrc(review.imageUrl) || safeImageSrc(Array.isArray(review.images) ? review.images[0] : "") || firstColorImage || categoryPlaceholderDataUrl(review.category);
-  return `<div class="product-single-image"><img class="product-detail-image" src="${image}" alt="${escapeHtml(review.name || "Producto")}"></div>`;
+  const images = [...new Set([
+    safeImageSrc(review.imageUrl),
+    ...(Array.isArray(review.images) ? review.images.map(safeImageSrc) : []),
+    firstColorImage
+  ].filter(Boolean))];
+
+  if (!images.length) images.push(categoryPlaceholderDataUrl(review.category));
+
+  const video = safeVideoSrc(review?.specs?.productVideo);
+  const sound = review.category === "Teclados" ? safeAudioSrc(review?.specs?.keyboardSound) : "";
+
+  return `
+    <div class="product-media-viewer">
+      <div class="product-media-stage" id="productMediaStage">
+        <img class="product-detail-image" src="${escapeHtml(images[0])}" alt="${escapeHtml(review.name || "Producto")}">
+      </div>
+
+      ${sound ? `
+        <button class="keyboard-sound-button" id="keyboardSoundButton" type="button" aria-label="Reproducir sonido del teclado" title="Escuchar cómo suena al teclear">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10z"></path><path d="M16 9c1.5 1.5 1.5 4.5 0 6M19 6c4 3.5 4 8.5 0 12"></path></svg>
+          <span>ESCUCHAR</span>
+        </button>
+        <audio id="keyboardSoundAudio" preload="metadata" src="${escapeHtml(sound)}"></audio>
+      ` : ""}
+
+      ${(images.length > 1 || video) ? `
+        <div class="product-media-thumbs">
+          ${images.map((src,index) => `
+            <button class="product-media-thumb ${index===0 ? "active" : ""}" type="button" data-media-image="${escapeHtml(src)}" aria-label="Imagen ${index+1}">
+              <img src="${escapeHtml(src)}" alt="">
+            </button>`).join("")}
+          ${video ? `
+            <button class="product-media-thumb product-video-thumb" type="button" data-media-video="${escapeHtml(video)}" aria-label="Video del producto">
+              <svg viewBox="0 0 24 24"><path d="m9 7 8 5-8 5z"></path></svg><span>VIDEO</span>
+            </button>` : ""}
+        </div>` : ""}
+    </div>`;
+}
+
+function safeVideoSrc(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  try {
+    const url = new URL(text);
+    return ["http:","https:"].includes(url.protocol) ? url.href : "";
+  } catch { return ""; }
+}
+
+function safeAudioSrc(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  if (/^data:audio\/(?:mpeg|mp3|ogg|wav|webm|mp4|aac|x-m4a|m4a);base64,/i.test(text)) return text;
+  return safeUrl(text);
+}
+
+function youtubeEmbedUrl(value) {
+  const url = safeVideoSrc(value);
+  if (!url) return "";
+  try {
+    const parsed = new URL(url);
+    let id = "";
+    if (parsed.hostname.includes("youtu.be")) id = parsed.pathname.split("/").filter(Boolean)[0] || "";
+    if (parsed.hostname.includes("youtube.com")) id = parsed.searchParams.get("v") || (parsed.pathname.includes("/shorts/") ? parsed.pathname.split("/").filter(Boolean).pop() : "");
+    return id ? `https://www.youtube.com/embed/${encodeURIComponent(id)}` : "";
+  } catch { return ""; }
+}
+
+function videoStageHtml(url) {
+  const embed = youtubeEmbedUrl(url);
+  if (embed) return `<iframe class="product-detail-video" src="${escapeHtml(embed)}" title="Video del producto" allow="accelerometer; autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
+  if (/\.(mp4|webm|ogg)(?:$|[?#])/i.test(url)) return `<video class="product-detail-video" src="${escapeHtml(url)}" controls playsinline preload="metadata"></video>`;
+  return `<div class="product-video-external"><span>VIDEO DEL PRODUCTO</span><a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">ABRIR VIDEO ↗</a></div>`;
+}
+
+function bindProductMedia(review) {
+  const stage = modalContent.querySelector("#productMediaStage");
+  if (!stage) return;
+
+  const thumbs = [...modalContent.querySelectorAll(".product-media-thumb")];
+  thumbs.forEach(button => {
+    button.addEventListener("click", () => {
+      const image = safeImageSrc(button.dataset.mediaImage || "");
+      const video = safeVideoSrc(button.dataset.mediaVideo || "");
+      if (image) stage.innerHTML = `<img class="product-detail-image" src="${escapeHtml(image)}" alt="${escapeHtml(review.name || "Producto")}">`;
+      else if (video) stage.innerHTML = videoStageHtml(video);
+      thumbs.forEach(item => item.classList.toggle("active", item === button));
+    });
+  });
+
+  const soundButton = modalContent.querySelector("#keyboardSoundButton");
+  const soundAudio = modalContent.querySelector("#keyboardSoundAudio");
+  soundButton?.addEventListener("click", async () => {
+    if (!soundAudio) return;
+    if (soundAudio.paused) {
+      try {
+        await soundAudio.play();
+        soundButton.classList.add("playing");
+        soundButton.querySelector("span").textContent = "SONANDO";
+      } catch {}
+    } else {
+      soundAudio.pause();
+    }
+  });
+  const stopSoundVisual = () => {
+    soundButton?.classList.remove("playing");
+    const label = soundButton?.querySelector("span");
+    if (label) label.textContent = "ESCUCHAR";
+  };
+  soundAudio?.addEventListener("ended", stopSoundVisual);
+  soundAudio?.addEventListener("pause", stopSoundVisual);
 }
 
 function displaySummary(review) {
@@ -1350,7 +1711,12 @@ function bindProductColorImages(review) {
       buttons.forEach(item => item.classList.remove("active"));
       button.classList.add("active");
       const src = mapping.get(String(button.dataset.productColorHex || "").toLowerCase()) || fallback;
-      if (src) image.src = src;
+      if (src) {
+        const stage = modalContent.querySelector("#productMediaStage");
+        if (stage) stage.innerHTML = `<img class="product-detail-image" src="${escapeHtml(src)}" alt="${escapeHtml(review.name || "Producto")}">`;
+        else if (image) image.src = src;
+        modalContent.querySelectorAll(".product-media-thumb").forEach(item => item.classList.remove("active"));
+      }
     });
   });
 }
@@ -1365,6 +1731,26 @@ function renderConnections(connections) {
       </div>
     </section>
   `;
+}
+
+function renderProPlayers(product) {
+  const players = Array.isArray(product?.specs?.proPlayers) ? product.specs.proPlayers : [];
+  if (!players.length) return "";
+
+  return `
+    <section class="product-info-section pro-players-section">
+      <div class="product-section-head"><h3>Jugadores profesionales</h3><p>${players.length} referencia${players.length===1?"":"s"}</p></div>
+      <div class="pro-player-grid">
+        ${players.map(player => {
+          const name = escapeHtml(player?.name || "Jugador");
+          const team = escapeHtml(player?.team || "");
+          const url = safeUrl(player?.url || "");
+          const content = `<span class="pro-player-avatar">${escapeHtml((player?.name||"?").trim().charAt(0).toUpperCase())}</span><span><strong>${name}</strong>${team?`<small>${team}</small>`:""}</span>${url?`<b>↗</b>`:""}`;
+          return url ? `<a class="pro-player-card" href="${url}" target="_blank" rel="noopener noreferrer">${content}</a>` : `<div class="pro-player-card">${content}</div>`;
+        }).join("")}
+      </div>
+      <p class="pro-player-note">Referencias añadidas por el administrador de MadeLesh.</p>
+    </section>`;
 }
 
 function renderTechnicalSource(product) {

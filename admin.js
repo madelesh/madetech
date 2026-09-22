@@ -1,4 +1,4 @@
-console.info("MadeLesh Admin build 5.18.3");
+console.info("MadeLesh Admin build 5.19");
 import { API_BASE } from "./config.js";
 
 const adminLogin = document.getElementById("adminLogin");
@@ -50,6 +50,16 @@ const productImageUrlInput = document.getElementById("productImageUrl");
 const productImagePreview = document.getElementById("productImagePreview");
 const productImageFile = document.getElementById("productImageFile");
 const clearProductImage = document.getElementById("clearProductImage");
+const productGalleryFiles = document.getElementById("productGalleryFiles");
+const productGalleryUrl = document.getElementById("productGalleryUrl");
+const addProductGalleryUrl = document.getElementById("addProductGalleryUrl");
+const productGalleryList = document.getElementById("productGalleryList");
+const productVideoUrl = document.getElementById("productVideoUrl");
+const keyboardSoundBlock = document.getElementById("keyboardSoundBlock");
+const keyboardSoundUrl = document.getElementById("keyboardSoundUrl");
+const keyboardSoundFile = document.getElementById("keyboardSoundFile");
+const keyboardSoundPreview = document.getElementById("keyboardSoundPreview");
+const productProPlayers = document.getElementById("productProPlayers");
 const storeAmazonIconFile = document.getElementById("storeAmazonIconFile");
 const storeAliExpressIconFile = document.getElementById("storeAliExpressIconFile");
 const storeAmazonIconPreview = document.getElementById("storeAmazonIconPreview");
@@ -298,6 +308,7 @@ function bindSpecChoiceGroups() {
 
 productCategory.addEventListener("change", () => {
   renderCategoryFields(productCategory.value, {});
+  renderKeyboardSoundVisibility();
   if (webSearchCategory) webSearchCategory.value = productCategory.value;
 });
 
@@ -368,19 +379,53 @@ function renderConnectionPicker() {
 /* ---------------- PRODUCT IMAGE PREVIEW ---------------- */
 
 function setProductImages(values = []) {
-  const images = [...new Set((Array.isArray(values) ? values : []).map(safeImageSource).filter(Boolean))].slice(0, 5);
+  const images = [...new Set((Array.isArray(values) ? values : []).map(safeImageSource).filter(Boolean))].slice(0, 12);
   productImagesJson.value = JSON.stringify(images);
   if (!productImageUrlInput.value && images[0]) productImageUrlInput.value = images[0];
+  renderProductGalleryList();
   renderMainImagePreview();
 }
 
 function getProductImages() {
   try {
     const parsed = JSON.parse(productImagesJson.value || "[]");
-    return Array.isArray(parsed) ? parsed.slice(0, 5) : [];
+    return Array.isArray(parsed) ? parsed.slice(0, 12) : [];
   } catch {
     return [];
   }
+}
+
+function renderProductGalleryList() {
+  if (!productGalleryList) return;
+  const images = getProductImages();
+  if (!images.length) {
+    productGalleryList.innerHTML = `<div class="gallery-empty-admin">Aún no hay imágenes adicionales.</div>`;
+    return;
+  }
+
+  productGalleryList.innerHTML = images.map((src,index) => `
+    <div class="gallery-admin-item">
+      <img src="${escapeAttr(src)}" alt="Imagen ${index+1}">
+      <div>
+        <button type="button" data-gallery-main="${index}">PRINCIPAL</button>
+        <button type="button" data-gallery-remove="${index}">×</button>
+      </div>
+    </div>`).join("");
+
+  productGalleryList.querySelectorAll("[data-gallery-main]").forEach(button => {
+    button.addEventListener("click", () => {
+      const src = images[Number(button.dataset.galleryMain)];
+      if (!src) return;
+      productImageUrlInput.value = src;
+      renderMainImagePreview();
+    });
+  });
+
+  productGalleryList.querySelectorAll("[data-gallery-remove]").forEach(button => {
+    button.addEventListener("click", () => {
+      setProductImages(images.filter((_,i) => i !== Number(button.dataset.galleryRemove)));
+    });
+  });
 }
 
 function renderMainImagePreview() {
@@ -433,7 +478,7 @@ productImageFile?.addEventListener("change", async () => {
   try {
     const dataUrl = await imageFileToWebpDataUrl(productImageFile.files?.[0]);
     productImageUrlInput.value = dataUrl;
-    setProductImages([dataUrl]);
+    setProductImages([dataUrl, ...getProductImages()]);
     renderMainImagePreview();
   } catch (error) {
     alert(error.message);
@@ -447,6 +492,102 @@ clearProductImage?.addEventListener("click", () => {
   setProductImages([]);
   renderMainImagePreview();
 });
+
+productGalleryFiles?.addEventListener("change", async () => {
+  const files = [...(productGalleryFiles.files || [])];
+  if (!files.length) return;
+  try {
+    const current = getProductImages();
+    const room = Math.max(0, 12 - current.length);
+    const converted = [];
+    for (const file of files.slice(0,room)) {
+      converted.push(await imageFileToWebpDataUrl(file,{maxSize:1000,quality:.78,maxChars:310000}));
+    }
+    setProductImages([...current,...converted]);
+    if (files.length > room) alert("MadeLesh permite hasta 12 imágenes por producto.");
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    productGalleryFiles.value = "";
+  }
+});
+
+addProductGalleryUrl?.addEventListener("click", () => {
+  const url = safeImageSource(productGalleryUrl?.value || "");
+  if (!url) return alert("Escribe una URL de imagen válida.");
+  const images = getProductImages();
+  if (images.length >= 12) return alert("MadeLesh permite hasta 12 imágenes por producto.");
+  setProductImages([...images,url]);
+  productGalleryUrl.value = "";
+});
+
+function renderKeyboardSoundVisibility() {
+  if (keyboardSoundBlock) keyboardSoundBlock.hidden = productCategory.value !== "Teclados";
+}
+
+function safeAudioSource(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  if (/^data:audio\/(?:mpeg|mp3|ogg|wav|webm|mp4|aac|x-m4a|m4a);base64,/i.test(text)) return text;
+  return safeExternalUrl(text);
+}
+
+function renderKeyboardSoundPreview() {
+  if (!keyboardSoundPreview) return;
+  const src = safeAudioSource(keyboardSoundUrl?.value || "");
+  keyboardSoundPreview.innerHTML = src ? `<audio controls preload="metadata" src="${escapeAttr(src)}"></audio>` : `<span>Sin audio cargado.</span>`;
+}
+
+async function audioDuration(file) {
+  return await new Promise((resolve,reject) => {
+    const audio = document.createElement("audio");
+    const url = URL.createObjectURL(file);
+    audio.preload = "metadata";
+    audio.onloadedmetadata = () => { const d = Number(audio.duration || 0); URL.revokeObjectURL(url); resolve(d); };
+    audio.onerror = () => { URL.revokeObjectURL(url); reject(new Error("No se pudo leer el audio.")); };
+    audio.src = url;
+  });
+}
+
+async function audioFileToDataUrl(file) {
+  if (!file || !String(file.type || "").startsWith("audio/")) throw new Error("Selecciona un audio válido.");
+  if (file.size > 1100000) throw new Error("El audio es demasiado pesado. Usa MP3/OGG corto de 5 a 10 segundos.");
+  const duration = await audioDuration(file);
+  if (duration > 12) throw new Error("El audio debe durar aproximadamente 5–10 segundos. Máximo permitido: 12 s.");
+  return await new Promise((resolve,reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("No se pudo cargar el audio."));
+    reader.readAsDataURL(file);
+  });
+}
+
+keyboardSoundUrl?.addEventListener("input", renderKeyboardSoundPreview);
+keyboardSoundFile?.addEventListener("change", async () => {
+  try {
+    keyboardSoundUrl.value = await audioFileToDataUrl(keyboardSoundFile.files?.[0]);
+    renderKeyboardSoundPreview();
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    keyboardSoundFile.value = "";
+  }
+});
+
+function parseProPlayers() {
+  return lines(productProPlayers?.value || "").map(line => {
+    const [name="",team="",url=""] = line.split("|").map(part => part.trim());
+    return {name,team,url};
+  }).filter(item => item.name).slice(0,20);
+}
+
+function formatProPlayers(players) {
+  return (Array.isArray(players) ? players : []).map(item => {
+    if (typeof item === "string") return item;
+    return [item?.name||"",item?.team||"",item?.url||""].join(" | ").replace(/\s+\|\s+\|\s*$/,"").trim();
+  }).filter(Boolean).join("\n");
+}
+
 
 
 /* ---------------- VISUAL PRODUCT EDITORS ---------------- */
@@ -853,6 +994,11 @@ function applyImportedWebProduct(product) {
   document.getElementById("productFeatured").value = "false";
   setConnections(Array.isArray(product.connections) ? product.connections : []);
   setProductImages(Array.isArray(product.images) && product.images.length ? product.images : (product.imageUrl ? [product.imageUrl] : []));
+  if (productVideoUrl) productVideoUrl.value = product.specs?.productVideo || "";
+  if (keyboardSoundUrl) keyboardSoundUrl.value = product.specs?.keyboardSound || "";
+  if (productProPlayers) productProPlayers.value = formatProPlayers(product.specs?.proPlayers || []);
+  renderKeyboardSoundVisibility();
+  renderKeyboardSoundPreview();
   document.getElementById("productYoutube").value = product.reviewLinks?.youtube || "";
   document.getElementById("productTiktok").value = product.reviewLinks?.tiktok || "";
   document.getElementById("productSummary").value = product.summary || "";
@@ -1409,10 +1555,7 @@ function editProduct(id) {
   document.getElementById("productStatus").value = product.status || "published";
   document.getElementById("productBrand").value = product.brand || "";
   document.getElementById("productName").value = product.name || "";
-  document.getElementById("productModel").value = product.model || ""; else {
-    eloshapesBrand.value = "";
-    eloshapesModel.value = "";
-  }
+  document.getElementById("productModel").value = product.model || "";
   document.getElementById("productScore").value = product.score ?? "";
   document.getElementById("productPrice").value = product.price || "";
   document.getElementById("productDate").value = product.date || "";
@@ -1451,11 +1594,12 @@ function resetProductForm() {
   renderColorPicker([]);
   setConnections([]);
   setProductImages([]);
+  if (productVideoUrl) productVideoUrl.value = "";
+  if (keyboardSoundUrl) keyboardSoundUrl.value = "";
+  if (productProPlayers) productProPlayers.value = "";
   renderCategoryFields("Mouse", {});
-  eloshapesBrand.value = "";
-  eloshapesModel.value = "";
-  eloshapesImportStatus.hidden = true;
-  eloshapesSourceLink.hidden = true;
+  renderKeyboardSoundVisibility();
+  renderKeyboardSoundPreview();
   renderMainImagePreview();
 }
 
@@ -1493,6 +1637,9 @@ productForm.addEventListener("submit", async event => {
   };
 
   payload.specs.colorImages = getColorImages();
+  payload.specs.productVideo = productVideoUrl?.value.trim() || "";
+  payload.specs.keyboardSound = productCategory.value === "Teclados" ? (keyboardSoundUrl?.value.trim() || "") : "";
+  payload.specs.proPlayers = parseProPlayers();
 
   const saveButton = document.getElementById("saveProduct");
   const oldText = saveButton.textContent;
@@ -1906,5 +2053,8 @@ function escapeAttr(value) {
 }
 
 renderConnectionPicker();
+renderProductGalleryList();
+renderKeyboardSoundVisibility();
+renderKeyboardSoundPreview();
 renderMainImagePreview();
 restoreAdminSession();

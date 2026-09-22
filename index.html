@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es" data-theme="light">
 <head>
-  <meta name="madelesh-build" content="5.18.3" />
+  <meta name="madelesh-build" content="5.19" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="MadeLesh — Reviews de mouse, teclados, IEM, headsets y DACs." />
@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link id="siteFavicon" rel="icon" type="image/png" href="" />
-  <link rel="stylesheet" href="styles.css?v=5.18.3" />
+  <link rel="stylesheet" href="styles.css?v=5.19" />
 </head>
 
 <body>
@@ -351,18 +351,43 @@
         <p class="empty-message" id="emptyMessage" hidden>No hay reviews que coincidan con tu búsqueda.</p>
       </section>
 
-      <section class="section compare-section compare-coming-soon" id="comparacion" data-view="comparacion">
-        <div class="coming-soon-card">
-          <span class="section-index">(03)</span>
-          <div class="coming-soon-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M7 4v16M17 4v16M4 7h6M14 17h6"></path><path d="m8 5-1-1-1 1M16 19l1 1 1-1"></path></svg>
-          </div>
+      <section class="section compare-section" id="comparacion" data-view="comparacion">
+        <div class="compare-page-head">
           <div>
-            <span class="coming-soon-kicker">PRÓXIMAMENTE</span>
-            <h2>Comparación</h2>
-            <p>Estamos preparando una herramienta para comparar productos lado a lado. Esta función todavía no está habilitada.</p>
+            <span class="section-index">(03)</span>
+            <span class="compare-kicker">HERRAMIENTA DE COMPARACIÓN</span>
+            <h2>Compara productos<br>de la misma categoría</h2>
           </div>
-          <span class="coming-soon-badge">COMING SOON</span>
+          <p>Selecciona un producto y MadeLesh limitará automáticamente la segunda opción a la misma categoría. Mouse con mouse, teclados con teclados, IEM con IEM, headsets con headsets y DAC con DAC.</p>
+        </div>
+
+        <div class="compare-selector-grid">
+          <label class="compare-select-card">
+            <span>PRODUCTO A</span>
+            <select id="compareProductA">
+              <option value="">Seleccionar producto</option>
+            </select>
+          </label>
+
+          <div class="compare-versus" aria-hidden="true">VS</div>
+
+          <label class="compare-select-card">
+            <span>PRODUCTO B</span>
+            <select id="compareProductB" disabled>
+              <option value="">Primero elige el producto A</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="compare-category-lock" id="compareCategoryLock">
+          Solo se permiten comparaciones entre productos de la misma categoría.
+        </div>
+
+        <div class="compare-result" id="compareResult">
+          <div class="compare-empty">
+            <strong>Elige dos productos para empezar.</strong>
+            <span>Las estadísticas aparecerán aquí de forma automática.</span>
+          </div>
         </div>
       </section>
 
@@ -416,7 +441,7 @@
     </article>
   </div>
 
-  <script type="module" src="app.js?v=5.18.3"></script>
+  <script type="module" src="app.js?v=5.19"></script>
   </div>
 </body>
 </html>

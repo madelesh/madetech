@@ -1817,3 +1817,26 @@ body.admin-authenticated #adminApp {
   letter-spacing: .06em;
   opacity: .7;
 }
+
+
+/* ==========================================================
+   MADELESH V5.19 — GALERÍA / AUDIO / VIDEO
+   ========================================================== */
+.product-gallery-admin,.product-video-admin{margin-top:14px}
+.product-gallery-actions{display:grid;grid-template-columns:auto minmax(220px,1fr) auto;gap:9px;align-items:center}
+.product-gallery-actions>input{min-height:40px;padding:0 12px;border:1px solid rgba(255,255,255,.12);border-radius:10px;background:#171719;color:#fff}
+.product-gallery-list-admin{margin-top:10px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.gallery-empty-admin{grid-column:1/-1;padding:14px;border:1px dashed rgba(255,255,255,.1);border-radius:12px;color:#707078;font-size:.7rem;text-align:center}
+.gallery-admin-item{position:relative;min-height:100px;overflow:hidden;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:#101012}
+.gallery-admin-item img{width:100%;height:100px;object-fit:contain}
+.gallery-admin-item>div{position:absolute;inset:auto 5px 5px 5px;display:flex;justify-content:space-between;gap:4px}
+.gallery-admin-item button{min-height:26px;padding:0 8px;border:0;border-radius:8px;background:rgba(6,6,7,.86);color:#fff;font-size:.52rem;font-weight:850;cursor:pointer}
+.gallery-admin-item button:first-child{color:#eeff00}
+.product-video-admin label{display:grid;gap:7px;color:#85858d;font-size:.64rem;letter-spacing:.08em}
+.product-video-admin input,#productProPlayers,#keyboardSoundUrl{min-height:46px;padding:0 12px;border:1px solid rgba(255,255,255,.12);border-radius:11px;background:#171719;color:#fff}
+#productProPlayers{width:100%;min-height:110px;padding:12px;resize:vertical;line-height:1.5}
+.keyboard-sound-admin-grid{display:grid;grid-template-columns:1fr auto;gap:9px}
+.keyboard-sound-preview-admin{margin-top:10px;min-height:44px;display:flex;align-items:center;color:#74747c;font-size:.7rem}
+.keyboard-sound-preview-admin audio{width:min(100%,460px);height:38px}
+@media(max-width:900px){.product-gallery-list-admin{grid-template-columns:repeat(3,minmax(0,1fr))}.product-gallery-actions,.keyboard-sound-admin-grid{grid-template-columns:1fr}}
+@media(max-width:560px){.product-gallery-list-admin{grid-template-columns:repeat(2,minmax(0,1fr))}}
