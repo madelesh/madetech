@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es" data-theme="dark">
 <head>
-  <meta name="madelesh-admin-build" content="5.19" />
+  <meta name="madelesh-admin-build" content="5.20" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0b0b0c" />
@@ -10,8 +10,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link id="siteFavicon" rel="icon" type="image/png" href="" />
-  <link rel="stylesheet" href="styles.css?v=5.19" />
-  <link rel="stylesheet" href="admin.css?v=5.19" />
+  <link rel="stylesheet" href="styles.css?v=5.20" />
+  <link rel="stylesheet" href="admin.css?v=5.20" />
 </head>
 <body class="admin-body">
 
@@ -39,7 +39,7 @@
 
       <p class="admin-error" id="adminLoginError" hidden></p>
       <a class="back-site" href="index.html">← Volver a MadeLesh</a>
-      <small class="admin-build-marker">build 5.19</small>
+      <small class="admin-build-marker">build 5.20</small>
     </div>
   </section>
 
@@ -85,7 +85,7 @@
       <div class="admin-sidebar-footer">
         <span id="adminIdentity"></span>
         <button id="adminLogout">Cerrar sesión</button>
-        <small class="admin-build-marker">build 5.19</small>
+        <small class="admin-build-marker">build 5.20</small>
       </div>
     </aside>
 
@@ -275,14 +275,30 @@
                 <div id="keyboardSoundPreview" class="keyboard-sound-preview-admin"><span>Sin audio cargado.</span></div>
               </div>
 
-              <div class="visual-field-block">
+              <div class="visual-field-block pro-players-admin-block">
                 <div class="visual-field-heading">
                   <div>
                     <span class="visual-field-label">JUGADORES PROFESIONALES</span>
-                    <small>Un jugador por línea: Nombre | Equipo | enlace opcional.</small>
+                    <small>Máximo 3 jugadores. El nombre y la red social se guardan en campos separados.</small>
                   </div>
                 </div>
-                <textarea id="productProPlayers" rows="4" placeholder="TenZ | Sentinels | https://...&#10;Jugador 2 | Equipo"></textarea>
+                <div class="pro-players-admin-grid">
+                  <div class="pro-player-admin-row">
+                    <span class="pro-player-number">01</span>
+                    <label>NOMBRE DEL JUGADOR<input id="proPlayerName1" type="text" maxlength="100" placeholder="Ej. TenZ" /></label>
+                    <label>RED SOCIAL<input id="proPlayerSocial1" type="url" placeholder="https://x.com/..." /></label>
+                  </div>
+                  <div class="pro-player-admin-row">
+                    <span class="pro-player-number">02</span>
+                    <label>NOMBRE DEL JUGADOR<input id="proPlayerName2" type="text" maxlength="100" placeholder="Jugador 2" /></label>
+                    <label>RED SOCIAL<input id="proPlayerSocial2" type="url" placeholder="https://..." /></label>
+                  </div>
+                  <div class="pro-player-admin-row">
+                    <span class="pro-player-number">03</span>
+                    <label>NOMBRE DEL JUGADOR<input id="proPlayerName3" type="text" maxlength="100" placeholder="Jugador 3" /></label>
+                    <label>RED SOCIAL<input id="proPlayerSocial3" type="url" placeholder="https://..." /></label>
+                  </div>
+                </div>
               </div>
 
               <div class="form-row">
@@ -297,6 +313,24 @@
                     <option value="true">Sí</option>
                   </select>
                 </label>
+              </div>
+              <div class="visual-field-block product-downloads-admin">
+                <div class="visual-field-heading">
+                  <div>
+                    <span class="visual-field-label">DRIVERS Y SOFTWARE</span>
+                    <small>Opcional. Añade enlaces oficiales de descarga para mostrarlos en la ficha.</small>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <label>
+                    LINK DE DRIVERS
+                    <input id="productDriverUrl" type="url" placeholder="https://marca.com/drivers" />
+                  </label>
+                  <label>
+                    LINK DE SOFTWARE
+                    <input id="productSoftwareUrl" type="url" placeholder="https://marca.com/software" />
+                  </label>
+                </div>
               </div>
 
               <div class="visual-field-block">
@@ -645,13 +679,28 @@
 
               <div class="release-notes-editor">
                 <span>CAMBIOS DE ESTA VERSIÓN</span>
-                <textarea id="releaseNotes" rows="8" maxlength="1100" placeholder="Escribe un cambio por línea.&#10;Ej. Se corrigió el modo claro.&#10;Ej. Se añadió carga de imágenes desde PC."></textarea>
-                <small>Máximo 6 cambios. Un cambio por línea.</small>
+                <textarea id="releaseNotes" rows="8" maxlength="1800" placeholder="Escribe un cambio por línea. MadeLesh lo separará automáticamente por palabras clave.&#10;Ej. Añadido botón de descarga de drivers.&#10;Ej. Eliminado precio de comparación.&#10;Ej. Corregida la galería de imágenes."></textarea>
+                <small>Palabras como “añadido/nuevo”, “eliminado/quitado” y “arreglado/corregido/solucionado” se clasifican automáticamente.</small>
+              </div>
+
+              <div class="release-auto-preview" id="releaseAutoPreview">
+                <section data-release-preview="added">
+                  <span class="release-preview-icon release-added-icon">+</span>
+                  <div><strong>Se añadió</strong><small id="releaseAddedPreview">Sin cambios</small></div>
+                </section>
+                <section data-release-preview="removed">
+                  <span class="release-preview-icon release-removed-icon">−</span>
+                  <div><strong>Se eliminó</strong><small id="releaseRemovedPreview">Sin cambios</small></div>
+                </section>
+                <section data-release-preview="fixed">
+                  <span class="release-preview-icon release-fixed-icon">✓</span>
+                  <div><strong>Se arregló</strong><small id="releaseFixedPreview">Sin cambios</small></div>
+                </section>
               </div>
 
               <div class="release-preview-hint">
                 <span>Vista pública:</span>
-                <strong>v5.18 · Ver cambios</strong>
+                <strong>v5.20 · Ver cambios</strong>
               </div>
 
               <div class="contacts-save-row">
@@ -672,7 +721,7 @@
   </div>
 
   <script type="module">
-console.info("MadeLesh Admin build 5.19");
+console.info("MadeLesh Admin build 5.20");
 import { API_BASE } from "./config.js";
 
 const adminLogin = document.getElementById("adminLogin");
@@ -733,7 +782,10 @@ const keyboardSoundBlock = document.getElementById("keyboardSoundBlock");
 const keyboardSoundUrl = document.getElementById("keyboardSoundUrl");
 const keyboardSoundFile = document.getElementById("keyboardSoundFile");
 const keyboardSoundPreview = document.getElementById("keyboardSoundPreview");
-const productProPlayers = document.getElementById("productProPlayers");
+const proPlayerNames = [1,2,3].map(i => document.getElementById(`proPlayerName${i}`));
+const proPlayerSocials = [1,2,3].map(i => document.getElementById(`proPlayerSocial${i}`));
+const productDriverUrl = document.getElementById("productDriverUrl");
+const productSoftwareUrl = document.getElementById("productSoftwareUrl");
 const storeAmazonIconFile = document.getElementById("storeAmazonIconFile");
 const storeAliExpressIconFile = document.getElementById("storeAliExpressIconFile");
 const storeAmazonIconPreview = document.getElementById("storeAmazonIconPreview");
@@ -747,6 +799,9 @@ const releaseVersion = document.getElementById("releaseVersion");
 const releaseDate = document.getElementById("releaseDate");
 const releaseTitle = document.getElementById("releaseTitle");
 const releaseNotes = document.getElementById("releaseNotes");
+const releaseAddedPreview = document.getElementById("releaseAddedPreview");
+const releaseRemovedPreview = document.getElementById("releaseRemovedPreview");
+const releaseFixedPreview = document.getElementById("releaseFixedPreview");
 const libraryNavCount = document.getElementById("libraryNavCount");
 const libraryCategoryFilter = document.getElementById("libraryCategoryFilter");
 const adminToast = document.getElementById("adminToast");
@@ -1227,7 +1282,7 @@ async function audioFileToDataUrl(file) {
   if (!file || !String(file.type || "").startsWith("audio/")) throw new Error("Selecciona un audio válido.");
   if (file.size > 1100000) throw new Error("El audio es demasiado pesado. Usa MP3/OGG corto de 5 a 10 segundos.");
   const duration = await audioDuration(file);
-  if (duration > 12) throw new Error("El audio debe durar aproximadamente 5–10 segundos. Máximo permitido: 12 s.");
+  if (duration < 5 || duration > 10) throw new Error("El audio del teclado debe durar entre 5 y 10 segundos.");
   return await new Promise((resolve,reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result || ""));
@@ -1249,22 +1304,21 @@ keyboardSoundFile?.addEventListener("change", async () => {
 });
 
 function parseProPlayers() {
-  return lines(productProPlayers?.value || "").map(line => {
-    const [name="",team="",url=""] = line.split("|").map(part => part.trim());
-    return {name,team,url};
-  }).filter(item => item.name).slice(0,20);
+  return proPlayerNames.map((input, index) => ({
+    name: String(input?.value || "").trim(),
+    url: String(proPlayerSocials[index]?.value || "").trim()
+  })).filter(item => item.name).slice(0, 3);
 }
 
-function formatProPlayers(players) {
-  return (Array.isArray(players) ? players : []).map(item => {
-    if (typeof item === "string") return item;
-    return [item?.name||"",item?.team||"",item?.url||""].join(" | ").replace(/\s+\|\s+\|\s*$/,"").trim();
-  }).filter(Boolean).join("\n");
+function fillProPlayers(players = []) {
+  const clean = Array.isArray(players) ? players.slice(0, 3) : [];
+  proPlayerNames.forEach((input, index) => {
+    if (input) input.value = clean[index]?.name || "";
+  });
+  proPlayerSocials.forEach((input, index) => {
+    if (input) input.value = clean[index]?.url || "";
+  });
 }
-
-
-
-/* ---------------- VISUAL PRODUCT EDITORS ---------------- */
 
 function renderColorPicker(colors = selectedColors) {
   selectedColors = normalizeColors(colors);
@@ -1670,7 +1724,9 @@ function applyImportedWebProduct(product) {
   setProductImages(Array.isArray(product.images) && product.images.length ? product.images : (product.imageUrl ? [product.imageUrl] : []));
   if (productVideoUrl) productVideoUrl.value = product.specs?.productVideo || "";
   if (keyboardSoundUrl) keyboardSoundUrl.value = product.specs?.keyboardSound || "";
-  if (productProPlayers) productProPlayers.value = formatProPlayers(product.specs?.proPlayers || []);
+  fillProPlayers(product.specs?.proPlayers || []);
+  if (productDriverUrl) productDriverUrl.value = product.specs?.driverDownloadUrl || "";
+  if (productSoftwareUrl) productSoftwareUrl.value = product.specs?.softwareDownloadUrl || "";
   renderKeyboardSoundVisibility();
   renderKeyboardSoundPreview();
   document.getElementById("productYoutube").value = product.reviewLinks?.youtube || "";
@@ -2077,28 +2133,68 @@ announcementsSettingsForm?.addEventListener("submit", async event => {
 });
 
 
+function classifyReleaseNotesAdmin(notes = []) {
+  const result = { added: [], removed: [], fixed: [] };
+  for (const raw of Array.isArray(notes) ? notes : []) {
+    const note = String(raw || "").trim();
+    if (!note) continue;
+    const lower = note.toLowerCase();
+    if (/(elimin|quit|remov|retir|desactiv|borr)/i.test(lower)) result.removed.push(note);
+    else if (/(arreg|correg|solucion|repar|fix|ajust|mejor|optim)/i.test(lower)) result.fixed.push(note);
+    else result.added.push(note);
+  }
+  return result;
+}
+
+function releaseChangesFromTextarea() {
+  return classifyReleaseNotesAdmin(
+    String(releaseNotes?.value || "")
+      .split("\n")
+      .map(value => value.trim())
+      .filter(Boolean)
+      .slice(0, 24)
+  );
+}
+
+function updateReleaseAutoPreview() {
+  const changes = releaseChangesFromTextarea();
+  const preview = (element, values) => {
+    if (!element) return;
+    element.textContent = values.length ? values.join(" · ") : "Sin cambios";
+  };
+  preview(releaseAddedPreview, changes.added);
+  preview(releaseRemovedPreview, changes.removed);
+  preview(releaseFixedPreview, changes.fixed);
+}
+
 function fillReleaseSettings(release = {}) {
-  if (releaseVersion) releaseVersion.value = String(release.version || "5.18").replace(/^v/i, "");
+  if (releaseVersion) releaseVersion.value = String(release.version || "5.20").replace(/^v/i, "");
   if (releaseDate) releaseDate.value = String(release.date || "");
   if (releaseTitle) releaseTitle.value = String(release.title || "");
+
+  const changes = release.changes && typeof release.changes === "object"
+    ? release.changes
+    : classifyReleaseNotesAdmin(release.notes || []);
+
   if (releaseNotes) {
-    releaseNotes.value = Array.isArray(release.notes)
-      ? release.notes.slice(0, 6).join("\n")
-      : "";
+    releaseNotes.value = [
+      ...(Array.isArray(changes.added) ? changes.added : []),
+      ...(Array.isArray(changes.removed) ? changes.removed : []),
+      ...(Array.isArray(changes.fixed) ? changes.fixed : [])
+    ].join("\n");
   }
+  updateReleaseAutoPreview();
 }
+
+releaseNotes?.addEventListener("input", updateReleaseAutoPreview);
 
 releaseSettingsForm?.addEventListener("submit", async event => {
   event.preventDefault();
 
-  const notes = String(releaseNotes?.value || "")
-    .split("\n")
-    .map(value => value.trim())
-    .filter(Boolean)
-    .slice(0, 6);
-
+  const changes = releaseChangesFromTextarea();
   const button = releaseSettingsForm.querySelector('button[type="submit"]');
   const original = button?.textContent || "GUARDAR ACTUALIZACIÓN ↗";
+
   if (button) {
     button.disabled = true;
     button.textContent = "GUARDANDO...";
@@ -2111,7 +2207,7 @@ releaseSettingsForm?.addEventListener("submit", async event => {
         version: releaseVersion?.value.trim() || "",
         date: releaseDate?.value || "",
         title: releaseTitle?.value.trim() || "",
-        notes
+        changes
       })
     });
 
@@ -2126,6 +2222,7 @@ releaseSettingsForm?.addEventListener("submit", async event => {
     }
   }
 });
+
 
 /* ---------------- PANELS ---------------- */
 
@@ -2270,7 +2367,9 @@ function resetProductForm() {
   setProductImages([]);
   if (productVideoUrl) productVideoUrl.value = "";
   if (keyboardSoundUrl) keyboardSoundUrl.value = "";
-  if (productProPlayers) productProPlayers.value = "";
+  fillProPlayers([]);
+  if (productDriverUrl) productDriverUrl.value = "";
+  if (productSoftwareUrl) productSoftwareUrl.value = "";
   renderCategoryFields("Mouse", {});
   renderKeyboardSoundVisibility();
   renderKeyboardSoundPreview();
@@ -2314,6 +2413,8 @@ productForm.addEventListener("submit", async event => {
   payload.specs.productVideo = productVideoUrl?.value.trim() || "";
   payload.specs.keyboardSound = productCategory.value === "Teclados" ? (keyboardSoundUrl?.value.trim() || "") : "";
   payload.specs.proPlayers = parseProPlayers();
+  payload.specs.driverDownloadUrl = productDriverUrl?.value.trim() || "";
+  payload.specs.softwareDownloadUrl = productSoftwareUrl?.value.trim() || "";
 
   const saveButton = document.getElementById("saveProduct");
   const oldText = saveButton.textContent;

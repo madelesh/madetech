@@ -3367,3 +3367,50 @@ html[data-theme="light"] .keyboard-sound-button{background:rgba(255,255,255,.9);
 
 @media(max-width:900px){.compare-page-head,.compare-products-head{grid-template-columns:1fr}.compare-selector-grid{grid-template-columns:1fr}.compare-versus{margin:auto}.compare-stats-grid{grid-template-columns:1fr}.pro-player-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:620px){.compare-spec-row{grid-template-columns:1fr 1fr}.compare-spec-row>span{grid-column:1/-1}.pro-player-grid{grid-template-columns:1fr}.product-media-stage,.product-media-stage .product-detail-image,.product-detail-video,.product-video-external{min-height:280px;height:280px}}
+
+
+/* ==========================================================
+   MADELESH V5.20 — NOTIFICACIONES / COMPARACIÓN SIMPLE / DESCARGAS
+   ========================================================== */
+.product-notification-wrap{position:relative}
+.product-notification-button{position:relative;width:38px;height:38px;display:grid;place-items:center;border:1px solid var(--line);border-radius:12px;background:transparent;color:var(--text);cursor:pointer}
+.product-notification-button svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.product-notification-badge{position:absolute;top:-6px;right:-6px;min-width:19px;height:19px;padding:0 5px;display:grid;place-items:center;border:2px solid var(--bg);border-radius:999px;background:var(--accent);color:#080808;font-size:.57rem;font-weight:950}
+.product-notification-popover{position:absolute;top:calc(100% + 10px);right:0;z-index:60;width:min(330px,calc(100vw - 30px));padding:12px;border:1px solid var(--line);border-radius:16px;background:var(--panel);box-shadow:0 22px 70px rgba(0,0,0,.32)}
+.product-notification-head{padding:4px 4px 10px;display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line)}
+.product-notification-head span{font-size:.56rem;letter-spacing:.1em;color:var(--muted)}.product-notification-head strong{font-size:.68rem}
+.product-notification-list{display:grid;gap:5px;padding-top:8px}
+.product-notification-list button{width:100%;min-height:52px;padding:7px;display:grid;grid-template-columns:42px 1fr auto;gap:9px;align-items:center;border:0;border-radius:10px;background:transparent;color:var(--text);text-align:left;cursor:pointer}
+.product-notification-list button:hover{background:rgba(127,127,127,.08)}
+.product-notification-list img{width:42px;height:42px;object-fit:contain;border-radius:9px;background:rgba(127,127,127,.06)}
+.product-notification-list button span{min-width:0;display:grid;gap:2px}.product-notification-list strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.7rem}.product-notification-list small{color:var(--muted);font-size:.58rem}.product-notification-list b{color:var(--accent)}
+.notification-empty{padding:16px;color:var(--muted);font-size:.7rem;text-align:center}
+
+.compare-stat-head strong{display:inline-flex;align-items:center;gap:7px}
+.compare-mini-icon,.compare-spec-icon{display:inline-grid;place-items:center;flex:0 0 auto;color:var(--accent)}
+.compare-mini-icon{width:18px;height:18px}.compare-spec-icon{width:22px;height:22px}
+.compare-mini-icon svg,.compare-spec-icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.compare-spec-row>span{display:flex;align-items:center;gap:8px}
+.compare-product-card p{display:none}
+
+.product-photo-section-label{margin-top:12px;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.product-photo-section-label span{font-size:.6rem;font-weight:900;letter-spacing:.1em;color:var(--text)}
+.product-photo-section-label small{font-size:.58rem;color:var(--muted)}
+.product-download-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.product-download-card{min-height:78px;padding:13px;display:grid;grid-template-columns:42px 1fr auto;gap:11px;align-items:center;border:1px solid var(--line);border-radius:16px;background:var(--panel);color:var(--text);text-decoration:none}
+.product-download-card:hover{border-color:var(--accent)}
+.product-download-icon{width:42px;height:42px;display:grid;place-items:center;border-radius:12px;background:rgba(238,255,0,.1);color:var(--accent)}
+.product-download-icon svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.product-download-card>span:nth-child(2){display:grid;gap:3px}.product-download-card small{font-size:.55rem;letter-spacing:.1em;color:var(--muted)}.product-download-card strong{font-size:.75rem}.product-download-card>b{color:var(--accent)}
+
+.footer-release-groups{margin-top:10px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.footer-release-group{padding:10px;border:1px solid var(--line);border-radius:12px;background:rgba(127,127,127,.035)}
+.footer-release-group-title{display:flex;align-items:center;gap:7px}.footer-release-group-title strong{font-size:.68rem}
+.footer-release-group-icon{width:23px;height:23px;display:grid;place-items:center;border-radius:7px}
+.footer-release-group-icon svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.footer-release-added .footer-release-group-icon{background:rgba(116,255,154,.1);color:#7cff9d}
+.footer-release-removed .footer-release-group-icon{background:rgba(255,115,115,.1);color:#ff8383}
+.footer-release-fixed .footer-release-group-icon{background:rgba(238,255,0,.1);color:var(--accent)}
+.footer-release-group ul{margin:8px 0 0 17px;padding:0;display:grid;gap:4px;color:var(--muted);font-size:.64rem;line-height:1.4}
+
+@media(max-width:760px){.footer-release-groups{grid-template-columns:1fr}.product-download-grid{grid-template-columns:1fr}.product-notification-popover{right:-90px}}

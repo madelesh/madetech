@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es" data-theme="light">
 <head>
-  <meta name="madelesh-build" content="5.19" />
+  <meta name="madelesh-build" content="5.20" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="MadeLesh — Reviews de mouse, teclados, IEM, headsets y DACs." />
@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link id="siteFavicon" rel="icon" type="image/png" href="" />
-  <link rel="stylesheet" href="styles.css?v=5.19" />
+  <link rel="stylesheet" href="styles.css?v=5.20" />
 </head>
 
 <body>
@@ -78,6 +78,24 @@
       </nav>
 
       <div class="header-actions">
+        <div class="product-notification-wrap" id="productNotificationWrap">
+          <button class="product-notification-button" id="productNotificationButton" type="button"
+                  aria-label="Productos publicados" aria-expanded="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
+              <path d="M10 21h4"></path>
+            </svg>
+            <span class="product-notification-badge" id="productNotificationBadge">0</span>
+          </button>
+          <div class="product-notification-popover" id="productNotificationPopover" hidden>
+            <div class="product-notification-head">
+              <span>PRODUCTOS PUBLICADOS</span>
+              <strong id="productNotificationCount">0 productos</strong>
+            </div>
+            <div class="product-notification-list" id="productNotificationList"></div>
+          </div>
+        </div>
+
         <button class="theme-toggle" id="themeToggle" type="button" aria-label="Cambiar tema">
           <svg class="sun-icon" viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="12" cy="12" r="4"></circle>
@@ -421,11 +439,11 @@
           </div>
           <time id="footerReleaseDate"></time>
         </div>
-        <ul id="footerReleaseNotes"></ul>
+        <div class="footer-release-groups" id="footerReleaseChanges"></div>
       </div>
 
       <div class="footer-version-row">
-        <span id="siteVersionLabel">MadeLesh v5.18</span>
+        <span id="siteVersionLabel">MadeLesh v5.20</span>
         <button id="footerReleaseToggle" type="button" aria-expanded="false">
           Ver cambios
         </button>
@@ -441,7 +459,7 @@
     </article>
   </div>
 
-  <script type="module" src="app.js?v=5.19"></script>
+  <script type="module" src="app.js?v=5.20"></script>
   </div>
 </body>
 </html>

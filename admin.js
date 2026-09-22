@@ -1,4 +1,4 @@
-console.info("MadeLesh Admin build 5.19");
+console.info("MadeLesh Admin build 5.20");
 import { API_BASE } from "./config.js";
 
 const adminLogin = document.getElementById("adminLogin");
@@ -59,7 +59,10 @@ const keyboardSoundBlock = document.getElementById("keyboardSoundBlock");
 const keyboardSoundUrl = document.getElementById("keyboardSoundUrl");
 const keyboardSoundFile = document.getElementById("keyboardSoundFile");
 const keyboardSoundPreview = document.getElementById("keyboardSoundPreview");
-const productProPlayers = document.getElementById("productProPlayers");
+const proPlayerNames = [1,2,3].map(i => document.getElementById(`proPlayerName${i}`));
+const proPlayerSocials = [1,2,3].map(i => document.getElementById(`proPlayerSocial${i}`));
+const productDriverUrl = document.getElementById("productDriverUrl");
+const productSoftwareUrl = document.getElementById("productSoftwareUrl");
 const storeAmazonIconFile = document.getElementById("storeAmazonIconFile");
 const storeAliExpressIconFile = document.getElementById("storeAliExpressIconFile");
 const storeAmazonIconPreview = document.getElementById("storeAmazonIconPreview");
@@ -73,6 +76,9 @@ const releaseVersion = document.getElementById("releaseVersion");
 const releaseDate = document.getElementById("releaseDate");
 const releaseTitle = document.getElementById("releaseTitle");
 const releaseNotes = document.getElementById("releaseNotes");
+const releaseAddedPreview = document.getElementById("releaseAddedPreview");
+const releaseRemovedPreview = document.getElementById("releaseRemovedPreview");
+const releaseFixedPreview = document.getElementById("releaseFixedPreview");
 const libraryNavCount = document.getElementById("libraryNavCount");
 const libraryCategoryFilter = document.getElementById("libraryCategoryFilter");
 const adminToast = document.getElementById("adminToast");
@@ -553,7 +559,7 @@ async function audioFileToDataUrl(file) {
   if (!file || !String(file.type || "").startsWith("audio/")) throw new Error("Selecciona un audio válido.");
   if (file.size > 1100000) throw new Error("El audio es demasiado pesado. Usa MP3/OGG corto de 5 a 10 segundos.");
   const duration = await audioDuration(file);
-  if (duration > 12) throw new Error("El audio debe durar aproximadamente 5–10 segundos. Máximo permitido: 12 s.");
+  if (duration < 5 || duration > 10) throw new Error("El audio del teclado debe durar entre 5 y 10 segundos.");
   return await new Promise((resolve,reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result || ""));
@@ -575,22 +581,21 @@ keyboardSoundFile?.addEventListener("change", async () => {
 });
 
 function parseProPlayers() {
-  return lines(productProPlayers?.value || "").map(line => {
-    const [name="",team="",url=""] = line.split("|").map(part => part.trim());
-    return {name,team,url};
-  }).filter(item => item.name).slice(0,20);
+  return proPlayerNames.map((input, index) => ({
+    name: String(input?.value || "").trim(),
+    url: String(proPlayerSocials[index]?.value || "").trim()
+  })).filter(item => item.name).slice(0, 3);
 }
 
-function formatProPlayers(players) {
-  return (Array.isArray(players) ? players : []).map(item => {
-    if (typeof item === "string") return item;
-    return [item?.name||"",item?.team||"",item?.url||""].join(" | ").replace(/\s+\|\s+\|\s*$/,"").trim();
-  }).filter(Boolean).join("\n");
+function fillProPlayers(players = []) {
+  const clean = Array.isArray(players) ? players.slice(0, 3) : [];
+  proPlayerNames.forEach((input, index) => {
+    if (input) input.value = clean[index]?.name || "";
+  });
+  proPlayerSocials.forEach((input, index) => {
+    if (input) input.value = clean[index]?.url || "";
+  });
 }
-
-
-
-/* ---------------- VISUAL PRODUCT EDITORS ---------------- */
 
 function renderColorPicker(colors = selectedColors) {
   selectedColors = normalizeColors(colors);
@@ -996,7 +1001,9 @@ function applyImportedWebProduct(product) {
   setProductImages(Array.isArray(product.images) && product.images.length ? product.images : (product.imageUrl ? [product.imageUrl] : []));
   if (productVideoUrl) productVideoUrl.value = product.specs?.productVideo || "";
   if (keyboardSoundUrl) keyboardSoundUrl.value = product.specs?.keyboardSound || "";
-  if (productProPlayers) productProPlayers.value = formatProPlayers(product.specs?.proPlayers || []);
+  fillProPlayers(product.specs?.proPlayers || []);
+  if (productDriverUrl) productDriverUrl.value = product.specs?.driverDownloadUrl || "";
+  if (productSoftwareUrl) productSoftwareUrl.value = product.specs?.softwareDownloadUrl || "";
   renderKeyboardSoundVisibility();
   renderKeyboardSoundPreview();
   document.getElementById("productYoutube").value = product.reviewLinks?.youtube || "";
@@ -1403,28 +1410,68 @@ announcementsSettingsForm?.addEventListener("submit", async event => {
 });
 
 
+function classifyReleaseNotesAdmin(notes = []) {
+  const result = { added: [], removed: [], fixed: [] };
+  for (const raw of Array.isArray(notes) ? notes : []) {
+    const note = String(raw || "").trim();
+    if (!note) continue;
+    const lower = note.toLowerCase();
+    if (/(elimin|quit|remov|retir|desactiv|borr)/i.test(lower)) result.removed.push(note);
+    else if (/(arreg|correg|solucion|repar|fix|ajust|mejor|optim)/i.test(lower)) result.fixed.push(note);
+    else result.added.push(note);
+  }
+  return result;
+}
+
+function releaseChangesFromTextarea() {
+  return classifyReleaseNotesAdmin(
+    String(releaseNotes?.value || "")
+      .split("\n")
+      .map(value => value.trim())
+      .filter(Boolean)
+      .slice(0, 24)
+  );
+}
+
+function updateReleaseAutoPreview() {
+  const changes = releaseChangesFromTextarea();
+  const preview = (element, values) => {
+    if (!element) return;
+    element.textContent = values.length ? values.join(" · ") : "Sin cambios";
+  };
+  preview(releaseAddedPreview, changes.added);
+  preview(releaseRemovedPreview, changes.removed);
+  preview(releaseFixedPreview, changes.fixed);
+}
+
 function fillReleaseSettings(release = {}) {
-  if (releaseVersion) releaseVersion.value = String(release.version || "5.18").replace(/^v/i, "");
+  if (releaseVersion) releaseVersion.value = String(release.version || "5.20").replace(/^v/i, "");
   if (releaseDate) releaseDate.value = String(release.date || "");
   if (releaseTitle) releaseTitle.value = String(release.title || "");
+
+  const changes = release.changes && typeof release.changes === "object"
+    ? release.changes
+    : classifyReleaseNotesAdmin(release.notes || []);
+
   if (releaseNotes) {
-    releaseNotes.value = Array.isArray(release.notes)
-      ? release.notes.slice(0, 6).join("\n")
-      : "";
+    releaseNotes.value = [
+      ...(Array.isArray(changes.added) ? changes.added : []),
+      ...(Array.isArray(changes.removed) ? changes.removed : []),
+      ...(Array.isArray(changes.fixed) ? changes.fixed : [])
+    ].join("\n");
   }
+  updateReleaseAutoPreview();
 }
+
+releaseNotes?.addEventListener("input", updateReleaseAutoPreview);
 
 releaseSettingsForm?.addEventListener("submit", async event => {
   event.preventDefault();
 
-  const notes = String(releaseNotes?.value || "")
-    .split("\n")
-    .map(value => value.trim())
-    .filter(Boolean)
-    .slice(0, 6);
-
+  const changes = releaseChangesFromTextarea();
   const button = releaseSettingsForm.querySelector('button[type="submit"]');
   const original = button?.textContent || "GUARDAR ACTUALIZACIÓN ↗";
+
   if (button) {
     button.disabled = true;
     button.textContent = "GUARDANDO...";
@@ -1437,7 +1484,7 @@ releaseSettingsForm?.addEventListener("submit", async event => {
         version: releaseVersion?.value.trim() || "",
         date: releaseDate?.value || "",
         title: releaseTitle?.value.trim() || "",
-        notes
+        changes
       })
     });
 
@@ -1452,6 +1499,7 @@ releaseSettingsForm?.addEventListener("submit", async event => {
     }
   }
 });
+
 
 /* ---------------- PANELS ---------------- */
 
@@ -1596,7 +1644,9 @@ function resetProductForm() {
   setProductImages([]);
   if (productVideoUrl) productVideoUrl.value = "";
   if (keyboardSoundUrl) keyboardSoundUrl.value = "";
-  if (productProPlayers) productProPlayers.value = "";
+  fillProPlayers([]);
+  if (productDriverUrl) productDriverUrl.value = "";
+  if (productSoftwareUrl) productSoftwareUrl.value = "";
   renderCategoryFields("Mouse", {});
   renderKeyboardSoundVisibility();
   renderKeyboardSoundPreview();
@@ -1640,6 +1690,8 @@ productForm.addEventListener("submit", async event => {
   payload.specs.productVideo = productVideoUrl?.value.trim() || "";
   payload.specs.keyboardSound = productCategory.value === "Teclados" ? (keyboardSoundUrl?.value.trim() || "") : "";
   payload.specs.proPlayers = parseProPlayers();
+  payload.specs.driverDownloadUrl = productDriverUrl?.value.trim() || "";
+  payload.specs.softwareDownloadUrl = productSoftwareUrl?.value.trim() || "";
 
   const saveButton = document.getElementById("saveProduct");
   const oldText = saveButton.textContent;

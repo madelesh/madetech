@@ -66,7 +66,13 @@ const footerReleaseToggle = document.getElementById("footerReleaseToggle");
 const footerReleasePanel = document.getElementById("footerReleasePanel");
 const footerReleaseTitle = document.getElementById("footerReleaseTitle");
 const footerReleaseDate = document.getElementById("footerReleaseDate");
-const footerReleaseNotes = document.getElementById("footerReleaseNotes");
+const footerReleaseChanges = document.getElementById("footerReleaseChanges");
+const productNotificationWrap = document.getElementById("productNotificationWrap");
+const productNotificationButton = document.getElementById("productNotificationButton");
+const productNotificationBadge = document.getElementById("productNotificationBadge");
+const productNotificationPopover = document.getElementById("productNotificationPopover");
+const productNotificationCount = document.getElementById("productNotificationCount");
+const productNotificationList = document.getElementById("productNotificationList");
 
 let reviews = [];
 let currentRole = null;
@@ -173,36 +179,73 @@ async function loadPublicSettings() {
 }
 
 
-function renderPublicRelease(release = {}, version = "5.18") {
+function releaseIcon(type) {
+  const icons = {
+    added: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>`,
+    removed: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"></path></svg>`,
+    fixed: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 13 4 4L19 7"></path></svg>`
+  };
+  return icons[type] || icons.added;
+}
+
+function renderPublicRelease(release = {}, version = "5.20") {
   if (siteVersionLabel) {
-    siteVersionLabel.textContent = `MadeLesh v${String(version || "5.18").replace(/^v/i, "")}`;
+    siteVersionLabel.textContent = `MadeLesh v${String(version || "5.20").replace(/^v/i, "")}`;
   }
 
-  if (!footerReleasePanel || !footerReleaseToggle || !footerReleaseNotes) return;
+  if (!footerReleasePanel || !footerReleaseToggle || !footerReleaseChanges) return;
 
-  const notes = Array.isArray(release.notes)
-    ? release.notes.map(item => String(item || "").trim()).filter(Boolean).slice(0, 6)
-    : [];
+  const fallbackChanges = classifyReleaseNotesClient(release.notes || []);
+  const source = release.changes && typeof release.changes === "object" ? release.changes : fallbackChanges;
+  const changes = {
+    added: Array.isArray(source.added) ? source.added.filter(Boolean).slice(0, 8) : [],
+    removed: Array.isArray(source.removed) ? source.removed.filter(Boolean).slice(0, 8) : [],
+    fixed: Array.isArray(source.fixed) ? source.fixed.filter(Boolean).slice(0, 8) : []
+  };
 
   footerReleaseTitle.textContent = String(release.title || "Actualización de MadeLesh");
-  footerReleaseNotes.innerHTML = notes.map(note => `<li>${escapeHtml(note)}</li>`).join("");
+
+  const groups = [
+    ["added", "Se añadió", changes.added],
+    ["removed", "Se eliminó", changes.removed],
+    ["fixed", "Se arregló", changes.fixed]
+  ].filter(([, , items]) => items.length);
+
+  footerReleaseChanges.innerHTML = groups.map(([type, title, items]) => `
+    <section class="footer-release-group footer-release-${type}">
+      <div class="footer-release-group-title">
+        <span class="footer-release-group-icon">${releaseIcon(type)}</span>
+        <strong>${title}</strong>
+      </div>
+      <ul>${items.map(note => `<li>${escapeHtml(note)}</li>`).join("")}</ul>
+    </section>
+  `).join("");
 
   const date = String(release.date || "").trim();
   if (date) {
     const parsed = new Date(`${date}T12:00:00`);
     footerReleaseDate.textContent = Number.isNaN(parsed.getTime())
       ? date
-      : new Intl.DateTimeFormat("es-EC", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric"
-        }).format(parsed);
+      : new Intl.DateTimeFormat("es-EC", { day: "2-digit", month: "short", year: "numeric" }).format(parsed);
   } else {
     footerReleaseDate.textContent = "";
   }
 
-  footerReleaseToggle.hidden = notes.length === 0;
-  if (!notes.length) footerReleasePanel.hidden = true;
+  footerReleaseToggle.hidden = groups.length === 0;
+  if (!groups.length) footerReleasePanel.hidden = true;
+}
+
+function classifyReleaseNotesClient(notes = []) {
+  const result = { added: [], removed: [], fixed: [] };
+  for (const raw of Array.isArray(notes) ? notes : []) {
+    const note = String(raw || "").trim();
+    if (!note) continue;
+    const lower = note.toLowerCase();
+    if (/(elimin|quit|remov|retir|desactiv|borr)/i.test(lower)) result.removed.push(note);
+    else if (/(arreg|correg|solucion|repar|fix|ajust|mejor|optim)/i.test(lower)) result.fixed.push(note);
+    else result.added.push(note);
+  }
+  return result;
 }
 
 footerReleaseToggle?.addEventListener("click", () => {
@@ -617,11 +660,59 @@ async function loadReviews() {
     populateComparisonSelectors();
     renderReviews();
     updateFeatured();
+    renderProductNotifications();
   } catch (error) {
     console.error(error);
     reviewsGrid.innerHTML = `<div class="review-loading">No se pudieron cargar las reviews.</div>`;
   }
 }
+
+function renderProductNotifications() {
+  if (!productNotificationBadge || !productNotificationList || !productNotificationCount) return;
+  const total = reviews.length;
+  productNotificationBadge.textContent = String(total);
+  productNotificationBadge.hidden = total === 0;
+  productNotificationCount.textContent = `${total} ${total === 1 ? "producto" : "productos"}`;
+
+  const recent = [...reviews]
+    .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))
+    .slice(0, 6);
+
+  productNotificationList.innerHTML = recent.length
+    ? recent.map(product => `
+        <button type="button" data-notification-product="${product.id}">
+          <img src="${escapeHtml(comparisonImage(product))}" alt="">
+          <span>
+            <strong>${escapeHtml(product.name || "Producto")}</strong>
+            <small>${escapeHtml(product.category || "")}</small>
+          </span>
+          <b>↗</b>
+        </button>
+      `).join("")
+    : `<div class="notification-empty">No hay productos publicados.</div>`;
+
+  productNotificationList.querySelectorAll("[data-notification-product]").forEach(button => {
+    button.addEventListener("click", () => {
+      productNotificationPopover.hidden = true;
+      productNotificationButton?.setAttribute("aria-expanded", "false");
+      openReview(Number(button.dataset.notificationProduct));
+    });
+  });
+}
+
+productNotificationButton?.addEventListener("click", event => {
+  event.stopPropagation();
+  const open = productNotificationPopover.hidden;
+  productNotificationPopover.hidden = !open;
+  productNotificationButton.setAttribute("aria-expanded", String(open));
+});
+
+document.addEventListener("click", event => {
+  if (!productNotificationWrap?.contains(event.target)) {
+    if (productNotificationPopover) productNotificationPopover.hidden = true;
+    productNotificationButton?.setAttribute("aria-expanded", "false");
+  }
+});
 
 function cardTemplate(review) {
   const image = safeImageSrc(review.imageUrl) || safeImageSrc(Array.isArray(review.images) ? review.images[0] : "") || categoryPlaceholderDataUrl(review.category);
@@ -949,12 +1040,58 @@ const compareResult = document.getElementById("compareResult");
 const compareCategoryLock = document.getElementById("compareCategoryLock");
 
 const COMPARISON_TEXT_SPECS = {
-  Mouse: [["Sensor","sensor"],["MCU","mcu"],["Switch","switchType"],["Material","material"],["Conexión","__connections"]],
-  Teclados: [["Switch","switchType"],["Tecnología","switchTechnology"],["Formato","layout"],["Hot-swap","hotSwap"],["Rapid Trigger","rapidTrigger"],["Keycaps","keycaps"],["Montaje","mount"],["Conexión","__connections"]],
-  IEM: [["Drivers","driverConfig"],["Firma sonora","soundSignature"],["Impedancia","impedance"],["Sensibilidad","sensitivity"],["Respuesta en frecuencia","frequencyResponse"],["Conector","cableConnector"],["Plug","plug"],["Conexión","__connections"]],
-  Headsets: [["Driver","driver"],["Micrófono","microphone"],["Codec","codec"],["Sonido espacial","spatialAudio"],["Impedancia","impedance"],["Respuesta en frecuencia","frequencyResponse"],["Almohadillas","earpads"],["Conexión","__connections"]],
-  DAC: [["Chip DAC","dacChip"],["Amplificador","ampChip"],["Entradas","inputs"],["Salidas","outputs"],["PCM máximo","maxPcm"],["DSD máximo","maxDsd"],["Bluetooth","bluetooth"],["Ganancia","gain"]]
+  Mouse: [
+    ["weight","Peso","weight"],
+    ["sensor","Sensor","sensor"],
+    ["pollingRate","Polling Rate","pollingRate"],
+    ["__connections","Conexión","connection"]
+  ],
+  Teclados: [
+    ["switchType","Switch","switch"],
+    ["layout","Formato","layout"],
+    ["pollingRate","Polling Rate","pollingRate"],
+    ["rapidTrigger","Rapid Trigger","rapid"]
+  ],
+  IEM: [
+    ["driverConfig","Drivers","driver"],
+    ["impedance","Impedancia","impedance"],
+    ["soundSignature","Firma sonora","sound"],
+    ["__connections","Conexión","connection"]
+  ],
+  Headsets: [
+    ["driver","Driver","driver"],
+    ["weight","Peso","weight"],
+    ["batteryHours","Autonomía","battery"],
+    ["__connections","Conexión","connection"]
+  ],
+  DAC: [
+    ["dacChip","Chip DAC","chip"],
+    ["outputs","Salidas","output"],
+    ["maxPcm","PCM máximo","pcm"],
+    ["bluetooth","Bluetooth","bluetooth"]
+  ]
 };
+
+function comparisonSpecIcon(icon) {
+  const icons = {
+    weight:`<svg viewBox="0 0 24 24"><path d="M7 9a5 5 0 0 1 10 0"/><path d="M5 9h14l2 11H3z"/><path d="m12 9 2-3"/></svg>`,
+    sensor:`<svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="16" rx="7"/><path d="M12 4v6"/></svg>`,
+    pollingRate:`<svg viewBox="0 0 24 24"><path d="M4 14a8 8 0 1 1 2 4"/><path d="M4 19v-5h5"/></svg>`,
+    connection:`<svg viewBox="0 0 24 24"><path d="M8 12h8M12 8v8"/><path d="M5 5h4v4H5zM15 15h4v4h-4z"/></svg>`,
+    switch:`<svg viewBox="0 0 24 24"><rect x="5" y="6" width="14" height="12" rx="2"/><path d="M8 10h8M8 14h5"/></svg>`,
+    layout:`<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M6 10h2M10 10h2M14 10h2M18 10h1M6 14h12"/></svg>`,
+    rapid:`<svg viewBox="0 0 24 24"><path d="m13 2-8 12h7l-1 8 8-12h-7z"/></svg>`,
+    driver:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/></svg>`,
+    impedance:`<svg viewBox="0 0 24 24"><path d="M4 12h3l2-4 4 8 2-4h5"/></svg>`,
+    sound:`<svg viewBox="0 0 24 24"><path d="M5 9v6h4l5 4V5L9 9z"/><path d="M17 9c2 2 2 4 0 6"/></svg>`,
+    battery:`<svg viewBox="0 0 24 24"><rect x="3" y="7" width="17" height="10" rx="2"/><path d="M20 10h2v4h-2M6 10h8"/></svg>`,
+    chip:`<svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M9 3v4M15 3v4M9 17v4M15 17v4M3 9h4M17 9h4M3 15h4M17 15h4"/></svg>`,
+    output:`<svg viewBox="0 0 24 24"><path d="M4 12h12"/><path d="m12 8 4 4-4 4"/><path d="M18 6h2v12h-2"/></svg>`,
+    pcm:`<svg viewBox="0 0 24 24"><path d="M3 12h3l2-6 4 12 3-8 2 2h4"/></svg>`,
+    bluetooth:`<svg viewBox="0 0 24 24"><path d="m7 7 10 10V7L7 17l10-10"/></svg>`
+  };
+  return icons[icon] || icons.chip;
+}
 
 function comparisonImage(product) {
   return safeImageSrc(product?.imageUrl)
@@ -1019,47 +1156,41 @@ function powerOutput(product) {
 
 function comparisonMetrics(category) {
   const scoreMetric = {
-    key:"score", label:"MadeLesh Score", unit:"/10", direction:"high", weight:2,
+    key:"score", label:"MadeLesh Score", icon:"score", unit:"/10", direction:"high", weight:2,
     value:p => Number(p?.score) > 0 ? Number(p.score) : NaN
-  };
-  const priceMetric = {
-    key:"price", label:"Precio de referencia", unit:"", direction:"low", weight:0,
-    value:p => parsePrice(p?.price), format:v => `$${v.toFixed(2)}`
   };
 
   const map = {
     Mouse: [
-      {key:"polling",label:"Polling Rate",unit:" Hz",direction:"high",weight:1,value:maxPolling},
-      {key:"weight",label:"Peso",unit:" g",direction:"low",weight:1,value:p=>parseFirstNumber(p?.specs?.weight)},
-      {key:"battery",label:"Autonomía",unit:" h",direction:"high",weight:1,value:batteryHours},
-      scoreMetric, priceMetric
+      {key:"polling",label:"Polling Rate",icon:"pollingRate",unit:" Hz",direction:"high",weight:1,value:maxPolling},
+      {key:"weight",label:"Peso",icon:"weight",unit:" g",direction:"low",weight:1,value:p=>parseFirstNumber(p?.specs?.weight)},
+      {key:"battery",label:"Autonomía",icon:"battery",unit:" h",direction:"high",weight:1,value:batteryHours},
+      scoreMetric
     ],
     Teclados: [
-      {key:"polling",label:"Polling Rate",unit:" Hz",direction:"high",weight:1,value:maxPolling},
-      {key:"battery",label:"Autonomía",unit:" h",direction:"high",weight:1,value:batteryHours},
-      {key:"features",label:"Funciones competitivas",unit:"/2",direction:"high",weight:1,value:p=>featureCount(p,["hotSwap","rapidTrigger"])},
-      scoreMetric, priceMetric
+      {key:"polling",label:"Polling Rate",icon:"pollingRate",unit:" Hz",direction:"high",weight:1,value:maxPolling},
+      {key:"battery",label:"Autonomía",icon:"battery",unit:" h",direction:"high",weight:1,value:batteryHours},
+      {key:"features",label:"Funciones competitivas",icon:"rapid",unit:"/2",direction:"high",weight:1,value:p=>featureCount(p,["hotSwap","rapidTrigger"])},
+      scoreMetric
     ],
     IEM: [
-      {key:"weight",label:"Peso por lado",unit:" g",direction:"low",weight:1,value:p=>parseFirstNumber(p?.specs?.weightPerSide)},
-      {key:"detachable",label:"Cable desmontable",unit:"",direction:"high",weight:1,value:p=>p?.specs?.detachableCable===true?1:(p?.specs?.detachableCable===false?0:NaN),format:v=>v?"Sí":"No"},
-      scoreMetric, priceMetric
+      {key:"weight",label:"Peso por lado",icon:"weight",unit:" g",direction:"low",weight:1,value:p=>parseFirstNumber(p?.specs?.weightPerSide)},
+      {key:"detachable",label:"Cable desmontable",icon:"connection",unit:"",direction:"high",weight:1,value:p=>p?.specs?.detachableCable===true?1:(p?.specs?.detachableCable===false?0:NaN),format:v=>v?"Sí":"No"},
+      scoreMetric
     ],
     Headsets: [
-      {key:"battery",label:"Autonomía",unit:" h",direction:"high",weight:1,value:batteryHours},
-      {key:"weight",label:"Peso",unit:" g",direction:"low",weight:1,value:p=>parseFirstNumber(p?.specs?.weight)},
-      {key:"detachableMic",label:"Micrófono desmontable",unit:"",direction:"high",weight:1,value:p=>p?.specs?.detachableMic===true?1:(p?.specs?.detachableMic===false?0:NaN),format:v=>v?"Sí":"No"},
-      scoreMetric, priceMetric
+      {key:"battery",label:"Autonomía",icon:"battery",unit:" h",direction:"high",weight:1,value:batteryHours},
+      {key:"weight",label:"Peso",icon:"weight",unit:" g",direction:"low",weight:1,value:p=>parseFirstNumber(p?.specs?.weight)},
+      scoreMetric
     ],
     DAC: [
-      {key:"power",label:"Potencia de salida",unit:" mW",direction:"high",weight:1,value:powerOutput},
-      {key:"pcm",label:"PCM máximo",unit:" kHz",direction:"high",weight:1,value:pcmRate},
-      {key:"dsd",label:"DSD máximo",unit:"",direction:"high",weight:1,value:dsdRate,format:v=>`DSD${Math.round(v)}`},
-      {key:"balanced",label:"Salida balanceada",unit:"",direction:"high",weight:1,value:p=>p?.specs?.balanced===true?1:(p?.specs?.balanced===false?0:NaN),format:v=>v?"Sí":"No"},
-      scoreMetric, priceMetric
+      {key:"power",label:"Potencia de salida",icon:"output",unit:" mW",direction:"high",weight:1,value:powerOutput},
+      {key:"pcm",label:"PCM máximo",icon:"pcm",unit:" kHz",direction:"high",weight:1,value:pcmRate},
+      {key:"dsd",label:"DSD máximo",icon:"chip",unit:"",direction:"high",weight:1,value:dsdRate,format:v=>`DSD${Math.round(v)}`},
+      scoreMetric
     ]
   };
-  return map[category] || [scoreMetric, priceMetric];
+  return map[category] || [scoreMetric];
 }
 
 function metricAdvantage(value, other, direction) {
@@ -1135,7 +1266,6 @@ function comparisonProductCard(product,isWinner) {
       <img src="${escapeHtml(comparisonImage(product))}" alt="${escapeHtml(product.name || "Producto")}">
       <small>${escapeHtml(product.category || "")}</small>
       <h3>${escapeHtml(`${product.brand||""} ${product.name||""}`.trim())}</h3>
-      <p>${escapeHtml(product.price || "Precio no disponible")}</p>
       <button type="button" data-open-compare-product="${product.id}">Ver producto</button>
     </article>`;
 }
@@ -1172,8 +1302,8 @@ function renderComparison() {
     return `
       <article class="compare-stat-card">
         <div class="compare-stat-head">
-          <strong>${escapeHtml(metric.label)}</strong>
-          <span>${metric.weight===0 ? "Referencia" : (winner==="tie" ? "Empate" : "Ventaja detectada")}</span>
+          <strong><span class="compare-mini-icon">${comparisonSpecIcon(metric.icon || "chip")}</span>${escapeHtml(metric.label)}</strong>
+          <span>${winner==="tie" ? "Empate" : "Ventaja detectada"}</span>
         </div>
         <div class="compare-stat-side ${winner==="a" ? "metric-winner" : ""}">
           <span>${escapeHtml(a.name || "Producto A")}</span>
@@ -1201,9 +1331,9 @@ function renderComparison() {
     winnerNote = "Añade más especificaciones comparables para calcular un producto destacado.";
   }
 
-  const textRows = (COMPARISON_TEXT_SPECS[a.category] || []).map(([label,key]) => `
+  const textRows = (COMPARISON_TEXT_SPECS[a.category] || []).map(([key,label,icon]) => `
     <div class="compare-spec-row">
-      <span>${escapeHtml(label)}</span>
+      <span><i class="compare-spec-icon">${comparisonSpecIcon(icon)}</i>${escapeHtml(label)}</span>
       <strong>${escapeHtml(comparisonTextValue(a,key))}</strong>
       <strong>${escapeHtml(comparisonTextValue(b,key))}</strong>
     </div>`).join("");
@@ -1312,6 +1442,7 @@ async function openReview(id) {
         </section>
 
         ${renderTechnicalSource(review)}
+        ${renderProductDownloads(review)}
         ${renderPurchaseLinks(review)}
         ${renderReviewLinks(review)}
 
@@ -1397,6 +1528,10 @@ function productImageHtml(review) {
       ` : ""}
 
       ${(images.length > 1 || video) ? `
+        <div class="product-photo-section-label">
+          <span>FOTOS DEL PRODUCTO</span>
+          <small>${images.length} ${images.length === 1 ? "imagen" : "imágenes"}${video ? " · 1 video" : ""}</small>
+        </div>
         <div class="product-media-thumbs">
           ${images.map((src,index) => `
             <button class="product-media-thumb ${index===0 ? "active" : ""}" type="button" data-media-image="${escapeHtml(src)}" aria-label="Imagen ${index+1}">
@@ -1734,22 +1869,61 @@ function renderConnections(connections) {
 }
 
 function renderProPlayers(product) {
-  const players = Array.isArray(product?.specs?.proPlayers) ? product.specs.proPlayers : [];
+  const players = Array.isArray(product?.specs?.proPlayers) ? product.specs.proPlayers.slice(0, 3) : [];
   if (!players.length) return "";
 
   return `
     <section class="product-info-section pro-players-section">
-      <div class="product-section-head"><h3>Jugadores profesionales</h3><p>${players.length} referencia${players.length===1?"":"s"}</p></div>
+      <div class="product-section-head">
+        <h3>Jugadores profesionales</h3>
+        <p>Periférico usado por</p>
+      </div>
       <div class="pro-player-grid">
         ${players.map(player => {
           const name = escapeHtml(player?.name || "Jugador");
-          const team = escapeHtml(player?.team || "");
           const url = safeUrl(player?.url || "");
-          const content = `<span class="pro-player-avatar">${escapeHtml((player?.name||"?").trim().charAt(0).toUpperCase())}</span><span><strong>${name}</strong>${team?`<small>${team}</small>`:""}</span>${url?`<b>↗</b>`:""}`;
-          return url ? `<a class="pro-player-card" href="${url}" target="_blank" rel="noopener noreferrer">${content}</a>` : `<div class="pro-player-card">${content}</div>`;
+          const content = `
+            <span class="pro-player-avatar">${escapeHtml((player?.name || "?").trim().charAt(0).toUpperCase())}</span>
+            <span><strong>${name}</strong><small>${url ? "Ver red social" : "Jugador profesional"}</small></span>
+            ${url ? `<b>↗</b>` : ""}`;
+          return url
+            ? `<a class="pro-player-card" href="${url}" target="_blank" rel="noopener noreferrer">${content}</a>`
+            : `<div class="pro-player-card">${content}</div>`;
         }).join("")}
       </div>
-      <p class="pro-player-note">Referencias añadidas por el administrador de MadeLesh.</p>
+    </section>`;
+}
+
+
+function renderProductDownloads(product) {
+  const driverUrl = safeUrl(product?.specs?.driverDownloadUrl || "");
+  const softwareUrl = safeUrl(product?.specs?.softwareDownloadUrl || "");
+  if (!driverUrl && !softwareUrl) return "";
+
+  return `
+    <section class="product-info-section product-downloads-section">
+      <div class="product-section-head">
+        <h3>Drivers y software</h3>
+        <p>Descargas oficiales configuradas por MadeLesh</p>
+      </div>
+      <div class="product-download-grid">
+        ${driverUrl ? `
+          <a class="product-download-card" href="${driverUrl}" target="_blank" rel="noopener noreferrer">
+            <span class="product-download-icon">
+              <svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 19h14"/></svg>
+            </span>
+            <span><small>DRIVERS</small><strong>Descargar drivers</strong></span>
+            <b>↗</b>
+          </a>` : ""}
+        ${softwareUrl ? `
+          <a class="product-download-card" href="${softwareUrl}" target="_blank" rel="noopener noreferrer">
+            <span class="product-download-icon">
+              <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h5"/></svg>
+            </span>
+            <span><small>SOFTWARE</small><strong>Descargar software</strong></span>
+            <b>↗</b>
+          </a>` : ""}
+      </div>
     </section>`;
 }
 
