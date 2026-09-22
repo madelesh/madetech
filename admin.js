@@ -1,3 +1,4 @@
+console.info("MadeLesh Admin build 5.18.3");
 import { API_BASE } from "./config.js";
 
 const adminLogin = document.getElementById("adminLogin");
@@ -1103,10 +1104,17 @@ async function restoreAdminSession() {
     showAdminDashboard(me.profileName || "Administrador");
     await loadAdminDashboardData();
   } catch (error) {
-    console.warn("Sesión admin no válida:", error);
-    localStorage.removeItem("madetech_admin_token");
-    adminToken = "";
-    showAdminLogin("Tu sesión de administrador expiró. Inicia sesión nuevamente.");
+    console.warn("No se pudo restaurar la sesión admin:", error);
+
+    if (error?.status === 401 || error?.status === 403) {
+      localStorage.removeItem("madetech_admin_token");
+      adminToken = "";
+      showAdminLogin("Tu sesión de administrador expiró. Inicia sesión nuevamente.");
+      return;
+    }
+
+    // Un error temporal del API o de red no debe destruir el token guardado.
+    showAdminLogin(`No se pudo comprobar la sesión: ${error?.message || "error de conexión"}.`);
   }
 }
 

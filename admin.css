@@ -1807,3 +1807,13 @@ body.admin-authenticated #adminApp {
     grid-template-columns: 1fr;
   }
 }
+
+/* Hotfix 5.18.3 — marcador de sincronización */
+.admin-build-marker {
+  display: block;
+  margin-top: 10px;
+  color: #666;
+  font-size: .58rem;
+  letter-spacing: .06em;
+  opacity: .7;
+}

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es" data-theme="dark">
 <head>
+  <meta name="madelesh-admin-build" content="5.18.3" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0b0b0c" />
@@ -9,8 +10,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link id="siteFavicon" rel="icon" type="image/png" href="" />
-  <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="admin.css" />
+  <link rel="stylesheet" href="styles.css?v=5.18.3" />
+  <link rel="stylesheet" href="admin.css?v=5.18.3" />
 </head>
 <body class="admin-body">
 
@@ -38,6 +39,7 @@
 
       <p class="admin-error" id="adminLoginError" hidden></p>
       <a class="back-site" href="index.html">← Volver a MadeLesh</a>
+      <small class="admin-build-marker">build 5.18.3</small>
     </div>
   </section>
 
@@ -83,6 +85,7 @@
       <div class="admin-sidebar-footer">
         <span id="adminIdentity"></span>
         <button id="adminLogout">Cerrar sesión</button>
+        <small class="admin-build-marker">build 5.18.3</small>
       </div>
     </aside>
 
@@ -616,6 +619,6 @@
     <span id="adminToastText">Este producto ha sido agregado correctamente</span>
   </div>
 
-  <script type="module" src="admin.js"></script>
+  <script type="module" src="admin.js?v=5.18.3"></script>
 </body>
 </html>
