@@ -73,10 +73,6 @@ const storeAmazon = document.getElementById("storeAmazon");
 const storeAliExpress = document.getElementById("storeAliExpress");
 const extraStores = document.getElementById("extraStores");
 const addStoreButton = document.getElementById("addStoreButton");
-const universalProductUrl = document.getElementById("universalProductUrl");
-const universalImportButton = document.getElementById("universalImportButton");
-const universalImportStatus = document.getElementById("universalImportStatus");
-const universalSourceLink = document.getElementById("universalSourceLink");
 
 const webSearchCategory = document.getElementById("webSearchCategory");
 const webSearchBrand = document.getElementById("webSearchBrand");
@@ -85,15 +81,7 @@ const webSearchButton = document.getElementById("webSearchButton");
 const webSearchStatus = document.getElementById("webSearchStatus");
 const webSourceList = document.getElementById("webSourceList");
 
-const eloshapesBrand = document.getElementById("eloshapesBrand");
-const eloshapesModel = document.getElementById("eloshapesModel");
-const eloshapesImportButton = document.getElementById("eloshapesImportButton");
-const eloshapesImportStatus = document.getElementById("eloshapesImportStatus");
-const eloshapesSourceLink = document.getElementById("eloshapesSourceLink");
 
-const mechkeysProductUrl = document.getElementById("mechkeysProductUrl");
-const mechkeysImportButton = document.getElementById("mechkeysImportButton");
-const mechkeysImportStatus = document.getElementById("mechkeysImportStatus");
 
 const keyGeneratorForm = document.getElementById("keyGeneratorForm");
 const generatedKeyBox = document.getElementById("generatedKeyBox");
@@ -168,8 +156,7 @@ const categorySchemas = {
     field("battery", "Battery", "text", "Ej. 300 mAh / 80 h"),
     field("weight", "Peso (g)", "number", "Ej. 50"),
     field("sensor", "Sensor", "text", "Ej. PAW3950"),
-    field("material", "Material", "text", "Ej. Aleación de magnesio"),
-    field("eloShapesUrl", "Fuente técnica EloShapes", "url", "https://www.eloshapes.com/mouse/compare?p=...")
+    field("material", "Material", "text", "Ej. Aleación de magnesio")
   ],
   Teclados: [
     field("switchType", "Switch", "text", "Ej. Gateron Jade Pro"),
@@ -760,9 +747,9 @@ renderTrustedStores([]);
 
 /* ---------------- INTERNET AUTO-IMPORT ---------------- */
 
-webSearchButton.addEventListener("click", importFromWeb);
+webSearchButton?.addEventListener("click", importFromWeb);
 
-[webSearchBrand, webSearchModel].forEach(input => {
+[webSearchBrand, webSearchModel].filter(Boolean).forEach(input => {
   input.addEventListener("keydown", event => {
     if (event.key === "Enter") {
       event.preventDefault();
@@ -771,7 +758,7 @@ webSearchButton.addEventListener("click", importFromWeb);
   });
 });
 
-webSearchCategory.addEventListener("change", () => {
+webSearchCategory?.addEventListener("change", () => {
   productCategory.value = webSearchCategory.value;
   renderCategoryFields(productCategory.value, {});
 });
@@ -854,10 +841,6 @@ function applyImportedWebProduct(product) {
   document.getElementById("productBrand").value = product.brand || "";
   document.getElementById("productName").value = product.name || "";
   document.getElementById("productModel").value = product.model || "";
-  if (product.category === "Mouse") {
-    eloshapesBrand.value = product.brand || "";
-    eloshapesModel.value = product.model || product.name || "";
-  }
   document.getElementById("productScore").value =
     Number.isFinite(Number(product.score)) ? Number(product.score) : 0;
   document.getElementById("productPrice").value = product.price || "";
@@ -912,109 +895,6 @@ function renderWebSources(sources) {
       }).join("")}
     </div>
   `;
-}
-
-
-/* ---------------- MECHKEYS AUTO-IMPORT ---------------- */
-
-mechkeysImportButton.addEventListener("click", importFromMechKeys);
-mechkeysProductUrl.addEventListener("keydown", event => {
-  if (event.key === "Enter") {
-    event.preventDefault();
-    importFromMechKeys();
-  }
-});
-
-async function importFromMechKeys() {
-  const url = mechkeysProductUrl.value.trim();
-  if (!url) {
-    showMechKeysStatus("Pega primero el enlace individual del producto.", "error");
-    mechkeysProductUrl.focus();
-    return;
-  }
-
-  const oldText = mechkeysImportButton.textContent;
-  mechkeysImportButton.disabled = true;
-  mechkeysImportButton.textContent = "EXTRAYENDO...";
-  showMechKeysStatus("Conectando con MechKeys y leyendo la ficha técnica...", "loading");
-
-  try {
-    const result = await api("/admin/import/mechkeys", {
-      method: "POST",
-      body: JSON.stringify({ url })
-    });
-
-    applyImportedMechKeysProduct(result.product || {});
-
-    const detected = Array.isArray(result.detected) ? result.detected : [];
-    const warnings = Array.isArray(result.warnings) ? result.warnings : [];
-    const detectedText = detected.length
-      ? `<strong>Encontrado:</strong> ${detected.map(escapeHtml).join(", ")}.`
-      : "La página respondió, pero no pude reconocer campos automáticamente.";
-    const warningHtml = warnings.length
-      ? `<ul>${warnings.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
-      : "";
-
-    showMechKeysStatus(`✓ Ficha extraída. ${detectedText}${warningHtml}`, "success", true);
-    productForm.scrollIntoView({ behavior: "smooth", block: "start" });
-  } catch (error) {
-    const messages = {
-      mechkeys_url_required: "Pega un enlace de producto de MechKeys.",
-      invalid_mechkeys_url: "El enlace debe pertenecer a https://mechkeys.com/.",
-      mechkeys_product_url_required: "Pega el enlace individual del producto, por ejemplo https://mechkeys.com/products/zaopin-z2. No uses el enlace de una colección.",
-      mechkeys_fetch_failed: "No pude leer MechKeys en este momento. Prueba nuevamente en unos segundos."
-    };
-    showMechKeysStatus(messages[error.code] || `No se pudo importar: ${error.message}`, "error");
-  } finally {
-    mechkeysImportButton.disabled = false;
-    mechkeysImportButton.textContent = oldText;
-  }
-}
-
-function applyImportedMechKeysProduct(product) {
-  // Nunca sobrescribimos un producto ya guardado; la importación prepara una ficha nueva.
-  document.getElementById("productId").value = "";
-  productFormTitle.textContent = "Nuevo producto · importado de MechKeys";
-  document.getElementById("productStatus").value = "draft";
-
-  const allowedCategories = ["Mouse", "Teclados", "IEM", "Headsets", "DAC"];
-  if (allowedCategories.includes(product.category)) {
-    productCategory.value = product.category;
-  }
-
-  document.getElementById("productBrand").value = product.brand || "";
-  document.getElementById("productName").value = product.name || "";
-  document.getElementById("productModel").value = product.model || "";
-  if (product.category === "Mouse") {
-    eloshapesBrand.value = product.brand || "";
-    eloshapesModel.value = product.model || product.name || "";
-  }
-  document.getElementById("productScore").value = Number.isFinite(Number(product.score)) ? Number(product.score) : 0;
-  document.getElementById("productPrice").value = product.price || "";
-  document.getElementById("productDate").value = "";
-  document.getElementById("productImageUrl").value = product.imageUrl || "";
-  renderMainImagePreview();
-  document.getElementById("productOfficialUrl").value = product.officialUrl || "";
-  document.getElementById("productFeatured").value = "false";
-  setConnections(Array.isArray(product.connections) ? product.connections : []);
-  setProductImages(Array.isArray(product.images) && product.images.length ? product.images : (product.imageUrl ? [product.imageUrl] : []));
-  document.getElementById("productYoutube").value = product.reviewLinks?.youtube || "";
-  document.getElementById("productTiktok").value = product.reviewLinks?.tiktok || "";
-  document.getElementById("productSummary").value = product.summary || "";
-  document.getElementById("productPros").value = Array.isArray(product.pros) ? product.pros.join("\n") : "";
-  document.getElementById("productCons").value = Array.isArray(product.cons) ? product.cons.join("\n") : "";
-
-  renderTrustedStores(Array.isArray(product.trustedStores) ? product.trustedStores : []);
-  setColorImages(product.specs?.colorImages || []);
-  renderColorPicker(Array.isArray(product.colors) ? product.colors : []);
-  renderCategoryFields(productCategory.value, product.specs || {});
-}
-
-function showMechKeysStatus(message, type = "", allowHtml = false) {
-  mechkeysImportStatus.hidden = false;
-  mechkeysImportStatus.className = `mechkeys-import-status ${type}`.trim();
-  if (allowHtml) mechkeysImportStatus.innerHTML = message;
-  else mechkeysImportStatus.textContent = message;
 }
 
 
@@ -1231,7 +1111,7 @@ async function restoreAdminSession() {
   }
 }
 
-adminLoginForm.addEventListener("submit", async event => {
+adminLoginForm?.addEventListener("submit", async event => {
   event.preventDefault();
   adminLoginError.hidden = true;
 
@@ -1260,7 +1140,7 @@ adminLoginForm.addEventListener("submit", async event => {
   }
 });
 
-adminLogout.addEventListener("click", async () => {
+adminLogout?.addEventListener("click", async () => {
   try { await api("/session/logout", { method: "POST" }); } catch {}
   localStorage.removeItem("madetech_admin_token");
   adminToken = "";
@@ -1453,11 +1333,7 @@ function editProduct(id) {
   document.getElementById("productStatus").value = product.status || "published";
   document.getElementById("productBrand").value = product.brand || "";
   document.getElementById("productName").value = product.name || "";
-  document.getElementById("productModel").value = product.model || "";
-  if (product.category === "Mouse") {
-    eloshapesBrand.value = product.brand || "";
-    eloshapesModel.value = product.model || product.name || "";
-  } else {
+  document.getElementById("productModel").value = product.model || ""; else {
     eloshapesBrand.value = "";
     eloshapesModel.value = "";
   }
