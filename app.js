@@ -196,13 +196,18 @@ function renderPublicContacts(contacts = {}) {
     ["email", "Correo", socialIcon("email")]
   ];
 
+  const customIcons = contacts?.icons || {};
   const links = definitions.flatMap(([key, label, icon]) => {
     const raw = String(contacts?.[key] || "").trim();
     if (!raw) return [];
     const href = key === "email" ? `mailto:${raw}` : safeUrl(raw);
     if (!href) return [];
     const target = key === "email" ? "" : ' target="_blank" rel="noopener noreferrer"';
-    return [`<a class="social-contact-card social-${key}" href="${escapeHtml(href)}"${target}>${icon}<span>${escapeHtml(label)}</span><b>↗</b></a>`];
+    const customIcon = safeImageSrc(customIcons?.[key]);
+    const iconHtml = customIcon
+      ? `<img class="social-contact-custom-icon" src="${escapeHtml(customIcon)}" alt="">`
+      : icon;
+    return [`<a class="social-contact-card social-${key}" href="${escapeHtml(href)}"${target}>${iconHtml}<span>${escapeHtml(label)}</span><b>↗</b></a>`];
   });
 
   if (!links.length) {
@@ -939,7 +944,7 @@ async function openReview(id) {
           </div>
         </section>
 
-        ${renderColors(review.colors)}
+        ${renderColors(review.colors, review.specs?.colorImages)}
         ${renderConnections(review.connections)}
 
         <section class="product-info-section">
@@ -999,6 +1004,7 @@ async function openReview(id) {
     `;
 
     if (currentRole === "user") bindRatingButtons(id, Number(rating.mine || 0));
+    bindProductColorImages(review);
 
     modal.classList.add("open");
     modal.setAttribute("aria-hidden", "false");
@@ -1010,7 +1016,8 @@ async function openReview(id) {
 }
 
 function productImageHtml(review) {
-  const image = safeUrl(review.imageUrl) || safeUrl(Array.isArray(review.images) ? review.images[0] : "");
+  const firstColorImage = Array.isArray(review?.specs?.colorImages) ? review.specs.colorImages.map(item => safeImageSrc(item?.image || "")).find(Boolean) : "";
+  const image = safeImageSrc(review.imageUrl) || safeImageSrc(Array.isArray(review.images) ? review.images[0] : "") || firstColorImage;
   if (!image) return `<div class="product-detail-placeholder" aria-label="Imagen no disponible"></div>`;
   return `<div class="product-single-image"><img class="product-detail-image" src="${image}" alt="${escapeHtml(review.name || "Producto")}"></div>`;
 }
@@ -1207,21 +1214,45 @@ function pushSpec(list, label, value) {
   }
 }
 
-function renderColors(colors) {
+function renderColors(colors, colorImages = []) {
   if (!Array.isArray(colors) || !colors.length) return "";
+  const mapped = new Set((Array.isArray(colorImages) ? colorImages : []).map(item => String(item?.hex || "").toLowerCase()));
   return `
     <section class="product-info-section">
-      <div class="product-section-head"><h3>Colores disponibles</h3><p>${colors.length} colores</p></div>
-      <div class="product-color-list">
-        ${colors.map(item => `
-          <span class="product-color">
+      <div class="product-section-head"><h3>Colores disponibles</h3><p>Selecciona un color para cambiar la imagen</p></div>
+      <div class="product-color-list product-color-selector">
+        ${colors.map((item, index) => `
+          <button type="button" class="product-color ${index === 0 ? "active" : ""} ${mapped.has(String(item.hex || "").toLowerCase()) ? "has-image" : ""}"
+                  data-product-color-hex="${escapeHtml(String(item.hex || "").toLowerCase())}">
             <span class="product-color-dot" style="background:${safeColor(item.hex)}"></span>
             ${escapeHtml(item.name || item.hex || "Color")}
-          </span>
+          </button>
         `).join("")}
       </div>
     </section>
   `;
+}
+
+function bindProductColorImages(review) {
+  const buttons = [...modalContent.querySelectorAll("[data-product-color-hex]")];
+  const image = modalContent.querySelector(".product-detail-image");
+  if (!buttons.length || !image) return;
+
+  const mapping = new Map(
+    (Array.isArray(review?.specs?.colorImages) ? review.specs.colorImages : [])
+      .map(item => [String(item?.hex || "").toLowerCase(), safeImageSrc(item?.image || item?.imageUrl || "")])
+      .filter(([,src]) => Boolean(src))
+  );
+  const fallback = safeImageSrc(review.imageUrl) || safeImageSrc(Array.isArray(review.images) ? review.images[0] : "");
+
+  buttons.forEach(button => {
+    button.addEventListener("click", () => {
+      buttons.forEach(item => item.classList.remove("active"));
+      button.classList.add("active");
+      const src = mapping.get(String(button.dataset.productColorHex || "").toLowerCase()) || fallback;
+      if (src) image.src = src;
+    });
+  });
 }
 
 function renderConnections(connections) {
@@ -1411,6 +1442,13 @@ function formatValue(value) {
   if (Array.isArray(value)) return value.join(", ");
   if (typeof value === "boolean") return value ? "Sí" : "No";
   return value;
+}
+
+function safeImageSrc(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  if (/^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/=\s]+$/i.test(text)) return text;
+  return safeUrl(text);
 }
 
 function safeUrl(value) {

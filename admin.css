@@ -1673,3 +1673,46 @@ body.admin-authenticated #adminApp {
   .branding-theme-grid, .contacts-settings-form { grid-template-columns: 1fr; }
   .contacts-save-row { align-items: stretch; flex-direction: column; }
 }
+
+
+/* ==========================================================
+   MADELESH V5.16 — GUÍAS DE IMAGEN, ICONOS Y VARIANTES COLOR
+   ========================================================== */
+.image-size-hint { display:block; margin-top:7px; color:#74747c; font-size:.7rem; line-height:1.45; text-transform:none; letter-spacing:0; }
+
+.color-image-editor { display:grid; gap:9px; margin-top:14px; }
+.color-image-empty { padding:12px 14px; border:1px dashed rgba(255,255,255,.10); border-radius:12px; color:#717178; font-size:.75rem; }
+.color-image-row {
+  display:grid; grid-template-columns:145px 70px minmax(180px,1fr) auto auto;
+  align-items:center; gap:9px; padding:9px; border:1px solid rgba(255,255,255,.09);
+  border-radius:13px; background:#151517;
+}
+.color-image-identity { display:flex; align-items:center; gap:8px; min-width:0; }
+.color-image-identity > span { width:24px; height:24px; border-radius:50%; border:1px solid rgba(255,255,255,.20); flex:0 0 auto; }
+.color-image-identity strong { font-size:.76rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.color-image-preview { width:64px; height:52px; display:grid; place-items:center; overflow:hidden; border:1px solid rgba(255,255,255,.10); border-radius:9px; background:#0e0e10; color:#626268; font-size:.6rem; }
+.color-image-preview img { width:100%; height:100%; object-fit:contain; padding:4px; }
+.color-image-url { width:100%; min-height:42px; border:1px solid rgba(255,255,255,.11); border-radius:10px; padding:0 11px; background:#101012; color:#fff; outline:none; }
+.color-image-url:focus { border-color:#eeff00; }
+.color-image-file-button { min-height:40px; padding:0 12px; display:inline-flex; align-items:center; border-radius:999px; background:#eeff00; color:#080808; font-size:.68rem; font-weight:900; cursor:pointer; }
+.color-image-file-button input { position:absolute; opacity:0; pointer-events:none; }
+.color-image-clear { min-height:40px; }
+
+.contact-setting-card { padding:13px; display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:end; gap:12px; border:1px solid rgba(255,255,255,.08); border-radius:14px; background:#151517; }
+.contact-setting-card > label { min-width:0; }
+.contact-icon-admin { display:grid; grid-template-columns:48px auto auto; gap:7px; align-items:center; }
+.contact-icon-preview { width:46px; height:46px; display:grid; place-items:center; overflow:hidden; border:1px solid rgba(255,255,255,.12); border-radius:11px; background:#0e0e10; color:#666; font-size:.6rem; }
+.contact-icon-preview img { width:100%; height:100%; object-fit:contain; padding:6px; }
+.contact-icon-file { min-height:38px; padding:0 11px; display:inline-flex; align-items:center; border-radius:999px; background:#eeff00; color:#080808; font-size:.64rem; font-weight:900; cursor:pointer; }
+.contact-icon-file input { position:absolute; opacity:0; pointer-events:none; }
+.contact-icon-clear { min-height:38px; }
+
+@media(max-width:900px){
+  .color-image-row{grid-template-columns:120px 60px minmax(150px,1fr);}
+  .color-image-file-button,.color-image-clear{grid-row:2;}
+  .contact-setting-card{grid-template-columns:1fr;align-items:stretch;}
+}
+@media(max-width:600px){
+  .color-image-row{grid-template-columns:1fr 60px;}
+  .color-image-url{grid-column:1/-1;}
+}

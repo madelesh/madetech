@@ -276,6 +276,7 @@
                 <label>
                   URL DE IMAGEN DEL PRODUCTO
                   <input id="productImageUrl" type="url" placeholder="https://..." />
+                  <small class="image-size-hint">Recomendado: 1200 × 1200 px · PNG/WebP transparente · el producto debe ocupar 80–90% del lienzo.</small>
                 </label>
                 <div class="admin-image-preview-card" id="productImagePreview">
                   <div class="admin-image-preview-empty">
@@ -338,6 +339,8 @@
 
                 <div class="color-picker-admin" id="productColorPicker"></div>
                 <input id="customColorInput" type="color" value="#7c3aed" hidden />
+                <div class="color-image-editor" id="colorImageEditor"></div>
+                <small class="image-size-hint">Imagen por color: 1000 × 1000 px recomendado. Puedes pegar una URL o subir PNG/JPG/WEBP. Máx. 180 KB por imagen subida.</small>
               </div>
 
               <div class="visual-field-block">
@@ -486,7 +489,7 @@
       <section class="admin-panel" id="brandingPanel">
         <div class="admin-grid branding-admin-grid branding-theme-grid">
           <div class="admin-card">
-            <div class="card-heading"><div><span class="admin-eyebrow">MODO CLARO</span><h2>Logo claro</h2><p>Logo usado cuando la web está en modo claro.</p></div></div>
+            <div class="card-heading"><div><span class="admin-eyebrow">MODO CLARO</span><h2>Logo claro</h2><p>Logo usado cuando la web está en modo claro. Recomendado: 600 × 180 px, fondo transparente.</p></div></div>
             <div class="branding-upload-block">
               <div class="branding-preview branding-logo-preview" id="brandingLogoLightPreview"><span>Sin logo para modo claro</span></div>
               <label class="branding-file-button"><input id="brandingLogoLightFile" type="file" accept="image/png,image/jpeg,image/webp" /><span>SUBIR LOGO CLARO</span></label>
@@ -494,7 +497,7 @@
             </div>
           </div>
           <div class="admin-card">
-            <div class="card-heading"><div><span class="admin-eyebrow">MODO OSCURO</span><h2>Logo oscuro</h2><p>Logo usado cuando la web está en modo oscuro.</p></div></div>
+            <div class="card-heading"><div><span class="admin-eyebrow">MODO OSCURO</span><h2>Logo oscuro</h2><p>Logo usado cuando la web está en modo oscuro. Recomendado: 600 × 180 px, fondo transparente.</p></div></div>
             <div class="branding-upload-block">
               <div class="branding-preview branding-logo-preview" id="brandingLogoDarkPreview"><span>Sin logo para modo oscuro</span></div>
               <label class="branding-file-button"><input id="brandingLogoDarkFile" type="file" accept="image/png,image/jpeg,image/webp" /><span>SUBIR LOGO OSCURO</span></label>
@@ -502,7 +505,7 @@
             </div>
           </div>
           <div class="admin-card">
-            <div class="card-heading"><div><span class="admin-eyebrow">PESTAÑA · MODO CLARO</span><h2>Favicon claro</h2><p>Icono de la pestaña cuando la web está en modo claro.</p></div></div>
+            <div class="card-heading"><div><span class="admin-eyebrow">PESTAÑA · MODO CLARO</span><h2>Favicon claro</h2><p>Icono de la pestaña cuando la web está en modo claro. Recomendado: 512 × 512 px.</p></div></div>
             <div class="branding-upload-block">
               <div class="branding-preview branding-favicon-preview" id="brandingFaviconLightPreview"><span>Sin favicon claro</span></div>
               <label class="branding-file-button"><input id="brandingFaviconLightFile" type="file" accept="image/png,image/jpeg,image/webp" /><span>SUBIR ICONO CLARO</span></label>
@@ -510,7 +513,7 @@
             </div>
           </div>
           <div class="admin-card">
-            <div class="card-heading"><div><span class="admin-eyebrow">PESTAÑA · MODO OSCURO</span><h2>Favicon oscuro</h2><p>Icono de la pestaña cuando la web está en modo oscuro.</p></div></div>
+            <div class="card-heading"><div><span class="admin-eyebrow">PESTAÑA · MODO OSCURO</span><h2>Favicon oscuro</h2><p>Icono de la pestaña cuando la web está en modo oscuro. Recomendado: 512 × 512 px.</p></div></div>
             <div class="branding-upload-block">
               <div class="branding-preview branding-favicon-preview" id="brandingFaviconDarkPreview"><span>Sin favicon oscuro</span></div>
               <label class="branding-file-button"><input id="brandingFaviconDarkFile" type="file" accept="image/png,image/jpeg,image/webp" /><span>SUBIR ICONO OSCURO</span></label>
@@ -531,14 +534,56 @@
               <div><span class="admin-eyebrow">REDES SOCIALES</span><h2>Contactos de MadeLesh</h2><p>Agrega solo las redes que quieras mostrar públicamente.</p></div>
             </div>
             <form id="contactsSettingsForm" class="contacts-settings-form">
-              <label><span>Discord</span><input id="contactDiscord" type="url" placeholder="https://discord.gg/..." /></label>
-              <label><span>Steam</span><input id="contactSteam" type="url" placeholder="https://steamcommunity.com/id/..." /></label>
-              <label><span>X</span><input id="contactX" type="url" placeholder="https://x.com/..." /></label>
-              <label><span>YouTube</span><input id="contactYoutube" type="url" placeholder="https://youtube.com/@..." /></label>
-              <label><span>TikTok</span><input id="contactTiktok" type="url" placeholder="https://tiktok.com/@..." /></label>
-              <label><span>Correo electrónico</span><input id="contactEmail" type="email" placeholder="correo@ejemplo.com" /></label>
+              <div class="contact-setting-card" data-contact-key="discord">
+                <label><span>Discord</span><input id="contactDiscord" type="url" placeholder="https://discord.gg/..." /></label>
+                <div class="contact-icon-admin">
+                  <div class="contact-icon-preview" id="contactIconDiscordPreview"><span>Icono</span></div>
+                  <label class="contact-icon-file"><input id="contactIconDiscordFile" type="file" accept="image/png,image/jpeg,image/webp" /><span>SUBIR ICONO</span></label>
+                  <button class="ghost-btn contact-icon-clear" id="clearContactIconDiscord" type="button">Quitar</button>
+                </div>
+              </div>
+              <div class="contact-setting-card" data-contact-key="steam">
+                <label><span>Steam</span><input id="contactSteam" type="url" placeholder="https://steamcommunity.com/id/..." /></label>
+                <div class="contact-icon-admin">
+                  <div class="contact-icon-preview" id="contactIconSteamPreview"><span>Icono</span></div>
+                  <label class="contact-icon-file"><input id="contactIconSteamFile" type="file" accept="image/png,image/jpeg,image/webp" /><span>SUBIR ICONO</span></label>
+                  <button class="ghost-btn contact-icon-clear" id="clearContactIconSteam" type="button">Quitar</button>
+                </div>
+              </div>
+              <div class="contact-setting-card" data-contact-key="x">
+                <label><span>X</span><input id="contactX" type="url" placeholder="https://x.com/..." /></label>
+                <div class="contact-icon-admin">
+                  <div class="contact-icon-preview" id="contactIconXPreview"><span>Icono</span></div>
+                  <label class="contact-icon-file"><input id="contactIconXFile" type="file" accept="image/png,image/jpeg,image/webp" /><span>SUBIR ICONO</span></label>
+                  <button class="ghost-btn contact-icon-clear" id="clearContactIconX" type="button">Quitar</button>
+                </div>
+              </div>
+              <div class="contact-setting-card" data-contact-key="youtube">
+                <label><span>YouTube</span><input id="contactYoutube" type="url" placeholder="https://youtube.com/@..." /></label>
+                <div class="contact-icon-admin">
+                  <div class="contact-icon-preview" id="contactIconYoutubePreview"><span>Icono</span></div>
+                  <label class="contact-icon-file"><input id="contactIconYoutubeFile" type="file" accept="image/png,image/jpeg,image/webp" /><span>SUBIR ICONO</span></label>
+                  <button class="ghost-btn contact-icon-clear" id="clearContactIconYoutube" type="button">Quitar</button>
+                </div>
+              </div>
+              <div class="contact-setting-card" data-contact-key="tiktok">
+                <label><span>TikTok</span><input id="contactTiktok" type="url" placeholder="https://tiktok.com/@..." /></label>
+                <div class="contact-icon-admin">
+                  <div class="contact-icon-preview" id="contactIconTiktokPreview"><span>Icono</span></div>
+                  <label class="contact-icon-file"><input id="contactIconTiktokFile" type="file" accept="image/png,image/jpeg,image/webp" /><span>SUBIR ICONO</span></label>
+                  <button class="ghost-btn contact-icon-clear" id="clearContactIconTiktok" type="button">Quitar</button>
+                </div>
+              </div>
+              <div class="contact-setting-card" data-contact-key="email">
+                <label><span>Correo electrónico</span><input id="contactEmail" type="email" placeholder="correo@ejemplo.com" /></label>
+                <div class="contact-icon-admin">
+                  <div class="contact-icon-preview" id="contactIconEmailPreview"><span>Icono</span></div>
+                  <label class="contact-icon-file"><input id="contactIconEmailFile" type="file" accept="image/png,image/jpeg,image/webp" /><span>SUBIR ICONO</span></label>
+                  <button class="ghost-btn contact-icon-clear" id="clearContactIconEmail" type="button">Quitar</button>
+                </div>
+              </div>
               <div class="contacts-save-row">
-                <p>Los campos vacíos no se mostrarán en la página.</p>
+                <p>Iconos recomendados: 256 × 256 px, PNG/WebP transparente. Si no subes uno, MadeLesh usa el icono predeterminado.</p>
                 <button class="primary-admin-btn" id="saveContactsSettings" type="submit">GUARDAR CONTACTOS ↗</button>
               </div>
             </form>

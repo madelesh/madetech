@@ -31,6 +31,7 @@ const contactYoutube = document.getElementById("contactYoutube");
 const contactTiktok = document.getElementById("contactTiktok");
 const contactEmail = document.getElementById("contactEmail");
 const saveContactsSettings = document.getElementById("saveContactsSettings");
+const colorImageEditor = document.getElementById("colorImageEditor");
 
 const productForm = document.getElementById("productForm");
 const productFormTitle = document.getElementById("productFormTitle");
@@ -92,6 +93,8 @@ let brandingLogoLightDataUrl = "";
 let brandingLogoDarkDataUrl = "";
 let brandingFaviconLightDataUrl = "";
 let brandingFaviconDarkDataUrl = "";
+let contactIconDataUrls = { discord:"", steam:"", x:"", youtube:"", tiktok:"", email:"" };
+let colorImagesByHex = {};
 
 const PRESET_COLORS = [
   { name: "Negro", hex: "#111111" },
@@ -442,6 +445,8 @@ function renderColorPicker(colors = selectedColors) {
   document.getElementById("addCustomColor")?.addEventListener("click", () => {
     customColorInput.click();
   });
+
+  renderColorImageEditor();
 }
 
 customColorInput.addEventListener("change", () => {
@@ -471,6 +476,101 @@ function normalizeColors(colors) {
       seen.add(item.hex);
       return true;
     });
+}
+
+function normalizeProductImageSource(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  if (/^data:image\/(?:png|jpeg|webp);base64,/i.test(text)) return text;
+  return safeExternalUrl(text);
+}
+
+function setColorImages(values = []) {
+  colorImagesByHex = {};
+  for (const item of Array.isArray(values) ? values : []) {
+    const hex = String(item?.hex || "").trim().toLowerCase();
+    const image = normalizeProductImageSource(item?.image || item?.imageUrl || "");
+    if (/^#[0-9a-f]{6}$/i.test(hex) && image) {
+      colorImagesByHex[hex] = { name: String(item?.name || "Color"), hex, image };
+    }
+  }
+  renderColorImageEditor();
+}
+
+function getColorImages() {
+  return selectedColors.flatMap(color => {
+    const entry = colorImagesByHex[color.hex.toLowerCase()];
+    const image = normalizeProductImageSource(entry?.image || "");
+    return image ? [{ name: color.name, hex: color.hex.toLowerCase(), image }] : [];
+  }).slice(0, 8);
+}
+
+function renderColorImageEditor() {
+  if (!colorImageEditor) return;
+  const activeHex = new Set(selectedColors.map(item => item.hex.toLowerCase()));
+  Object.keys(colorImagesByHex).forEach(hex => { if (!activeHex.has(hex)) delete colorImagesByHex[hex]; });
+
+  if (!selectedColors.length) {
+    colorImageEditor.innerHTML = `<div class="color-image-empty">Selecciona uno o más colores para asignar una imagen a cada variante.</div>`;
+    return;
+  }
+
+  colorImageEditor.innerHTML = selectedColors.map(color => {
+    const hex = color.hex.toLowerCase();
+    const current = normalizeProductImageSource(colorImagesByHex[hex]?.image || "");
+    const externalValue = /^https?:/i.test(current) ? current : "";
+    return `<div class="color-image-row" data-color-image-row="${escapeAttr(hex)}">
+      <div class="color-image-identity"><span style="background:${escapeAttr(hex)}"></span><strong>${escapeHtml(color.name)}</strong></div>
+      <div class="color-image-preview">${current ? `<img src="${escapeAttr(current)}" alt="${escapeAttr(color.name)}">` : `<span>Sin imagen</span>`}</div>
+      <input class="color-image-url" data-color-image-url="${escapeAttr(hex)}" type="url" value="${escapeAttr(externalValue)}" placeholder="URL de imagen para ${escapeAttr(color.name)}">
+      <label class="color-image-file-button"><input data-color-image-file="${escapeAttr(hex)}" type="file" accept="image/png,image/jpeg,image/webp"><span>SUBIR</span></label>
+      <button class="ghost-btn color-image-clear" data-color-image-clear="${escapeAttr(hex)}" type="button">Quitar</button>
+    </div>`;
+  }).join("");
+
+  colorImageEditor.querySelectorAll("[data-color-image-url]").forEach(input => {
+    input.addEventListener("input", () => {
+      const hex = input.dataset.colorImageUrl;
+      const image = safeExternalUrl(input.value);
+      const color = selectedColors.find(item => item.hex.toLowerCase() === hex);
+      if (image && color) colorImagesByHex[hex] = { ...color, image };
+      else delete colorImagesByHex[hex];
+      const preview = input.closest(".color-image-row")?.querySelector(".color-image-preview");
+      if (preview) preview.innerHTML = image ? `<img src="${escapeAttr(image)}" alt="Vista previa">` : `<span>Sin imagen</span>`;
+    });
+  });
+
+  colorImageEditor.querySelectorAll("[data-color-image-file]").forEach(input => {
+    input.addEventListener("change", async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        const allowed = ["image/png","image/jpeg","image/webp"];
+        if (!allowed.includes(file.type)) throw new Error("Usa PNG, JPG o WEBP.");
+        if (file.size > 180 * 1024) throw new Error("La imagen por color debe pesar máximo 180 KB.");
+        const dataUrl = await new Promise((resolve,reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ""));
+          reader.onerror = () => reject(new Error("No se pudo leer la imagen."));
+          reader.readAsDataURL(file);
+        });
+        const hex = input.dataset.colorImageFile;
+        const color = selectedColors.find(item => item.hex.toLowerCase() === hex);
+        if (color) colorImagesByHex[hex] = { ...color, image: dataUrl };
+        renderColorImageEditor();
+      } catch (error) {
+        alert(error.message);
+        input.value = "";
+      }
+    });
+  });
+
+  colorImageEditor.querySelectorAll("[data-color-image-clear]").forEach(button => {
+    button.addEventListener("click", () => {
+      delete colorImagesByHex[button.dataset.colorImageClear];
+      renderColorImageEditor();
+    });
+  });
 }
 
 function renderTrustedStores(stores = []) {
@@ -668,6 +768,7 @@ function applyUniversalImportedProduct(product, sourceName = "") {
     Array.isArray(product.cons) ? product.cons.join("\n") : "";
 
   renderTrustedStores(Array.isArray(product.trustedStores) ? product.trustedStores : []);
+  setColorImages(product.specs?.colorImages || []);
   renderColorPicker(Array.isArray(product.colors) ? product.colors : []);
   renderCategoryFields(productCategory.value, product.specs || {});
 
@@ -805,6 +906,7 @@ function applyImportedWebProduct(product) {
     Array.isArray(product.cons) ? product.cons.join("\n") : "";
 
   renderTrustedStores(Array.isArray(product.trustedStores) ? product.trustedStores : []);
+  setColorImages(product.specs?.colorImages || []);
   renderColorPicker(Array.isArray(product.colors) ? product.colors : []);
   renderCategoryFields(productCategory.value, product.specs || {});
 }
@@ -1058,6 +1160,7 @@ function applyImportedMechKeysProduct(product) {
   document.getElementById("productCons").value = Array.isArray(product.cons) ? product.cons.join("\n") : "";
 
   renderTrustedStores(Array.isArray(product.trustedStores) ? product.trustedStores : []);
+  setColorImages(product.specs?.colorImages || []);
   renderColorPicker(Array.isArray(product.colors) ? product.colors : []);
   renderCategoryFields(productCategory.value, product.specs || {});
 }
@@ -1176,6 +1279,17 @@ saveBrandingSettings?.addEventListener("click", async () => {
   }
 });
 
+function renderContactIconPreviews() {
+  const keys = ["discord","steam","x","youtube","tiktok","email"];
+  keys.forEach(key => {
+    const cap = key.charAt(0).toUpperCase() + key.slice(1);
+    const preview = document.getElementById(`contactIcon${cap}Preview`);
+    if (!preview) return;
+    const value = contactIconDataUrls[key] || "";
+    preview.innerHTML = value ? `<img src="${escapeAttr(value)}" alt="Icono ${escapeAttr(key)}">` : `<span>Icono</span>`;
+  });
+}
+
 function fillContactsSettings(contacts) {
   if (contactDiscord) contactDiscord.value = contacts.discord || "";
   if (contactSteam) contactSteam.value = contacts.steam || "";
@@ -1183,7 +1297,33 @@ function fillContactsSettings(contacts) {
   if (contactYoutube) contactYoutube.value = contacts.youtube || "";
   if (contactTiktok) contactTiktok.value = contacts.tiktok || "";
   if (contactEmail) contactEmail.value = contacts.email || "";
+  const icons = contacts.icons || {};
+  contactIconDataUrls = {
+    discord: String(icons.discord || ""), steam: String(icons.steam || ""), x: String(icons.x || ""),
+    youtube: String(icons.youtube || ""), tiktok: String(icons.tiktok || ""), email: String(icons.email || "")
+  };
+  renderContactIconPreviews();
 }
+
+["discord","steam","x","youtube","tiktok","email"].forEach(key => {
+  const cap = key.charAt(0).toUpperCase() + key.slice(1);
+  const fileInput = document.getElementById(`contactIcon${cap}File`);
+  const clearButton = document.getElementById(`clearContactIcon${cap}`);
+  fileInput?.addEventListener("change", async () => {
+    try {
+      contactIconDataUrls[key] = await readBrandingFile(fileInput.files?.[0]);
+      renderContactIconPreviews();
+    } catch (error) {
+      alert(error.message);
+      fileInput.value = "";
+    }
+  });
+  clearButton?.addEventListener("click", () => {
+    contactIconDataUrls[key] = "";
+    if (fileInput) fileInput.value = "";
+    renderContactIconPreviews();
+  });
+});
 
 contactsSettingsForm?.addEventListener("submit", async event => {
   event.preventDefault();
@@ -1198,7 +1338,8 @@ contactsSettingsForm?.addEventListener("submit", async event => {
         x: contactX?.value.trim() || "",
         youtube: contactYoutube?.value.trim() || "",
         tiktok: contactTiktok?.value.trim() || "",
-        email: contactEmail?.value.trim() || ""
+        email: contactEmail?.value.trim() || "",
+        icons: { ...contactIconDataUrls }
       })
     });
     fillContactsSettings(data.contacts || {});
@@ -1404,6 +1545,7 @@ function editProduct(id) {
   document.getElementById("productOfficialUrl").value = product.officialUrl || "";
   document.getElementById("productFeatured").value = product.featured === true ? "true" : "false";
   renderTrustedStores(product.trustedStores || []);
+  setColorImages(product.specs?.colorImages || []);
   renderColorPicker(product.colors || []);
   setConnections(product.connections || []);
   setProductImages(Array.isArray(product.images) && product.images.length ? product.images : (product.imageUrl ? [product.imageUrl] : []));
@@ -1426,6 +1568,7 @@ function resetProductForm() {
   document.getElementById("productStatus").value = "published";
   document.getElementById("productFeatured").value = "false";
   renderTrustedStores([]);
+  setColorImages([]);
   renderColorPicker([]);
   setConnections([]);
   setProductImages([]);
@@ -1469,6 +1612,8 @@ productForm.addEventListener("submit", async event => {
     pros: lines(document.getElementById("productPros").value),
     cons: lines(document.getElementById("productCons").value)
   };
+
+  payload.specs.colorImages = getColorImages();
 
   const saveButton = document.getElementById("saveProduct");
   const oldText = saveButton.textContent;
