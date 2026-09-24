@@ -1,4 +1,4 @@
-console.info("MadeLesh Admin build 5.22");
+console.info("MadeLesh Admin build 5.23-A");
 import { API_BASE } from "./config.js";
 
 const adminLogin = document.getElementById("adminLogin");
@@ -59,6 +59,13 @@ const keyboardSoundBlock = document.getElementById("keyboardSoundBlock");
 const keyboardSoundUrl = document.getElementById("keyboardSoundUrl");
 const keyboardSoundFile = document.getElementById("keyboardSoundFile");
 const keyboardSoundPreview = document.getElementById("keyboardSoundPreview");
+const productLivePreviewCard = document.getElementById("productLivePreviewCard");
+const productLivePreviewImage = document.getElementById("productLivePreviewImage");
+const productLivePreviewEmpty = document.getElementById("productLivePreviewEmpty");
+const productLivePreviewName = document.getElementById("productLivePreviewName");
+const productLivePreviewConnections = document.getElementById("productLivePreviewConnections");
+const productLivePreviewPrice = document.getElementById("productLivePreviewPrice");
+const productLivePreviewSpecs = document.getElementById("productLivePreviewSpecs");
 const proPlayerNames = [1,2,3].map(i => document.getElementById(`proPlayerName${i}`));
 const proPlayerSocials = [1,2,3].map(i => document.getElementById(`proPlayerSocial${i}`));
 const productDriverUrl = document.getElementById("productDriverUrl");
@@ -119,23 +126,22 @@ let brandingFaviconDarkDataUrl = "";
 let contactIconDataUrls = { discord:"", steam:"", x:"", youtube:"", tiktok:"", email:"" };
 let colorImagesByHex = {};
 const ADMIN_BUILD_RELEASE = {
-  version: "5.22",
-  title: "Perfil compacto, footer social y galería",
+  version: "5.23-A",
+  title: "Interfaz visual y vista previa en tiempo real",
   date: "2026-09-21",
   changes: {
     added: [
-      "Redes sociales integradas discretamente en el pie de página.",
-      "Animación lateral del nombre de cuenta al pasar sobre el avatar."
+      "Vista previa en tiempo real dentro del editor de productos.",
+      "Marco visual neutro para imágenes con fondo blanco o transparente.",
+      "Botón Ver producto con interacción dinámica."
     ],
     removed: [
-      "Pestaña pública Nosotros.",
-      "Acceso al tema dentro del panel de perfil.",
-      "Nombre y categoría duplicados en la información del producto."
+      "Texto IMG en los selectores de color.",
+      "Bloque redundante Información del producto en la ficha."
     ],
     fixed: [
-      "Parpadeo de la pantalla de login al cambiar de pestaña.",
-      "Miniaturas de fotos debajo de la imagen principal.",
-      "Botón de tema reducido a solo icono."
+      "Tarjetas del catálogo más anchas y simétricas para imágenes cuadradas.",
+      "Miniaturas de la galería fuera del marco de la imagen principal."
     ]
   }
 };
@@ -262,6 +268,7 @@ function renderCategoryFields(category, values = {}) {
   categoryFieldsTitle.textContent = category === "IEM" ? "IEM / In-Ears" : category;
   categoryFields.innerHTML = schema.map(item => fieldHtml(item, values[item.key])).join("");
   bindSpecChoiceGroups();
+  renderProductLivePreview();
 }
 
 function fieldHtml(item, value) {
@@ -331,6 +338,7 @@ function bindSpecChoiceGroups() {
     button.addEventListener("click", () => {
       const active = button.classList.toggle("active");
       button.setAttribute("aria-pressed", String(active));
+      renderProductLivePreview();
     });
   });
 }
@@ -378,6 +386,7 @@ function setConnections(values = []) {
   const normalized = [...new Set((Array.isArray(values) ? values : []).map(normalizeConnectionValue).filter(Boolean))];
   productConnectionsInput.value = normalized.join("\n");
   renderConnectionPicker();
+  renderProductLivePreview();
 }
 
 function getConnections() {
@@ -401,9 +410,71 @@ function renderConnectionPicker() {
       if (current.has(value)) current.delete(value); else current.add(value);
       productConnectionsInput.value = [...current].join("\n");
       renderConnectionPicker();
+      renderProductLivePreview();
     });
   });
 }
+
+/* ---------------- LIVE PRODUCT PREVIEW ---------------- */
+
+const LIVE_PREVIEW_SPEC_KEYS = {
+  Mouse: [["sensor","Sensor"],["weight","Peso"],["pollingRate","Polling"]],
+  Teclados: [["switchType","Switch"],["layout","Formato"],["pollingRate","Polling"]],
+  IEM: [["driverConfig","Drivers"],["impedance","Impedancia"],["soundSignature","Firma"]],
+  Headsets: [["driver","Driver"],["weight","Peso"],["batteryHours","Autonomía"]],
+  DAC: [["dacChip","Chip DAC"],["maxPcm","PCM"],["outputs","Salidas"]]
+};
+
+function livePreviewSpecValue(value, key) {
+  if (Array.isArray(value)) return value.join(" · ");
+  if (typeof value === "boolean") return value ? "Sí" : "No";
+  if (value === undefined || value === null || value === "") return "";
+  if (key === "weight") return `${value} g`;
+  if (key === "batteryHours") return `${value} h`;
+  return String(value);
+}
+
+function renderProductLivePreview() {
+  if (!productLivePreviewCard) return;
+
+  const name = String(document.getElementById("productName")?.value || "").trim() || "Nombre del producto";
+  const price = String(document.getElementById("productPrice")?.value || "").trim() || "Precio";
+  const category = productCategory?.value || "Mouse";
+  const image = safeImageSource(productImageUrlInput?.value || "") || safeImageSource(getProductImages()[0] || "");
+  const connections = getConnections().slice(0, 2);
+
+  productLivePreviewName.textContent = name;
+  productLivePreviewPrice.textContent = price;
+  productLivePreviewCard.dataset.category = category;
+
+  if (image) {
+    productLivePreviewImage.src = image;
+    productLivePreviewImage.hidden = false;
+    productLivePreviewEmpty.hidden = true;
+  } else {
+    productLivePreviewImage.removeAttribute("src");
+    productLivePreviewImage.hidden = true;
+    productLivePreviewEmpty.hidden = false;
+  }
+
+  productLivePreviewConnections.innerHTML = connections.length
+    ? connections.map(value => `<span>${escapeHtml(value)}</span>`).join("")
+    : `<span class="preview-empty-chip">No disponible</span>`;
+
+  let specs = {};
+  try { specs = collectCategorySpecs(); } catch {}
+  const specRows = (LIVE_PREVIEW_SPEC_KEYS[category] || [])
+    .map(([key,label]) => [label, livePreviewSpecValue(specs[key], key)])
+    .filter(([,value]) => value)
+    .slice(0, 3);
+
+  productLivePreviewSpecs.innerHTML = specRows.length
+    ? specRows.map(([label,value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("")
+    : `<small>Completa la ficha técnica y aparecerá aquí.</small>`;
+}
+
+productForm?.addEventListener("input", renderProductLivePreview);
+productForm?.addEventListener("change", renderProductLivePreview);
 
 /* ---------------- PRODUCT IMAGE PREVIEW ---------------- */
 
@@ -464,9 +535,11 @@ function renderMainImagePreview() {
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"></rect><circle cx="9" cy="10" r="2"></circle><path d="m5 18 5-5 3 3 2-2 4 4"></path></svg>
       <span>Vista previa de la imagen</span>
     </div>`;
+    renderProductLivePreview();
     return;
   }
-  productImagePreview.innerHTML = `<img src="${escapeAttr(url)}" alt="Vista previa del producto" onerror="this.parentElement.classList.add('image-error')">`;
+  productImagePreview.innerHTML = `<div class="admin-image-neutral-frame"><img src="${escapeAttr(url)}" alt="Vista previa del producto" onerror="this.parentElement.classList.add('image-error')"></div>`;
+  renderProductLivePreview();
 }
 
 
@@ -1647,6 +1720,7 @@ function editProduct(id) {
   document.getElementById("productCons").value = (product.cons || []).join("\n");
 
   renderCategoryFields(product.category || "Mouse", product.specs || {});
+  renderProductLivePreview();
   productFormTitle.textContent = "Editar producto";
   productForm.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -1675,6 +1749,7 @@ function resetProductForm() {
   renderKeyboardSoundVisibility();
   renderKeyboardSoundPreview();
   renderMainImagePreview();
+  renderProductLivePreview();
 }
 
 resetProduct.addEventListener("click", resetProductForm);
@@ -2204,4 +2279,5 @@ renderProductGalleryList();
 renderKeyboardSoundVisibility();
 renderKeyboardSoundPreview();
 renderMainImagePreview();
+renderProductLivePreview();
 restoreAdminSession();

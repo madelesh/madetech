@@ -89,23 +89,22 @@ let publicAnnouncements = [];
 let publicAppVersion = "5.18";
 let publicRelease = { version: "5.18", title: "", date: "", notes: [] };
 const CURRENT_BUILD_RELEASE = {
-  version: "5.22",
-  title: "Perfil compacto, footer social y galería",
+  version: "5.23-A",
+  title: "Interfaz visual y vista previa en tiempo real",
   date: "2026-09-21",
   changes: {
     added: [
-      "Redes sociales integradas discretamente en el pie de página.",
-      "Animación lateral del nombre de cuenta al pasar sobre el avatar."
+      "Vista previa en tiempo real dentro del editor de productos.",
+      "Marco visual neutro para imágenes con fondo blanco o transparente.",
+      "Botón Ver producto con interacción dinámica."
     ],
     removed: [
-      "Pestaña pública Nosotros.",
-      "Acceso al tema dentro del panel de perfil.",
-      "Nombre y categoría duplicados en la información del producto."
+      "Texto IMG en los selectores de color.",
+      "Bloque redundante Información del producto en la ficha."
     ],
     fixed: [
-      "Parpadeo de la pantalla de login al cambiar de pestaña.",
-      "Miniaturas de fotos debajo de la imagen principal.",
-      "Botón de tema reducido a solo icono."
+      "Tarjetas del catálogo más anchas y simétricas para imágenes cuadradas.",
+      "Miniaturas de la galería fuera del marco de la imagen principal."
     ]
   }
 };
@@ -786,7 +785,9 @@ function cardTemplate(review) {
     <article class="review-card" data-category="${escapeHtml(review.category || "Producto")}" data-review="${review.id}"
              tabindex="0" role="button" aria-label="Abrir ${escapeHtml(review.name || "")}">
       <div class="review-visual">
-        <img src="${image}" alt="${escapeHtml(review.name || "Producto")}" class="review-product-image">
+        <div class="review-image-frame">
+          <img src="${image}" alt="${escapeHtml(review.name || "Producto")}" class="review-product-image">
+        </div>
       </div>
 
       <div class="review-content compact-product-card">
@@ -802,7 +803,7 @@ function cardTemplate(review) {
         </div>
 
         <div class="review-read product-card-footer">
-          <span>VER</span>
+          <span class="product-card-cta"><span>VER PRODUCTO</span><i aria-hidden="true">→</i></span>
           <strong>${escapeHtml(price)}</strong>
         </div>
       </div>
@@ -1475,18 +1476,6 @@ async function openReview(id) {
       </section>
 
       <div class="product-detail-body">
-        <section class="product-info-section">
-          <div class="product-section-head">
-            <h3>Información del producto</h3>
-            <p>Datos principales</p>
-          </div>
-
-          <div class="product-core-grid product-core-grid-compact">
-            ${coreSpec("Modelo", review.model)}
-            ${coreSpec("Marca", review.brand)}
-          </div>
-        </section>
-
         ${renderColors(review.colors, review.specs?.colorImages)}
         ${renderConnections(review.connections)}
         ${renderProPlayers(review)}
@@ -1576,20 +1565,24 @@ function productImageHtml(review) {
 
   return `
     <div class="product-media-viewer">
-      <div class="product-media-stage" id="productMediaStage">
-        <img class="product-detail-image" src="${escapeHtml(images[0])}" alt="${escapeHtml(review.name || "Producto")}">
+      <div class="product-media-main-frame">
+        <div class="product-media-stage" id="productMediaStage">
+          <img class="product-detail-image" src="${escapeHtml(images[0])}" alt="${escapeHtml(review.name || "Producto")}">
+        </div>
+
+        ${sound ? `
+          <button class="keyboard-sound-button" id="keyboardSoundButton" type="button" aria-label="Reproducir sonido del teclado" title="Escuchar cómo suena al teclear">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10z"></path><path d="M16 9c1.5 1.5 1.5 4.5 0 6M19 6c4 3.5 4 8.5 0 12"></path></svg>
+            <span>ESCUCHAR</span>
+          </button>
+          <audio id="keyboardSoundAudio" preload="metadata" src="${escapeHtml(sound)}"></audio>
+        ` : ""}
       </div>
 
-      ${sound ? `
-        <button class="keyboard-sound-button" id="keyboardSoundButton" type="button" aria-label="Reproducir sonido del teclado" title="Escuchar cómo suena al teclear">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10z"></path><path d="M16 9c1.5 1.5 1.5 4.5 0 6M19 6c4 3.5 4 8.5 0 12"></path></svg>
-          <span>ESCUCHAR</span>
-        </button>
-        <audio id="keyboardSoundAudio" preload="metadata" src="${escapeHtml(sound)}"></audio>
-      ` : ""}
-
       ${(images.length > 1 || video) ? `
-        <div class="product-media-thumbs" aria-label="Fotos y video del producto">
+        <div class="product-media-thumbs-wrap">
+          <span class="product-media-thumbs-label">FOTOS DEL PRODUCTO</span>
+          <div class="product-media-thumbs" aria-label="Fotos y video del producto">
           ${images.map((src,index) => `
             <button class="product-media-thumb ${index===0 ? "active" : ""}" type="button" data-media-image="${escapeHtml(src)}" aria-label="Imagen ${index+1}">
               <img src="${escapeHtml(src)}" alt="">
@@ -1598,6 +1591,7 @@ function productImageHtml(review) {
             <button class="product-media-thumb product-video-thumb" type="button" data-media-video="${escapeHtml(video)}" aria-label="Video del producto">
               <svg viewBox="0 0 24 24"><path d="m9 7 8 5-8 5z"></path></svg><span>VIDEO</span>
             </button>` : ""}
+          </div>
         </div>` : ""}
     </div>`;
 }
@@ -1869,13 +1863,12 @@ function pushSpec(list, label, value) {
 
 function renderColors(colors, colorImages = []) {
   if (!Array.isArray(colors) || !colors.length) return "";
-  const mapped = new Set((Array.isArray(colorImages) ? colorImages : []).map(item => String(item?.hex || "").toLowerCase()));
   return `
     <section class="product-info-section">
       <div class="product-section-head"><h3>Colores disponibles</h3><p>Selecciona un color para cambiar la imagen</p></div>
       <div class="product-color-list product-color-selector">
         ${colors.map((item, index) => `
-          <button type="button" class="product-color ${index === 0 ? "active" : ""} ${mapped.has(String(item.hex || "").toLowerCase()) ? "has-image" : ""}"
+          <button type="button" class="product-color ${index === 0 ? "active" : ""}"
                   data-product-color-hex="${escapeHtml(String(item.hex || "").toLowerCase())}">
             <span class="product-color-dot" style="background:${safeColor(item.hex)}"></span>
             ${escapeHtml(item.name || item.hex || "Color")}

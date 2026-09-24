@@ -1996,3 +1996,43 @@ body.admin-authenticated #adminApp {
   .product-gallery-actions{grid-template-columns:1fr!important}
   .keyboard-sound-admin-grid{grid-template-columns:1fr!important}
 }
+
+
+/* ==========================================================
+   MADELESH V5.23-A — LIVE PREVIEW / IMAGE FRAME
+   ========================================================== */
+.live-product-preview-panel{
+  grid-column:1/-1;
+  padding:16px;
+  border:1px solid rgba(238,255,0,.16);
+  border-radius:18px;
+  background:linear-gradient(135deg,rgba(238,255,0,.035),#121214 42%);
+}
+.live-preview-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;margin-bottom:13px}
+.live-preview-head>div{display:grid;gap:4px}.live-preview-head small{color:#74747c;font-size:.65rem}
+.live-preview-status{padding:5px 8px;border-radius:999px;background:#eeff00;color:#0a0a0a;font-size:.54rem;font-weight:950;letter-spacing:.1em}
+.live-preview-layout{display:grid;grid-template-columns:minmax(260px,360px) minmax(260px,1fr);gap:16px;align-items:start}
+.admin-live-product-card{overflow:hidden;border:1px solid rgba(255,255,255,.11);border-radius:18px;background:#151516;box-shadow:0 15px 36px rgba(0,0,0,.22)}
+.admin-live-media{aspect-ratio:1/1;padding:10px;background:#0f0f10}
+.admin-live-media-frame{width:100%;height:100%;display:grid;place-items:center;overflow:hidden;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:radial-gradient(circle at 72% 25%,rgba(238,255,0,.08),transparent 28%),linear-gradient(145deg,#f7f7f4,#e7e7e3)}
+.admin-live-media-frame img{width:88%;height:88%;object-fit:contain;filter:drop-shadow(0 12px 14px rgba(0,0,0,.18))}
+.admin-live-media-empty{color:#85858b;font-size:.62rem;letter-spacing:.12em;font-weight:900}
+.admin-live-content{min-height:165px;padding:13px;display:flex;flex-direction:column}
+.admin-live-content h3{margin:0 0 12px;font-size:1.08rem;color:#fff;line-height:1.1}
+.admin-live-label{margin-bottom:6px;color:#7c7c84;font-size:.54rem;letter-spacing:.1em}
+.admin-live-connections{display:flex;flex-wrap:wrap;gap:5px}
+.admin-live-connections span{padding:5px 7px;border:1px solid rgba(255,255,255,.11);border-radius:999px;color:#c8c8cc;font-size:.58rem;background:rgba(255,255,255,.035)}
+.admin-live-card-footer{margin-top:auto;padding-top:11px;border-top:1px solid rgba(255,255,255,.09);display:flex;justify-content:space-between;align-items:center;gap:10px}
+.admin-live-cta{display:inline-flex;align-items:center;gap:7px;font-size:.59rem;font-weight:850;color:#fff}.admin-live-cta i{width:24px;height:24px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.15);border-radius:50%;color:#eeff00;font-style:normal}
+.admin-live-card-footer strong{font-size:.76rem;color:#fff}
+.admin-live-specs-box{min-height:180px;padding:14px;border:1px solid rgba(255,255,255,.09);border-radius:15px;background:#151517}
+.admin-live-specs-box>span{display:block;margin-bottom:10px;color:#777780;font-size:.56rem;letter-spacing:.1em}
+#productLivePreviewSpecs{display:grid;gap:7px}
+#productLivePreviewSpecs>div{min-height:46px;padding:9px 11px;display:flex;justify-content:space-between;gap:12px;align-items:center;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:#101012}
+#productLivePreviewSpecs span{color:#777780;font-size:.62rem}#productLivePreviewSpecs strong{color:#fff;font-size:.68rem;text-align:right}#productLivePreviewSpecs small{color:#6f6f77;font-size:.68rem}
+
+.admin-image-preview-card{padding:10px!important;background:#101011!important}
+.admin-image-neutral-frame{width:100%;height:100%;min-height:230px;display:grid;place-items:center;overflow:hidden;border:1px solid rgba(255,255,255,.11);border-radius:14px;background:radial-gradient(circle at 72% 25%,rgba(238,255,0,.07),transparent 28%),linear-gradient(145deg,#f7f7f4,#e7e7e3)}
+.admin-image-neutral-frame img{width:88%!important;height:88%!important;max-height:220px!important;object-fit:contain!important;filter:drop-shadow(0 12px 14px rgba(0,0,0,.16))}
+
+@media(max-width:900px){.live-preview-layout{grid-template-columns:1fr}.admin-live-product-card{max-width:420px}.live-product-preview-panel{padding:13px}}
