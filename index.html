@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es" data-theme="light">
 <head>
-  <meta name="madelesh-build" content="5.24" />
+  <meta name="madelesh-build" content="5.25" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="MadeLesh — Reviews de mouse, teclados, IEM, headsets y DACs." />
@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link id="siteFavicon" rel="icon" type="image/png" href="" />
-  <link rel="stylesheet" href="styles.css?v=5.24" />
+  <link rel="stylesheet" href="styles.css?v=5.25" />
 </head>
 
 <body class="auth-pending">
@@ -53,10 +53,6 @@
         <img class="site-brand-logo" alt="MadeLesh" hidden />
         <span class="brand-fallback"><span class="brand-dot"></span><span>MADELESH</span></span>
       </a>
-
-      <div class="header-news-ticker" id="headerNewsTicker" hidden aria-label="Noticias">
-        <div class="header-news-track" id="headerNewsTrack"></div>
-      </div>
 
       <nav class="desktop-nav">
         <a href="index.html?view=home" class="nav-link">
@@ -106,7 +102,7 @@
         <div class="profile-menu-wrap" id="profileMenuWrap">
           <button class="profile-button profile-slide-button" id="profileButton" type="button" aria-label="Abrir perfil" aria-expanded="false">
             <span class="profile-button-label" id="profileButtonLabel">Perfil</span>
-            <span class="profile-avatar" aria-hidden="true">
+            <span class="profile-avatar" id="profileAvatarSmall" aria-hidden="true">
               <svg viewBox="0 0 24 24">
                 <circle cx="12" cy="8" r="4"></circle>
                 <path d="M4.5 21a7.5 7.5 0 0 1 15 0"></path>
@@ -116,7 +112,7 @@
 
           <div class="profile-popover" id="profilePopover" hidden>
             <div class="profile-popover-head">
-              <span class="profile-avatar profile-avatar-large" aria-hidden="true">
+              <span class="profile-avatar profile-avatar-large" id="profileAvatarLarge" aria-hidden="true">
                 <svg viewBox="0 0 24 24">
                   <circle cx="12" cy="8" r="4"></circle>
                   <path d="M4.5 21a7.5 7.5 0 0 1 15 0"></path>
@@ -136,6 +132,24 @@
                 <strong id="profileSessionLabel">Sesión activa</strong>
                 <span id="profileExpiryText">Comprobando expiración...</span>
               </div>
+            </div>
+
+            <button class="profile-menu-item profile-feature-item" id="profileFavoritesButton" type="button">
+              <span class="profile-menu-icon"><svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg></span>
+              <span>Favoritos</span><b id="profileFavoritesCount">0</b>
+            </button>
+            <div class="profile-subpanel profile-favorites-panel" id="profileFavoritesPanel" hidden>
+              <div class="profile-subpanel-head"><strong>Mis favoritos</strong><span>Productos guardados</span></div>
+              <div class="profile-favorites-list" id="profileFavoritesList"></div>
+            </div>
+
+            <button class="profile-menu-item profile-feature-item" id="profileAvatarButton" type="button">
+              <span class="profile-menu-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4.5 21a7.5 7.5 0 0 1 15 0"></path></svg></span>
+              <span>Foto de perfil</span><b>›</b>
+            </button>
+            <div class="profile-subpanel profile-avatar-panel" id="profileAvatarPanel" hidden>
+              <div class="profile-subpanel-head"><strong>Elegir foto</strong><span>Solo imágenes disponibles en MadeLesh</span></div>
+              <div class="profile-avatar-grid" id="profileAvatarGrid"></div>
             </div>
 
             <a class="profile-menu-item admin-shortcut" id="adminShortcut" href="admin.html" hidden>
@@ -159,6 +173,10 @@
         <a href="index.html?view=comparacion">⇄ Comparación</a>
       </nav>
     </header>
+
+    <div class="header-news-ticker site-announcement-bar" id="headerNewsTicker" hidden aria-label="Noticias">
+      <div class="header-news-track" id="headerNewsTrack"></div>
+    </div>
 
     <main>
 
@@ -446,7 +464,7 @@
       </div>
 
       <div class="footer-version-row">
-        <span id="siteVersionLabel">MadeLesh v5.24</span>
+        <span id="siteVersionLabel">MadeLesh v5.25</span>
         <button id="footerReleaseToggle" type="button" aria-expanded="false">
           Ver cambios
         </button>
@@ -462,7 +480,7 @@
     </article>
   </div>
 
-  <script type="module" src="app.js?v=5.24"></script>
+  <script type="module" src="app.js?v=5.25"></script>
   </div>
 </body>
 </html>

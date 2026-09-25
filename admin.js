@@ -1,4 +1,4 @@
-console.info("MadeLesh Admin build 5.24");
+console.info("MadeLesh Admin build 5.25");
 import { API_BASE } from "./config.js";
 
 const adminLogin = document.getElementById("adminLogin");
@@ -93,6 +93,12 @@ const announcementsSettingsForm = document.getElementById("announcementsSettings
 const announcementMessage1 = document.getElementById("announcementMessage1");
 const announcementMessage2 = document.getElementById("announcementMessage2");
 const announcementMessage3 = document.getElementById("announcementMessage3");
+const announcementMode = document.getElementById("announcementMode");
+const profileAvatarFiles = document.getElementById("profileAvatarFiles");
+const uploadProfileAvatars = document.getElementById("uploadProfileAvatars");
+const profileAvatarsList = document.getElementById("profileAvatarsList");
+const profileAvatarsCount = document.getElementById("profileAvatarsCount");
+const profileAvatarUploadStatus = document.getElementById("profileAvatarUploadStatus");
 const releaseSettingsForm = document.getElementById("releaseSettingsForm");
 const releaseVersion = document.getElementById("releaseVersion");
 const releaseDate = document.getElementById("releaseDate");
@@ -160,6 +166,7 @@ let adminRoles = [];
 let permissionDefinitions = [];
 let staffUsers = [];
 let auditEntries = [];
+let adminProfileAvatars = [];
 let selectedRoleId = null;
 let audioTrimBuffer = null;
 let audioTrimObjectUrl = "";
@@ -172,8 +179,8 @@ let brandingFaviconDarkDataUrl = "";
 let contactIconDataUrls = { discord:"", steam:"", x:"", youtube:"", tiktok:"", email:"" };
 let colorImagesByHex = {};
 const ADMIN_BUILD_RELEASE = {
-  version: "5.24",
-  title: "Roles, auditoría, comparación visual y audio",
+  version: "5.25",
+  title: "Favoritos, avatares y comparador mejorado",
   date: "2026-09-24",
   changes: {
     added: [
@@ -1351,7 +1358,7 @@ async function loadBrandingSettings() {
     renderBrandingPreviews();
     applyAdminBranding();
     fillContactsSettings(data.contacts || {});
-    fillAnnouncementSettings(data.announcements || []);
+    fillAnnouncementSettings(data.announcements || [], data.announcementMode || announcementMode?.value || "scroll");
     fillReleaseSettings(data.release || { version: data.appVersion || "5.18" });
   } catch (error) {
     console.warn("No se pudo cargar apariencia/contactos", error);
@@ -1606,6 +1613,7 @@ async function loadAdminDashboardData() {
   if (canAny("products.view_drafts","products.create","products.edit","products.delete","products.import")) tasks.push(["productos", loadProducts]);
   if (canAny("keys.view","keys.manage")) tasks.push(["access keys", loadKeys]);
   if (can("settings.branding")) tasks.push(["apariencia", loadBrandingSettings]);
+  if (can("profiles.manage_avatars")) tasks.push(["fotos de perfil", loadProfileAvatarsAdmin]);
   if (can("roles.manage")) tasks.push(["roles", loadRolesAdmin]);
   if (can("users.manage_roles")) tasks.push(["usuarios", loadStaffUsers]);
   if (can("audit.view")) tasks.push(["auditoría", loadAudit]);
@@ -1673,11 +1681,12 @@ adminLogout?.addEventListener("click", async () => {
   showAdminLogin();
 });
 
-function fillAnnouncementSettings(messages = []) {
+function fillAnnouncementSettings(messages = [], mode = "scroll") {
   const values = Array.isArray(messages) ? messages : [];
   if (announcementMessage1) announcementMessage1.value = values[0] || "";
   if (announcementMessage2) announcementMessage2.value = values[1] || "";
   if (announcementMessage3) announcementMessage3.value = values[2] || "";
+  if (announcementMode) announcementMode.value = mode === "static" ? "static" : "scroll";
 }
 
 announcementsSettingsForm?.addEventListener("submit", async event => {
@@ -1691,10 +1700,11 @@ announcementsSettingsForm?.addEventListener("submit", async event => {
       body: JSON.stringify({
         message1: announcementMessage1?.value.trim() || "",
         message2: announcementMessage2?.value.trim() || "",
-        message3: announcementMessage3?.value.trim() || ""
+        message3: announcementMessage3?.value.trim() || "",
+        mode: announcementMode?.value || "scroll"
       })
     });
-    fillAnnouncementSettings(data.announcements || []);
+    fillAnnouncementSettings(data.announcements || [], data.announcementMode || "scroll");
     showAdminToast("Los mensajes del encabezado han sido actualizados");
   } catch (error) {
     alert(`No se pudieron guardar los mensajes: ${error.message}`);
@@ -1703,6 +1713,58 @@ announcementsSettingsForm?.addEventListener("submit", async event => {
   }
 });
 
+
+async function loadProfileAvatarsAdmin() {
+  if (!profileAvatarsList) return;
+  const data = await api("/admin/profile-avatars");
+  adminProfileAvatars = Array.isArray(data.avatars) ? data.avatars : [];
+  renderProfileAvatarsAdmin();
+}
+
+function renderProfileAvatarsAdmin() {
+  if (!profileAvatarsList) return;
+  if (profileAvatarsCount) profileAvatarsCount.textContent = String(adminProfileAvatars.length);
+  profileAvatarsList.innerHTML = adminProfileAvatars.length ? adminProfileAvatars.map(avatar => `
+    <article class="profile-avatar-admin-item">
+      <img src="${escapeAttr(avatar.imageDataUrl || "")}" alt="${escapeAttr(avatar.label || "Foto de perfil")}">
+      <div><strong>${escapeHtml(avatar.label || `Foto ${avatar.id}`)}</strong><small>ID ${avatar.id}</small></div>
+      <button class="danger" type="button" data-delete-profile-avatar="${avatar.id}">ELIMINAR</button>
+    </article>`).join("") : `<div class="empty-admin-state">Todavía no hay fotos de perfil disponibles.</div>`;
+  profileAvatarsList.querySelectorAll("[data-delete-profile-avatar]").forEach(button => {
+    button.addEventListener("click", async () => {
+      if (!confirm("¿Eliminar esta foto de perfil? Los usuarios que la tengan volverán al avatar predeterminado.")) return;
+      try { button.disabled = true; await api(`/admin/profile-avatars/${button.dataset.deleteProfileAvatar}`, { method:"DELETE" }); await loadProfileAvatarsAdmin(); showAdminToast("Foto de perfil eliminada"); }
+      catch (error) { alert(error.message || "No se pudo eliminar la foto."); }
+      finally { button.disabled = false; }
+    });
+  });
+}
+
+uploadProfileAvatars?.addEventListener("click", async () => {
+  const files = [...(profileAvatarFiles?.files || [])];
+  if (!files.length) return alert("Selecciona una o más imágenes.");
+  const old = uploadProfileAvatars.textContent;
+  uploadProfileAvatars.disabled = true;
+  uploadProfileAvatars.textContent = "SUBIENDO...";
+  let uploaded = 0;
+  try {
+    for (const file of files) {
+      const imageDataUrl = await imageFileToWebpDataUrl(file, { maxSize:320, quality:.82, maxChars:220000 });
+      const label = String(file.name || "Foto de perfil").replace(/\.[^.]+$/, "").slice(0,80);
+      await api("/admin/profile-avatars", { method:"POST", body:JSON.stringify({ label, imageDataUrl }) });
+      uploaded++;
+    }
+    if (profileAvatarUploadStatus) profileAvatarUploadStatus.textContent = `${uploaded} foto${uploaded===1?"":"s"} subida${uploaded===1?"":"s"} correctamente.`;
+    if (profileAvatarFiles) profileAvatarFiles.value = "";
+    await loadProfileAvatarsAdmin();
+    showAdminToast("Fotos de perfil actualizadas");
+  } catch (error) {
+    alert(error.message || "No se pudieron subir las fotos.");
+  } finally {
+    uploadProfileAvatars.disabled = false;
+    uploadProfileAvatars.textContent = old;
+  }
+});
 
 function classifyReleaseNotesAdmin(notes = []) {
   const result = { added: [], removed: [], fixed: [] };
@@ -1740,7 +1802,7 @@ function updateReleaseAutoPreview() {
 
 function fillReleaseSettings(release = {}) {
   if (String(release.version || "") !== ADMIN_BUILD_RELEASE.version) release = ADMIN_BUILD_RELEASE;
-  if (releaseVersion) releaseVersion.value = String(release.version || "5.24").replace(/^v/i, "");
+  if (releaseVersion) releaseVersion.value = String(release.version || "5.25").replace(/^v/i, "");
   if (releaseDate) releaseDate.value = String(release.date || "");
   if (releaseTitle) releaseTitle.value = String(release.title || "");
 
@@ -1985,6 +2047,7 @@ function activateAdminPanel(panelId) {
     usersPanel: "Usuarios y roles",
     auditPanel: "Registro de auditoría",
     brandingPanel: "Apariencia",
+    avatarsPanel: "Fotos de perfil",
     contactsPanel: "Contactos",
     announcementsPanel: "Noticias",
     updatesPanel: "Actualizaciones"
@@ -1993,6 +2056,7 @@ function activateAdminPanel(panelId) {
   document.querySelectorAll(".admin-panel").forEach(panel => panel.classList.toggle("active", panel.id === panelId));
   document.getElementById("adminTitle").textContent = titles[panelId] || "MadeLesh Control";
   if (panelId === "rolesPanel" && can("roles.manage")) loadRolesAdmin().catch(console.warn);
+  if (panelId === "avatarsPanel" && can("profiles.manage_avatars")) loadProfileAvatarsAdmin().catch(console.warn);
   if (panelId === "usersPanel" && can("users.manage_roles")) loadStaffUsers().catch(console.warn);
   if (panelId === "auditPanel" && can("audit.view")) loadAudit().catch(console.warn);
   window.scrollTo({ top: 0, left: 0, behavior: "smooth" });

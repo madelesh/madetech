@@ -15,6 +15,15 @@ const profileRole = document.getElementById("profileRole");
 const profileButtonLabel = document.getElementById("profileButtonLabel");
 const profileSessionLabel = document.getElementById("profileSessionLabel");
 const profileExpiryText = document.getElementById("profileExpiryText");
+const profileAvatarSmall = document.getElementById("profileAvatarSmall");
+const profileAvatarLarge = document.getElementById("profileAvatarLarge");
+const profileFavoritesButton = document.getElementById("profileFavoritesButton");
+const profileFavoritesCount = document.getElementById("profileFavoritesCount");
+const profileFavoritesPanel = document.getElementById("profileFavoritesPanel");
+const profileFavoritesList = document.getElementById("profileFavoritesList");
+const profileAvatarButton = document.getElementById("profileAvatarButton");
+const profileAvatarPanel = document.getElementById("profileAvatarPanel");
+const profileAvatarGrid = document.getElementById("profileAvatarGrid");
 
 const root = document.documentElement;
 const themeToggle = document.getElementById("themeToggle");
@@ -86,23 +95,30 @@ let featuredTimer = null;
 let publicBranding = {};
 let publicContacts = {};
 let publicAnnouncements = [];
+let publicAnnouncementMode = "scroll";
+let favoriteProductIds = new Set();
+let availableProfileAvatars = [];
+let currentAvatarId = null;
+let currentAvatarUrl = "";
 let publicAppVersion = "5.18";
 let publicRelease = { version: "5.18", title: "", date: "", notes: [] };
 const CURRENT_BUILD_RELEASE = {
-  version: "5.24",
-  title: "Roles, auditoría, comparación visual y audio",
-  date: "2026-09-24",
+  version: "5.25",
+  title: "Favoritos, avatares y comparador mejorado",
+  date: "2026-09-25",
   changes: {
     added: [
-      "Roles personalizables con permisos individuales para colaboradores.",
-      "Asignación de roles a usuarios con Access Key y registro de auditoría.",
-      "Editor para recortar audio de teclados desde archivos de audio o video.",
-      "Selector visual con imágenes dentro del comparador."
+      "Favoritos personales por usuario con acceso desde el perfil.",
+      "Biblioteca de fotos de perfil administrada desde MadeLesh.",
+      "Buscador de productos dentro de comparación con favoritos en prioridad.",
+      "Noticias debajo del encabezado con modo deslizante o estático."
     ],
-    removed: [],
+    removed: [
+      "MadeLesh Score y Funciones competitivas como métricas del comparador."
+    ],
     fixed: [
-      "Comparador rediseñado con resultado visual, métricas y balance dinámico.",
-      "Animación del perfil invertida: avatar a la izquierda y nombre hacia la derecha."
+      "Resultado del comparador convertido a un aro hueco de grosor moderado.",
+      "Métricas de compra ajustadas para cada categoría."
     ]
   }
 };
@@ -183,13 +199,14 @@ async function loadPublicSettings() {
     publicBranding = data.branding || {};
     publicContacts = data.contacts || {};
     publicAnnouncements = Array.isArray(data.announcements) ? data.announcements : [];
+    publicAnnouncementMode = data.announcementMode === "static" ? "static" : "scroll";
     publicAppVersion = String(data.appVersion || data.release?.version || "5.18");
     publicRelease = data.release && typeof data.release === "object" && String(data.release.version || "") === CURRENT_BUILD_RELEASE.version
       ? data.release
       : CURRENT_BUILD_RELEASE;
     applyPublicBranding(publicBranding);
     renderPublicContacts(publicContacts);
-    renderHeaderAnnouncements(publicAnnouncements);
+    renderHeaderAnnouncements(publicAnnouncements, publicAnnouncementMode);
     renderPublicRelease(publicRelease, publicAppVersion);
   } catch (error) {
     console.warn("No se pudieron cargar los ajustes públicos de MadeLesh", error);
@@ -304,7 +321,7 @@ function applyPublicBranding(branding = publicBranding) {
   }
 }
 
-function renderHeaderAnnouncements(messages = []) {
+function renderHeaderAnnouncements(messages = [], mode = "scroll") {
   if (!headerNewsTicker || !headerNewsTrack) return;
   const clean = (Array.isArray(messages) ? messages : [])
     .map(value => String(value || "").trim())
@@ -317,9 +334,13 @@ function renderHeaderAnnouncements(messages = []) {
     return;
   }
 
+  const staticMode = mode === "static";
   const items = clean.map(message => `<span class="header-news-item">${escapeHtml(message)}</span>`).join('<span class="header-news-separator">•</span>');
-  // Duplicate once so the horizontal motion loops without a visible gap.
-  headerNewsTrack.innerHTML = `<div class="header-news-group">${items}</div><div class="header-news-group" aria-hidden="true">${items}</div>`;
+  headerNewsTicker.classList.toggle("is-static", staticMode);
+  headerNewsTicker.classList.toggle("is-scroll", !staticMode);
+  headerNewsTrack.innerHTML = staticMode
+    ? `<div class="header-news-group">${items}</div>`
+    : `<div class="header-news-group">${items}</div><div class="header-news-group" aria-hidden="true">${items}</div>`;
   headerNewsTicker.hidden = false;
 }
 
@@ -553,6 +574,139 @@ document.addEventListener("click", event => {
   if (!profileMenuWrap.contains(event.target)) closeProfileMenu();
 });
 
+function defaultProfileAvatarSvg() {
+  return `<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4.5 21a7.5 7.5 0 0 1 15 0"></path></svg>`;
+}
+
+function paintProfileAvatar(url = currentAvatarUrl) {
+  const safe = safeImageSrc(url);
+  [profileAvatarSmall, profileAvatarLarge].forEach(target => {
+    if (!target) return;
+    target.innerHTML = safe ? `<img src="${escapeHtml(safe)}" alt="Foto de perfil">` : defaultProfileAvatarSvg();
+    target.classList.toggle("has-photo", Boolean(safe));
+  });
+}
+
+async function loadProfilePersonalization() {
+  try {
+    const data = await api("/profile");
+    favoriteProductIds = new Set((data.favoriteProductIds || []).map(Number));
+    availableProfileAvatars = Array.isArray(data.avatars) ? data.avatars : [];
+    currentAvatarId = data.avatarId ? Number(data.avatarId) : null;
+    currentAvatarUrl = safeImageSrc(data.avatarUrl || "");
+    paintProfileAvatar();
+    renderProfileAvatarChoices();
+    renderProfileFavorites();
+  } catch (error) {
+    console.warn("No se pudo cargar la personalización del perfil", error);
+    favoriteProductIds = new Set();
+    availableProfileAvatars = [];
+    currentAvatarId = null;
+    currentAvatarUrl = "";
+    paintProfileAvatar("");
+  }
+}
+
+function renderProfileAvatarChoices() {
+  if (!profileAvatarGrid) return;
+  if (!availableProfileAvatars.length) {
+    profileAvatarGrid.innerHTML = `<div class="profile-subpanel-empty">El administrador todavía no ha añadido fotos de perfil.</div>`;
+    return;
+  }
+  profileAvatarGrid.innerHTML = `
+    <button type="button" class="profile-avatar-choice ${currentAvatarId ? "" : "active"}" data-profile-avatar="0" title="Avatar predeterminado">
+      <span>${defaultProfileAvatarSvg()}</span><small>Predeterminado</small>
+    </button>
+    ${availableProfileAvatars.map(avatar => `
+      <button type="button" class="profile-avatar-choice ${Number(avatar.id) === Number(currentAvatarId) ? "active" : ""}" data-profile-avatar="${avatar.id}" title="${escapeHtml(avatar.label || "Foto de perfil")}">
+        <img src="${escapeHtml(safeImageSrc(avatar.imageDataUrl || ""))}" alt="${escapeHtml(avatar.label || "Foto de perfil")}">
+        <small>${escapeHtml(avatar.label || `Foto ${avatar.id}`)}</small>
+      </button>`).join("")}`;
+  profileAvatarGrid.querySelectorAll("[data-profile-avatar]").forEach(button => {
+    button.addEventListener("click", async () => {
+      const avatarId = Number(button.dataset.profileAvatar || 0);
+      try {
+        const result = await api("/profile/avatar", { method:"PUT", body:JSON.stringify({ avatarId }) });
+        currentAvatarId = result.avatarId ? Number(result.avatarId) : null;
+        currentAvatarUrl = safeImageSrc(result.avatarUrl || "");
+        paintProfileAvatar();
+        renderProfileAvatarChoices();
+      } catch (error) {
+        alert(error.message || "No se pudo cambiar la foto de perfil.");
+      }
+    });
+  });
+}
+
+function renderProfileFavorites() {
+  if (profileFavoritesCount) profileFavoritesCount.textContent = String(favoriteProductIds.size);
+  if (!profileFavoritesList) return;
+  const favorites = reviews.filter(product => favoriteProductIds.has(Number(product.id)));
+  profileFavoritesList.innerHTML = favorites.length
+    ? favorites.map(product => `
+      <button type="button" class="profile-favorite-item" data-profile-favorite-open="${product.id}">
+        <img src="${escapeHtml(comparisonImage(product))}" alt="">
+        <span><strong>${escapeHtml(product.name || "Producto")}</strong><small>${escapeHtml(product.brand || product.category || "")}</small></span>
+        <b>↗</b>
+      </button>`).join("")
+    : `<div class="profile-subpanel-empty">Todavía no tienes productos favoritos.</div>`;
+  profileFavoritesList.querySelectorAll("[data-profile-favorite-open]").forEach(button => {
+    button.addEventListener("click", () => {
+      closeProfileMenu();
+      openReview(Number(button.dataset.profileFavoriteOpen));
+    });
+  });
+}
+
+function favoriteIcon(active = false) {
+  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>`;
+}
+
+async function toggleFavorite(productId, button = null) {
+  const id = Number(productId);
+  if (!id) return;
+  const wasFavorite = favoriteProductIds.has(id);
+  const next = !wasFavorite;
+  if (next) favoriteProductIds.add(id); else favoriteProductIds.delete(id);
+  updateFavoriteUI(id);
+  try {
+    await api(`/favorites/${id}`, { method: next ? "PUT" : "DELETE" });
+  } catch (error) {
+    if (wasFavorite) favoriteProductIds.add(id); else favoriteProductIds.delete(id);
+    updateFavoriteUI(id);
+    alert(error.message || "No se pudo actualizar favoritos.");
+  }
+}
+
+function updateFavoriteUI(productId = 0) {
+  renderProfileFavorites();
+  renderReviews();
+  refreshComparePickerMenus();
+  document.querySelectorAll(`[data-favorite-toggle="${Number(productId)}"]`).forEach(button => {
+    const active = favoriteProductIds.has(Number(productId));
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+    button.setAttribute("aria-label", active ? "Quitar de favoritos" : "Agregar a favoritos");
+  });
+  const detail = modalContent?.querySelector(`[data-detail-favorite="${Number(productId)}"]`);
+  if (detail) {
+    const active = favoriteProductIds.has(Number(productId));
+    detail.classList.toggle("active", active);
+    detail.innerHTML = `${favoriteIcon(active)}<span>${active ? "Guardado" : "Favorito"}</span>`;
+  }
+}
+
+profileFavoritesButton?.addEventListener("click", () => {
+  if (profileFavoritesPanel) profileFavoritesPanel.hidden = !profileFavoritesPanel.hidden;
+  if (profileAvatarPanel) profileAvatarPanel.hidden = true;
+  renderProfileFavorites();
+});
+profileAvatarButton?.addEventListener("click", () => {
+  if (profileAvatarPanel) profileAvatarPanel.hidden = !profileAvatarPanel.hidden;
+  if (profileFavoritesPanel) profileFavoritesPanel.hidden = true;
+  renderProfileAvatarChoices();
+});
+
 async function restoreSession() {
   const userToken = localStorage.getItem("madetech_user_token");
   const adminToken = localStorage.getItem("madetech_admin_token");
@@ -570,6 +724,7 @@ async function restoreSession() {
 
     adminShortcut.hidden = me.role !== "admin";
     showApp();
+    await loadProfilePersonalization();
     await loadReviews();
     focusProductsHome();
   } catch {
@@ -614,6 +769,7 @@ keyLoginForm.addEventListener("submit", async event => {
     accessKey.value = "";
     adminShortcut.hidden = true;
     showApp();
+    await loadProfilePersonalization();
     await loadReviews();
     focusProductsHome();
   } catch (error) {
@@ -652,6 +808,11 @@ logoutButton.addEventListener("click", async () => {
   currentRole = null;
   currentProfileName = "";
   currentKeyExpiresAt = null;
+  favoriteProductIds = new Set();
+  availableProfileAvatars = [];
+  currentAvatarId = null;
+  currentAvatarUrl = "";
+  paintProfileAvatar("");
 
   if (keyCountdownTimer) {
     clearInterval(keyCountdownTimer);
@@ -678,6 +839,7 @@ async function loadReviews() {
     renderReviews();
     updateFeatured();
     renderProductNotifications();
+    renderProfileFavorites();
   } catch (error) {
     console.error(error);
     reviewsGrid.innerHTML = `<div class="review-loading">No se pudieron cargar las reviews.</div>`;
@@ -783,6 +945,7 @@ function cardTemplate(review) {
     <article class="review-card" data-category="${escapeHtml(review.category || "Producto")}" data-review="${review.id}"
              tabindex="0" role="button" aria-label="Abrir ${escapeHtml(review.name || "")}">
       <div class="review-visual">
+        <button class="product-favorite-button ${favoriteProductIds.has(Number(review.id)) ? "active" : ""}" type="button" data-favorite-toggle="${review.id}" aria-pressed="${favoriteProductIds.has(Number(review.id))}" aria-label="${favoriteProductIds.has(Number(review.id)) ? "Quitar de favoritos" : "Agregar a favoritos"}">${favoriteIcon(favoriteProductIds.has(Number(review.id)))}</button>
         <div class="review-image-frame">
           <img src="${image}" alt="${escapeHtml(review.name || "Producto")}" class="review-product-image">
         </div>
@@ -976,12 +1139,23 @@ function bindCards() {
   reviewsGrid.querySelectorAll(".review-card").forEach(card => {
     const open = () => openReview(Number(card.dataset.review));
 
-    card.addEventListener("click", open);
+    card.addEventListener("click", event => {
+      if (event.target.closest("[data-favorite-toggle]")) return;
+      open();
+    });
     card.addEventListener("keydown", event => {
+      if (event.target.closest?.("[data-favorite-toggle]")) return;
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
         open();
       }
+    });
+  });
+  reviewsGrid.querySelectorAll("[data-favorite-toggle]").forEach(button => {
+    button.addEventListener("click", event => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleFavorite(Number(button.dataset.favoriteToggle), button);
     });
   });
 }
@@ -1150,29 +1324,78 @@ function pcmRate(product){const text=String(product?.specs?.maxPcm||"");const ma
 function dsdRate(product){const text=String(product?.specs?.maxDsd||"");const match=text.match(/dsd\s*(\d+)/i);return match?Number(match[1]):parseFirstNumber(text);}
 function powerOutput(product){const text=String(product?.specs?.powerOutput||"");const value=parseFirstNumber(text);if(!Number.isFinite(value))return NaN;return /\bw\b/i.test(text)&&!/\bmw\b/i.test(text)?value*1000:value;}
 
+function boolMetricValue(value){return value===true?1:(value===false?0:NaN);}
+function connectionCount(product){const list=Array.isArray(product?.connections)?product.connections.filter(Boolean):[];return list.length?list.length:NaN;}
 function comparisonMetrics(category){
-  const score={key:"score",label:"MadeLesh Score",icon:"score",unit:"/10",direction:"high",weight:2,value:p=>Number(p?.score)>0?Number(p.score):NaN};
   const map={
-    Mouse:[{key:"polling",label:"Polling Rate",icon:"pollingRate",unit:" Hz",direction:"high",weight:1,value:maxPolling},{key:"weight",label:"Peso",icon:"weight",unit:" g",direction:"low",weight:1,value:p=>parseFirstNumber(p?.specs?.weight)},{key:"battery",label:"Autonomía",icon:"battery",unit:" h",direction:"high",weight:1,value:batteryHours},score],
-    Teclados:[{key:"polling",label:"Polling Rate",icon:"pollingRate",unit:" Hz",direction:"high",weight:1,value:maxPolling},{key:"battery",label:"Autonomía",icon:"battery",unit:" h",direction:"high",weight:1,value:batteryHours},{key:"features",label:"Funciones competitivas",icon:"rapid",unit:"/2",direction:"high",weight:1,value:p=>featureCount(p,["hotSwap","rapidTrigger"])},score],
-    IEM:[{key:"weight",label:"Peso por lado",icon:"weight",unit:" g",direction:"low",weight:1,value:p=>parseFirstNumber(p?.specs?.weightPerSide)},{key:"detachable",label:"Cable desmontable",icon:"connection",unit:"",direction:"high",weight:1,value:p=>p?.specs?.detachableCable===true?1:(p?.specs?.detachableCable===false?0:NaN),format:v=>v?"Sí":"No"},score],
-    Headsets:[{key:"battery",label:"Autonomía",icon:"battery",unit:" h",direction:"high",weight:1,value:batteryHours},{key:"weight",label:"Peso",icon:"weight",unit:" g",direction:"low",weight:1,value:p=>parseFirstNumber(p?.specs?.weight)},score],
-    DAC:[{key:"power",label:"Potencia de salida",icon:"output",unit:" mW",direction:"high",weight:1,value:powerOutput},{key:"pcm",label:"PCM máximo",icon:"pcm",unit:" kHz",direction:"high",weight:1,value:pcmRate},{key:"dsd",label:"DSD máximo",icon:"chip",unit:"",direction:"high",weight:1,value:dsdRate,format:v=>`DSD${Math.round(v)}`},score]
-  };return map[category]||[score];
+    Mouse:[
+      {key:"polling",label:"Polling Rate",icon:"pollingRate",unit:" Hz",direction:"high",weight:1,value:maxPolling},
+      {key:"weight",label:"Peso",icon:"weight",unit:" g",direction:"low",weight:1,value:p=>parseFirstNumber(p?.specs?.weight)},
+      {key:"battery",label:"Autonomía",icon:"battery",unit:" h",direction:"high",weight:1,value:batteryHours},
+      {key:"connections",label:"Opciones de conexión",icon:"connection",unit:"",direction:"high",weight:1,value:connectionCount}
+    ],
+    Teclados:[
+      {key:"polling",label:"Polling Rate",icon:"pollingRate",unit:" Hz",direction:"high",weight:1,value:maxPolling},
+      {key:"battery",label:"Autonomía",icon:"battery",unit:" h",direction:"high",weight:1,value:batteryHours},
+      {key:"hotswap",label:"Hot-swap",icon:"switch",unit:"",direction:"high",weight:1,value:p=>boolMetricValue(p?.specs?.hotSwap),format:v=>v?"Sí":"No"},
+      {key:"rapid",label:"Rapid Trigger",icon:"rapid",unit:"",direction:"high",weight:1,value:p=>boolMetricValue(p?.specs?.rapidTrigger),format:v=>v?"Sí":"No"}
+    ],
+    IEM:[
+      {key:"weight",label:"Peso por lado",icon:"weight",unit:" g",direction:"low",weight:1,value:p=>parseFirstNumber(p?.specs?.weightPerSide)},
+      {key:"detachable",label:"Cable desmontable",icon:"connection",unit:"",direction:"high",weight:1,value:p=>boolMetricValue(p?.specs?.detachableCable),format:v=>v?"Sí":"No"}
+    ],
+    Headsets:[
+      {key:"battery",label:"Autonomía",icon:"battery",unit:" h",direction:"high",weight:1,value:batteryHours},
+      {key:"weight",label:"Peso",icon:"weight",unit:" g",direction:"low",weight:1,value:p=>parseFirstNumber(p?.specs?.weight)},
+      {key:"detachableMic",label:"Micrófono desmontable",icon:"driver",unit:"",direction:"high",weight:1,value:p=>boolMetricValue(p?.specs?.detachableMic),format:v=>v?"Sí":"No"}
+    ],
+    DAC:[
+      {key:"power",label:"Potencia de salida",icon:"output",unit:" mW",direction:"high",weight:1,value:powerOutput},
+      {key:"pcm",label:"PCM máximo",icon:"pcm",unit:" kHz",direction:"high",weight:1,value:pcmRate},
+      {key:"dsd",label:"DSD máximo",icon:"chip",unit:"",direction:"high",weight:1,value:dsdRate,format:v=>`DSD${Math.round(v)}`},
+      {key:"balanced",label:"Salida balanceada",icon:"connection",unit:"",direction:"high",weight:1,value:p=>boolMetricValue(p?.specs?.balanced),format:v=>v?"Sí":"No"}
+    ]
+  };
+  return map[category]||[];
 }
+
 function metricAdvantage(value,other,direction){if(!Number.isFinite(value)||!Number.isFinite(other))return 0;if(value===other)return 100;if(direction==="low"){const min=Math.min(value,other);return Math.max(10,Math.min(100,(min/Math.max(value,.0001))*100));}const max=Math.max(value,other);return max<=0?0:Math.max(10,Math.min(100,(value/max)*100));}
 function metricWinner(a,b,direction){if(!Number.isFinite(a)||!Number.isFinite(b)||a===b)return "tie";return direction==="low"?(a<b?"a":"b"):(a>b?"a":"b");}
 function formatMetricValue(metric,value){if(!Number.isFinite(value))return "No disponible";if(typeof metric.format==="function")return metric.format(value);const digits=Number.isInteger(value)?0:1;return `${value.toFixed(digits)}${metric.unit||""}`;}
 function comparisonTextValue(product,key){if(key==="__connections")return arrayLabel(product?.connections)||"No disponible";const value=product?.specs?.[key];if(typeof value==="boolean")return value?"Sí":"No";if(Array.isArray(value))return arrayLabel(value)||"No disponible";return value===undefined||value===null||value===""?"No disponible":String(value);}
 
-function comparePickerItem(product){return `<button type="button" class="compare-picker-item" data-compare-pick="${product.id}"><span class="compare-picker-thumb"><img src="${escapeHtml(comparisonImage(product))}" alt=""></span><span><strong>${escapeHtml(product.name||"Producto")}</strong><small>${escapeHtml(`${product.brand||""} · ${product.category||""}`)}</small></span><b>›</b></button>`;}
-function updateComparePickerButton(which,product){const button=which==="a"?comparePickerAButton:comparePickerBButton;if(!button)return;if(!product){button.innerHTML=`<span class="compare-picker-empty-icon">${which.toUpperCase()}</span><span><strong>${which==="a"?"Seleccionar producto":"Primero elige el producto A"}</strong><small>${which==="a"?"Ver catálogo compatible":"Misma categoría obligatoria"}</small></span><b>⌄</b>`;return;}button.innerHTML=`<span class="compare-picker-thumb"><img src="${escapeHtml(comparisonImage(product))}" alt=""></span><span><strong>${escapeHtml(product.name||"Producto")}</strong><small>${escapeHtml(`${product.brand||""} · ${product.category||""}`)}</small></span><b>⌄</b>`;}
+function comparePickerItem(product){
+  const favorite = favoriteProductIds.has(Number(product.id));
+  return `<button type="button" class="compare-picker-item ${favorite?"is-favorite":""}" data-compare-pick="${product.id}">
+    <span class="compare-picker-thumb"><img src="${escapeHtml(comparisonImage(product))}" alt=""></span>
+    <span><strong>${escapeHtml(product.name||"Producto")}</strong><small>${escapeHtml(`${product.brand||""} · ${product.category||""}`)}</small></span>
+    ${favorite?`<i class="compare-favorite-mark" title="Favorito">${favoriteIcon(true)}</i>`:""}<b>›</b>
+  </button>`;
+}
+function updateComparePickerButton(which,product){const button=which==="a"?comparePickerAButton:comparePickerBButton;if(!button)return;if(!product){button.innerHTML=`<span class="compare-picker-empty-icon">${which.toUpperCase()}</span><span><strong>${which==="a"?"Seleccionar producto":"Primero elige el producto A"}</strong><small>${which==="a"?"Busca por nombre, marca o modelo":"Misma categoría obligatoria"}</small></span><b>⌄</b>`;return;}button.innerHTML=`<span class="compare-picker-thumb"><img src="${escapeHtml(comparisonImage(product))}" alt=""></span><span><strong>${escapeHtml(product.name||"Producto")}</strong><small>${escapeHtml(`${product.brand||""} · ${product.category||""}`)}</small></span>${favoriteProductIds.has(Number(product.id))?`<i class="compare-trigger-favorite">${favoriteIcon(true)}</i>`:""}<b>⌄</b>`;}
 function closeCompareMenus(){if(comparePickerAMenu)comparePickerAMenu.hidden=true;if(comparePickerBMenu)comparePickerBMenu.hidden=true;comparePickerAButton?.setAttribute("aria-expanded","false");comparePickerBButton?.setAttribute("aria-expanded","false");}
-function bindComparePicker(menu,select,which){menu?.querySelectorAll("[data-compare-pick]").forEach(btn=>btn.addEventListener("click",()=>{select.value=btn.dataset.comparePick;closeCompareMenus();select.dispatchEvent(new Event("change",{bubbles:true}));const product=reviews.find(item=>String(item.id)===String(select.value));updateComparePickerButton(which,product);}));}
-
-function populateComparisonSelectors(){if(!compareProductA||!compareProductB)return;const products=[...reviews].sort((a,b)=>String(a.category||"").localeCompare(String(b.category||""))||String(a.name||"").localeCompare(String(b.name||"")));compareProductA.innerHTML=`<option value="">Seleccionar producto</option>${products.map(item=>`<option value="${item.id}">${escapeHtml(`${item.category} · ${item.brand||""} ${item.name||""}`.trim())}</option>`).join("")}`;compareProductB.innerHTML=`<option value="">Primero elige el producto A</option>`;compareProductB.disabled=true;if(comparePickerAMenu){comparePickerAMenu.innerHTML=`<div class="compare-picker-menu-head"><strong>Elegir producto A</strong><small>${products.length} productos</small></div>${products.map(comparePickerItem).join("")}`;bindComparePicker(comparePickerAMenu,compareProductA,"a");}updateComparePickerButton("a",null);updateComparePickerButton("b",null);if(comparePickerBButton)comparePickerBButton.disabled=true;}
-
-function refreshCompareProductB(){if(!compareProductA||!compareProductB)return;const selectedA=reviews.find(item=>String(item.id)===String(compareProductA.value||""));updateComparePickerButton("a",selectedA||null);if(!selectedA){compareProductB.innerHTML=`<option value="">Primero elige el producto A</option>`;compareProductB.disabled=true;if(comparePickerBButton)comparePickerBButton.disabled=true;if(comparePickerBMenu)comparePickerBMenu.innerHTML="";updateComparePickerButton("b",null);if(compareCategoryLock)compareCategoryLock.textContent="Solo se permiten comparaciones entre productos de la misma categoría.";renderComparison();return;}const same=reviews.filter(item=>item.category===selectedA.category&&String(item.id)!==String(selectedA.id));compareProductB.innerHTML=`<option value="">Seleccionar ${escapeHtml(selectedA.category)}</option>${same.map(item=>`<option value="${item.id}">${escapeHtml(`${item.brand||""} ${item.name||""}`.trim())}</option>`).join("")}`;compareProductB.disabled=same.length===0;if(comparePickerBButton)comparePickerBButton.disabled=same.length===0;if(comparePickerBMenu){comparePickerBMenu.innerHTML=`<div class="compare-picker-menu-head"><strong>Elegir rival</strong><small>Solo ${escapeHtml(selectedA.category)}</small></div>${same.map(comparePickerItem).join("")}`;bindComparePicker(comparePickerBMenu,compareProductB,"b");}updateComparePickerButton("b",null);if(compareCategoryLock)compareCategoryLock.innerHTML=`<strong>${escapeHtml(selectedA.category)}</strong> bloqueado como categoría · ${same.length} alternativa${same.length===1?"":"s"}.`;renderComparison();}
+function bindComparePicker(root,select,which){root?.querySelectorAll("[data-compare-pick]").forEach(btn=>btn.addEventListener("click",()=>{select.value=btn.dataset.comparePick;closeCompareMenus();select.dispatchEvent(new Event("change",{bubbles:true}));const product=reviews.find(item=>String(item.id)===String(select.value));updateComparePickerButton(which,product);}));}
+function compareProductHaystack(product){return `${product?.name||""} ${product?.brand||""} ${product?.model||""} ${product?.category||""}`.toLowerCase();}
+function sortCompareProducts(products){return [...products].sort((a,b)=>{const af=favoriteProductIds.has(Number(a.id))?1:0,bf=favoriteProductIds.has(Number(b.id))?1:0;if(af!==bf)return bf-af;return String(a.name||"").localeCompare(String(b.name||""),"es");});}
+function renderComparePickerMenu(menu,products,select,which,title,subtitle){
+  if(!menu)return;
+  const ordered=sortCompareProducts(products);
+  menu.innerHTML=`<div class="compare-picker-menu-head"><div><strong>${escapeHtml(title)}</strong><small>${escapeHtml(subtitle)}</small></div><label class="compare-picker-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg><input type="search" placeholder="Buscar producto..." autocomplete="off"></label></div><div class="compare-picker-results"></div>`;
+  const input=menu.querySelector(".compare-picker-search input"),results=menu.querySelector(".compare-picker-results");
+  const draw=()=>{const q=String(input?.value||"").trim().toLowerCase();const filtered=ordered.filter(p=>!q||compareProductHaystack(p).includes(q));results.innerHTML=filtered.length?filtered.map(comparePickerItem).join(""):`<div class="compare-picker-no-results">No se encontraron productos.</div>`;bindComparePicker(results,select,which);};
+  input?.addEventListener("input",draw); draw();
+}
+function refreshComparePickerMenus(){
+  if(!compareProductA||!compareProductB)return;
+  const a=reviews.find(item=>String(item.id)===String(compareProductA.value||""));
+  const b=reviews.find(item=>String(item.id)===String(compareProductB.value||""));
+  renderComparePickerMenu(comparePickerAMenu,reviews,compareProductA,"a","Elegir producto A",`${reviews.length} productos · favoritos primero`);
+  updateComparePickerButton("a",a||null);
+  if(a){const same=reviews.filter(item=>item.category===a.category&&String(item.id)!==String(a.id));renderComparePickerMenu(comparePickerBMenu,same,compareProductB,"b","Elegir rival",`Solo ${a.category} · favoritos primero`);updateComparePickerButton("b",b||null);}
+  else { if(comparePickerBMenu) comparePickerBMenu.innerHTML=""; updateComparePickerButton("b",null); }
+}
+function populateComparisonSelectors(){if(!compareProductA||!compareProductB)return;const products=sortCompareProducts(reviews);compareProductA.innerHTML=`<option value="">Seleccionar producto</option>${products.map(item=>`<option value="${item.id}">${escapeHtml(`${item.category} · ${item.brand||""} ${item.name||""}`.trim())}</option>`).join("")}`;compareProductB.innerHTML=`<option value="">Primero elige el producto A</option>`;compareProductB.disabled=true;renderComparePickerMenu(comparePickerAMenu,products,compareProductA,"a","Elegir producto A",`${products.length} productos · favoritos primero`);updateComparePickerButton("a",null);updateComparePickerButton("b",null);if(comparePickerBButton)comparePickerBButton.disabled=true;}
+function refreshCompareProductB(){if(!compareProductA||!compareProductB)return;const selectedA=reviews.find(item=>String(item.id)===String(compareProductA.value||""));updateComparePickerButton("a",selectedA||null);if(!selectedA){compareProductB.innerHTML=`<option value="">Primero elige el producto A</option>`;compareProductB.disabled=true;if(comparePickerBButton)comparePickerBButton.disabled=true;if(comparePickerBMenu)comparePickerBMenu.innerHTML="";updateComparePickerButton("b",null);if(compareCategoryLock)compareCategoryLock.textContent="Solo se permiten comparaciones entre productos de la misma categoría.";renderComparison();return;}const same=sortCompareProducts(reviews.filter(item=>item.category===selectedA.category&&String(item.id)!==String(selectedA.id)));compareProductB.innerHTML=`<option value="">Seleccionar ${escapeHtml(selectedA.category)}</option>${same.map(item=>`<option value="${item.id}">${escapeHtml(`${item.brand||""} ${item.name||""}`.trim())}</option>`).join("")}`;compareProductB.disabled=same.length===0;if(comparePickerBButton)comparePickerBButton.disabled=same.length===0;renderComparePickerMenu(comparePickerBMenu,same,compareProductB,"b","Elegir rival",`Solo ${selectedA.category} · favoritos primero`);updateComparePickerButton("b",null);if(compareCategoryLock)compareCategoryLock.innerHTML=`<strong>${escapeHtml(selectedA.category)}</strong> bloqueado como categoría · ${same.length} alternativa${same.length===1?"":"s"}.`;renderComparison();}
 
 function comparisonProductCard(product,isWinner,side){return `<article class="compare-duel-product ${side} ${isWinner?"overall-winner":""}">${isWinner?`<span class="compare-winner-badge">DESTACADO</span>`:""}<div class="compare-duel-image"><img src="${escapeHtml(comparisonImage(product))}" alt="${escapeHtml(product.name||"Producto")}"></div><small>${escapeHtml(product.brand||"")}</small><h3>${escapeHtml(product.name||"")}</h3><button type="button" data-open-compare-product="${product.id}">Ver ficha ↗</button></article>`;}
 
@@ -1218,7 +1441,7 @@ async function openReview(id) {
             ${review.price ? `<span>· ${escapeHtml(review.price)}</span>` : ""}
           </div>
 
-          <h2 id="modalTitle" class="product-detail-title">${escapeHtml(review.name || "")}</h2>
+          <div class="product-detail-title-row"><h2 id="modalTitle" class="product-detail-title">${escapeHtml(review.name || "")}</h2><button class="favorite-detail-button ${favoriteProductIds.has(Number(review.id))?"active":""}" type="button" data-detail-favorite="${review.id}" aria-label="${favoriteProductIds.has(Number(review.id))?"Quitar de favoritos":"Agregar a favoritos"}">${favoriteIcon(favoriteProductIds.has(Number(review.id)))}<span>${favoriteProductIds.has(Number(review.id))?"Guardado":"Favorito"}</span></button></div>
 
           <p class="product-detail-model">
             ${review.brand ? escapeHtml(review.brand) : ""}
@@ -1299,6 +1522,10 @@ async function openReview(id) {
     if (currentRole === "user") bindRatingButtons(id, Number(rating.mine || 0));
     bindProductMedia(review);
     bindProductColorImages(review);
+    modalContent.querySelector("[data-detail-favorite]")?.addEventListener("click", event => {
+      event.stopPropagation();
+      toggleFavorite(Number(event.currentTarget.dataset.detailFavorite), event.currentTarget);
+    });
 
     modal.classList.add("open");
     modal.setAttribute("aria-hidden", "false");

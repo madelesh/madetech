@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es" data-theme="dark">
 <head>
-  <meta name="madelesh-admin-build" content="5.24" />
+  <meta name="madelesh-admin-build" content="5.25" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0b0b0c" />
@@ -10,8 +10,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link id="siteFavicon" rel="icon" type="image/png" href="" />
-  <link rel="stylesheet" href="styles.css?v=5.24" />
-  <link rel="stylesheet" href="admin.css?v=5.24" />
+  <link rel="stylesheet" href="styles.css?v=5.25" />
+  <link rel="stylesheet" href="admin.css?v=5.25" />
 </head>
 <body class="admin-body">
 
@@ -49,7 +49,7 @@
 
       <p class="admin-error" id="adminLoginError" hidden></p>
       <a class="back-site" href="index.html">← Volver a MadeLesh</a>
-      <small class="admin-build-marker">build 5.24</small>
+      <small class="admin-build-marker">build 5.25</small>
     </div>
   </section>
 
@@ -90,6 +90,10 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4z"></path><circle cx="9" cy="11" r="2"></circle><path d="m6 16 4-4 3 3 2-2 3 3"></path></svg>
           <span>Apariencia</span>
         </button>
+        <button data-panel="avatarsPanel" data-permission="profiles.manage_avatars">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4.5 21a7.5 7.5 0 0 1 15 0"></path></svg>
+          <span>Fotos de perfil</span>
+        </button>
         <button data-panel="contactsPanel" data-permission="settings.contacts">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"></path><path d="m5 7 7 5 7-5"></path></svg>
           <span>Contactos</span>
@@ -107,7 +111,7 @@
       <div class="admin-sidebar-footer">
         <span id="adminIdentity"></span>
         <button id="adminLogout">Cerrar sesión</button>
-        <small class="admin-build-marker">build 5.24</small>
+        <small class="admin-build-marker">build 5.25</small>
       </div>
     </aside>
 
@@ -703,6 +707,23 @@
         </div>
       </section>
 
+      <section class="admin-panel" id="avatarsPanel">
+        <div class="admin-grid">
+          <div class="admin-card profile-avatar-admin-card">
+            <div class="card-heading">
+              <div><span class="admin-eyebrow">PERFILES</span><h2>Fotos disponibles</h2><p>Sube las imágenes que los usuarios podrán elegir como foto de perfil. Máximo 24.</p></div>
+              <span class="count-pill" id="profileAvatarsCount">0</span>
+            </div>
+            <div class="profile-avatar-upload-row">
+              <label class="branding-file-button"><input id="profileAvatarFiles" type="file" accept="image/png,image/jpeg,image/webp" multiple /><span>SELECCIONAR IMÁGENES</span></label>
+              <button class="primary-admin-btn" id="uploadProfileAvatars" type="button">SUBIR FOTOS ↗</button>
+            </div>
+            <p class="profile-avatar-admin-hint" id="profileAvatarUploadStatus">Recomendado: imágenes cuadradas. MadeLesh las optimiza antes de subirlas.</p>
+            <div class="profile-avatar-admin-grid" id="profileAvatarsList"></div>
+          </div>
+        </div>
+      </section>
+
       <section class="admin-panel" id="contactsPanel">
         <div class="admin-grid contacts-admin-grid">
           <div class="admin-card contacts-admin-card">
@@ -774,13 +795,14 @@
               <div>
                 <span class="admin-eyebrow">ENCABEZADO</span>
                 <h2>Mensajes de la página</h2>
-                <p>Puedes mostrar hasta 3 mensajes. Se desplazarán automáticamente en la barra superior.</p>
+                <p>Puedes mostrar hasta 3 mensajes. Se mostrarán debajo del encabezado. Puedes elegir entre deslizamiento automático o modo estático.</p>
               </div>
             </div>
             <form id="announcementsSettingsForm" class="announcements-settings-form">
               <label>MENSAJE 1<input id="announcementMessage1" type="text" maxlength="180" placeholder="Ej. Nuevas reviews cada semana" /></label>
               <label>MENSAJE 2<input id="announcementMessage2" type="text" maxlength="180" placeholder="Ej. Revisa el destacado del mes" /></label>
               <label>MENSAJE 3<input id="announcementMessage3" type="text" maxlength="180" placeholder="Ej. Comparación próximamente" /></label>
+              <label>MODO DE NOTICIAS<select id="announcementMode"><option value="scroll">Deslizamiento automático</option><option value="static">Estático</option></select></label>
               <div class="contacts-save-row">
                 <p>Los campos vacíos no se mostrarán.</p>
                 <button class="primary-admin-btn" type="submit">GUARDAR MENSAJES ↗</button>
@@ -862,7 +884,7 @@
   </div>
 
   <script type="module">
-console.info("MadeLesh Admin build 5.24");
+console.info("MadeLesh Admin build 5.25");
 import { API_BASE } from "./config.js";
 
 const adminLogin = document.getElementById("adminLogin");
@@ -957,6 +979,12 @@ const announcementsSettingsForm = document.getElementById("announcementsSettings
 const announcementMessage1 = document.getElementById("announcementMessage1");
 const announcementMessage2 = document.getElementById("announcementMessage2");
 const announcementMessage3 = document.getElementById("announcementMessage3");
+const announcementMode = document.getElementById("announcementMode");
+const profileAvatarFiles = document.getElementById("profileAvatarFiles");
+const uploadProfileAvatars = document.getElementById("uploadProfileAvatars");
+const profileAvatarsList = document.getElementById("profileAvatarsList");
+const profileAvatarsCount = document.getElementById("profileAvatarsCount");
+const profileAvatarUploadStatus = document.getElementById("profileAvatarUploadStatus");
 const releaseSettingsForm = document.getElementById("releaseSettingsForm");
 const releaseVersion = document.getElementById("releaseVersion");
 const releaseDate = document.getElementById("releaseDate");
@@ -1024,6 +1052,7 @@ let adminRoles = [];
 let permissionDefinitions = [];
 let staffUsers = [];
 let auditEntries = [];
+let adminProfileAvatars = [];
 let selectedRoleId = null;
 let audioTrimBuffer = null;
 let audioTrimObjectUrl = "";
@@ -1036,8 +1065,8 @@ let brandingFaviconDarkDataUrl = "";
 let contactIconDataUrls = { discord:"", steam:"", x:"", youtube:"", tiktok:"", email:"" };
 let colorImagesByHex = {};
 const ADMIN_BUILD_RELEASE = {
-  version: "5.24",
-  title: "Roles, auditoría, comparación visual y audio",
+  version: "5.25",
+  title: "Favoritos, avatares y comparador mejorado",
   date: "2026-09-24",
   changes: {
     added: [
@@ -2215,7 +2244,7 @@ async function loadBrandingSettings() {
     renderBrandingPreviews();
     applyAdminBranding();
     fillContactsSettings(data.contacts || {});
-    fillAnnouncementSettings(data.announcements || []);
+    fillAnnouncementSettings(data.announcements || [], data.announcementMode || announcementMode?.value || "scroll");
     fillReleaseSettings(data.release || { version: data.appVersion || "5.18" });
   } catch (error) {
     console.warn("No se pudo cargar apariencia/contactos", error);
@@ -2470,6 +2499,7 @@ async function loadAdminDashboardData() {
   if (canAny("products.view_drafts","products.create","products.edit","products.delete","products.import")) tasks.push(["productos", loadProducts]);
   if (canAny("keys.view","keys.manage")) tasks.push(["access keys", loadKeys]);
   if (can("settings.branding")) tasks.push(["apariencia", loadBrandingSettings]);
+  if (can("profiles.manage_avatars")) tasks.push(["fotos de perfil", loadProfileAvatarsAdmin]);
   if (can("roles.manage")) tasks.push(["roles", loadRolesAdmin]);
   if (can("users.manage_roles")) tasks.push(["usuarios", loadStaffUsers]);
   if (can("audit.view")) tasks.push(["auditoría", loadAudit]);
@@ -2537,11 +2567,12 @@ adminLogout?.addEventListener("click", async () => {
   showAdminLogin();
 });
 
-function fillAnnouncementSettings(messages = []) {
+function fillAnnouncementSettings(messages = [], mode = "scroll") {
   const values = Array.isArray(messages) ? messages : [];
   if (announcementMessage1) announcementMessage1.value = values[0] || "";
   if (announcementMessage2) announcementMessage2.value = values[1] || "";
   if (announcementMessage3) announcementMessage3.value = values[2] || "";
+  if (announcementMode) announcementMode.value = mode === "static" ? "static" : "scroll";
 }
 
 announcementsSettingsForm?.addEventListener("submit", async event => {
@@ -2555,10 +2586,11 @@ announcementsSettingsForm?.addEventListener("submit", async event => {
       body: JSON.stringify({
         message1: announcementMessage1?.value.trim() || "",
         message2: announcementMessage2?.value.trim() || "",
-        message3: announcementMessage3?.value.trim() || ""
+        message3: announcementMessage3?.value.trim() || "",
+        mode: announcementMode?.value || "scroll"
       })
     });
-    fillAnnouncementSettings(data.announcements || []);
+    fillAnnouncementSettings(data.announcements || [], data.announcementMode || "scroll");
     showAdminToast("Los mensajes del encabezado han sido actualizados");
   } catch (error) {
     alert(`No se pudieron guardar los mensajes: ${error.message}`);
@@ -2567,6 +2599,58 @@ announcementsSettingsForm?.addEventListener("submit", async event => {
   }
 });
 
+
+async function loadProfileAvatarsAdmin() {
+  if (!profileAvatarsList) return;
+  const data = await api("/admin/profile-avatars");
+  adminProfileAvatars = Array.isArray(data.avatars) ? data.avatars : [];
+  renderProfileAvatarsAdmin();
+}
+
+function renderProfileAvatarsAdmin() {
+  if (!profileAvatarsList) return;
+  if (profileAvatarsCount) profileAvatarsCount.textContent = String(adminProfileAvatars.length);
+  profileAvatarsList.innerHTML = adminProfileAvatars.length ? adminProfileAvatars.map(avatar => `
+    <article class="profile-avatar-admin-item">
+      <img src="${escapeAttr(avatar.imageDataUrl || "")}" alt="${escapeAttr(avatar.label || "Foto de perfil")}">
+      <div><strong>${escapeHtml(avatar.label || `Foto ${avatar.id}`)}</strong><small>ID ${avatar.id}</small></div>
+      <button class="danger" type="button" data-delete-profile-avatar="${avatar.id}">ELIMINAR</button>
+    </article>`).join("") : `<div class="empty-admin-state">Todavía no hay fotos de perfil disponibles.</div>`;
+  profileAvatarsList.querySelectorAll("[data-delete-profile-avatar]").forEach(button => {
+    button.addEventListener("click", async () => {
+      if (!confirm("¿Eliminar esta foto de perfil? Los usuarios que la tengan volverán al avatar predeterminado.")) return;
+      try { button.disabled = true; await api(`/admin/profile-avatars/${button.dataset.deleteProfileAvatar}`, { method:"DELETE" }); await loadProfileAvatarsAdmin(); showAdminToast("Foto de perfil eliminada"); }
+      catch (error) { alert(error.message || "No se pudo eliminar la foto."); }
+      finally { button.disabled = false; }
+    });
+  });
+}
+
+uploadProfileAvatars?.addEventListener("click", async () => {
+  const files = [...(profileAvatarFiles?.files || [])];
+  if (!files.length) return alert("Selecciona una o más imágenes.");
+  const old = uploadProfileAvatars.textContent;
+  uploadProfileAvatars.disabled = true;
+  uploadProfileAvatars.textContent = "SUBIENDO...";
+  let uploaded = 0;
+  try {
+    for (const file of files) {
+      const imageDataUrl = await imageFileToWebpDataUrl(file, { maxSize:320, quality:.82, maxChars:220000 });
+      const label = String(file.name || "Foto de perfil").replace(/\.[^.]+$/, "").slice(0,80);
+      await api("/admin/profile-avatars", { method:"POST", body:JSON.stringify({ label, imageDataUrl }) });
+      uploaded++;
+    }
+    if (profileAvatarUploadStatus) profileAvatarUploadStatus.textContent = `${uploaded} foto${uploaded===1?"":"s"} subida${uploaded===1?"":"s"} correctamente.`;
+    if (profileAvatarFiles) profileAvatarFiles.value = "";
+    await loadProfileAvatarsAdmin();
+    showAdminToast("Fotos de perfil actualizadas");
+  } catch (error) {
+    alert(error.message || "No se pudieron subir las fotos.");
+  } finally {
+    uploadProfileAvatars.disabled = false;
+    uploadProfileAvatars.textContent = old;
+  }
+});
 
 function classifyReleaseNotesAdmin(notes = []) {
   const result = { added: [], removed: [], fixed: [] };
@@ -2604,7 +2688,7 @@ function updateReleaseAutoPreview() {
 
 function fillReleaseSettings(release = {}) {
   if (String(release.version || "") !== ADMIN_BUILD_RELEASE.version) release = ADMIN_BUILD_RELEASE;
-  if (releaseVersion) releaseVersion.value = String(release.version || "5.24").replace(/^v/i, "");
+  if (releaseVersion) releaseVersion.value = String(release.version || "5.25").replace(/^v/i, "");
   if (releaseDate) releaseDate.value = String(release.date || "");
   if (releaseTitle) releaseTitle.value = String(release.title || "");
 
@@ -2849,6 +2933,7 @@ function activateAdminPanel(panelId) {
     usersPanel: "Usuarios y roles",
     auditPanel: "Registro de auditoría",
     brandingPanel: "Apariencia",
+    avatarsPanel: "Fotos de perfil",
     contactsPanel: "Contactos",
     announcementsPanel: "Noticias",
     updatesPanel: "Actualizaciones"
@@ -2857,6 +2942,7 @@ function activateAdminPanel(panelId) {
   document.querySelectorAll(".admin-panel").forEach(panel => panel.classList.toggle("active", panel.id === panelId));
   document.getElementById("adminTitle").textContent = titles[panelId] || "MadeLesh Control";
   if (panelId === "rolesPanel" && can("roles.manage")) loadRolesAdmin().catch(console.warn);
+  if (panelId === "avatarsPanel" && can("profiles.manage_avatars")) loadProfileAvatarsAdmin().catch(console.warn);
   if (panelId === "usersPanel" && can("users.manage_roles")) loadStaffUsers().catch(console.warn);
   if (panelId === "auditPanel" && can("audit.view")) loadAudit().catch(console.warn);
   window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
