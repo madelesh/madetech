@@ -1,9 +1,11 @@
-console.info("MadeLesh Admin build 5.23-A");
+console.info("MadeLesh Admin build 5.24");
 import { API_BASE } from "./config.js";
 
 const adminLogin = document.getElementById("adminLogin");
 const adminApp = document.getElementById("adminApp");
 const adminLoginForm = document.getElementById("adminLoginForm");
+const staffKeyLoginForm = document.getElementById("staffKeyLoginForm");
+const staffAccessKey = document.getElementById("staffAccessKey");
 const adminLoginError = document.getElementById("adminLoginError");
 const adminIdentity = document.getElementById("adminIdentity");
 const adminLogout = document.getElementById("adminLogout");
@@ -59,6 +61,19 @@ const keyboardSoundBlock = document.getElementById("keyboardSoundBlock");
 const keyboardSoundUrl = document.getElementById("keyboardSoundUrl");
 const keyboardSoundFile = document.getElementById("keyboardSoundFile");
 const keyboardSoundPreview = document.getElementById("keyboardSoundPreview");
+const loadAudioUrlForTrim = document.getElementById("loadAudioUrlForTrim");
+const audioTrimmer = document.getElementById("audioTrimmer");
+const audioTrimPlayer = document.getElementById("audioTrimPlayer");
+const audioTrimFileName = document.getElementById("audioTrimFileName");
+const audioTrimDuration = document.getElementById("audioTrimDuration");
+const audioTrimStart = document.getElementById("audioTrimStart");
+const audioTrimEnd = document.getElementById("audioTrimEnd");
+const audioTrimLength = document.getElementById("audioTrimLength");
+const audioTrimRangeFill = document.getElementById("audioTrimRangeFill");
+const previewAudioTrim = document.getElementById("previewAudioTrim");
+const applyAudioTrim = document.getElementById("applyAudioTrim");
+const clearAudioTrim = document.getElementById("clearAudioTrim");
+const audioTrimStatus = document.getElementById("audioTrimStatus");
 const productLivePreviewCard = document.getElementById("productLivePreviewCard");
 const productLivePreviewImage = document.getElementById("productLivePreviewImage");
 const productLivePreviewEmpty = document.getElementById("productLivePreviewEmpty");
@@ -115,9 +130,40 @@ const keysList = document.getElementById("keysList");
 const keysCount = document.getElementById("keysCount");
 const archivedKeysList = document.getElementById("archivedKeysList");
 const archivedKeysCount = document.getElementById("archivedKeysCount");
+const rolesList = document.getElementById("rolesList");
+const roleEditor = document.getElementById("roleEditor");
+const roleEditorEmpty = document.getElementById("roleEditorEmpty");
+const roleEditorTitle = document.getElementById("roleEditorTitle");
+const createRoleButton = document.getElementById("createRoleButton");
+const deleteRoleButton = document.getElementById("deleteRoleButton");
+const saveRoleButton = document.getElementById("saveRoleButton");
+const clearRolePermissions = document.getElementById("clearRolePermissions");
+const roleName = document.getElementById("roleName");
+const roleDescription = document.getElementById("roleDescription");
+const roleColor = document.getElementById("roleColor");
+const roleColorValue = document.getElementById("roleColorValue");
+const rolePermissionsList = document.getElementById("rolePermissionsList");
+const roleUnsavedState = document.getElementById("roleUnsavedState");
+const staffUsersList = document.getElementById("staffUsersList");
+const staffUsersCount = document.getElementById("staffUsersCount");
+const staffUsersSearch = document.getElementById("staffUsersSearch");
+const reloadStaffUsers = document.getElementById("reloadStaffUsers");
+const auditList = document.getElementById("auditList");
+const auditSearch = document.getElementById("auditSearch");
+const auditTypeFilter = document.getElementById("auditTypeFilter");
+const reloadAudit = document.getElementById("reloadAudit");
 
 let adminToken = localStorage.getItem("madetech_admin_token") || "";
+let adminSession = null;
 let products = [];
+let adminRoles = [];
+let permissionDefinitions = [];
+let staffUsers = [];
+let auditEntries = [];
+let selectedRoleId = null;
+let audioTrimBuffer = null;
+let audioTrimObjectUrl = "";
+let audioPreviewStopTimer = null;
 let fixedStoreIcons = { amazon: "", aliexpress: "" };
 let brandingLogoLightDataUrl = "";
 let brandingLogoDarkDataUrl = "";
@@ -126,22 +172,20 @@ let brandingFaviconDarkDataUrl = "";
 let contactIconDataUrls = { discord:"", steam:"", x:"", youtube:"", tiktok:"", email:"" };
 let colorImagesByHex = {};
 const ADMIN_BUILD_RELEASE = {
-  version: "5.23-A",
-  title: "Interfaz visual y vista previa en tiempo real",
-  date: "2026-09-21",
+  version: "5.24",
+  title: "Roles, auditoría, comparación visual y audio",
+  date: "2026-09-24",
   changes: {
     added: [
-      "Vista previa en tiempo real dentro del editor de productos.",
-      "Marco visual neutro para imágenes con fondo blanco o transparente.",
-      "Botón Ver producto con interacción dinámica."
+      "Roles personalizables con permisos individuales.",
+      "Asignación de roles a usuarios registrados y registro de auditoría.",
+      "Editor para recortar audio de teclados desde audio o video.",
+      "Comparador con selección visual de productos."
     ],
-    removed: [
-      "Texto IMG en los selectores de color.",
-      "Bloque redundante Información del producto en la ficha."
-    ],
+    removed: [],
     fixed: [
-      "Tarjetas del catálogo más anchas y simétricas para imágenes cuadradas.",
-      "Miniaturas de la galería fuera del marco de la imagen principal."
+      "Animación del perfil invertida: avatar a la izquierda y nombre a la derecha.",
+      "Comparativas rediseñadas con resultado visual más dinámico."
     ]
   }
 };
@@ -637,44 +681,189 @@ function safeAudioSource(value) {
 function renderKeyboardSoundPreview() {
   if (!keyboardSoundPreview) return;
   const src = safeAudioSource(keyboardSoundUrl?.value || "");
-  keyboardSoundPreview.innerHTML = src ? `<audio controls preload="metadata" src="${escapeAttr(src)}"></audio>` : `<span>Sin audio cargado.</span>`;
+  keyboardSoundPreview.innerHTML = src
+    ? `<div class="published-audio-preview"><span>AUDIO PUBLICADO</span><audio controls preload="metadata" src="${escapeAttr(src)}"></audio></div>`
+    : `<span>Sin audio publicado.</span>`;
 }
 
-async function audioDuration(file) {
-  return await new Promise((resolve,reject) => {
-    const audio = document.createElement("audio");
-    const url = URL.createObjectURL(file);
-    audio.preload = "metadata";
-    audio.onloadedmetadata = () => { const d = Number(audio.duration || 0); URL.revokeObjectURL(url); resolve(d); };
-    audio.onerror = () => { URL.revokeObjectURL(url); reject(new Error("No se pudo leer el audio.")); };
-    audio.src = url;
-  });
+function formatAudioTime(seconds) {
+  const value = Math.max(0, Number(seconds || 0));
+  const mins = Math.floor(value / 60);
+  const secs = Math.floor(value % 60).toString().padStart(2, "0");
+  return `${mins}:${secs}`;
 }
 
-async function audioFileToDataUrl(file) {
-  if (!file || !String(file.type || "").startsWith("audio/")) throw new Error("Selecciona un audio válido.");
-  if (file.size > 1100000) throw new Error("El audio es demasiado pesado. Usa MP3/OGG corto de 5 a 10 segundos.");
-  const duration = await audioDuration(file);
-  if (duration < 5 || duration > 10) throw new Error("El audio del teclado debe durar entre 5 y 10 segundos.");
-  return await new Promise((resolve,reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = () => reject(new Error("No se pudo cargar el audio."));
-    reader.readAsDataURL(file);
-  });
+function revokeAudioObjectUrl() {
+  if (audioTrimObjectUrl) URL.revokeObjectURL(audioTrimObjectUrl);
+  audioTrimObjectUrl = "";
+}
+
+function clearAudioEditor() {
+  if (audioPreviewStopTimer) clearTimeout(audioPreviewStopTimer);
+  audioPreviewStopTimer = null;
+  if (audioTrimPlayer) { audioTrimPlayer.pause(); audioTrimPlayer.removeAttribute("src"); audioTrimPlayer.load(); }
+  revokeAudioObjectUrl();
+  audioTrimBuffer = null;
+  if (audioTrimmer) audioTrimmer.hidden = true;
+  if (audioTrimStatus) audioTrimStatus.textContent = "El fragmento final debe durar entre 5 y 10 segundos.";
+}
+
+function updateAudioTrimUi() {
+  if (!audioTrimBuffer) return;
+  let start = Math.max(0, Number(audioTrimStart?.value || 0));
+  let end = Math.min(audioTrimBuffer.duration, Number(audioTrimEnd?.value || audioTrimBuffer.duration));
+  if (end < start) [start, end] = [end, start];
+  const len = Math.max(0, end - start);
+  if (audioTrimStart) audioTrimStart.value = start.toFixed(1);
+  if (audioTrimEnd) audioTrimEnd.value = end.toFixed(1);
+  if (audioTrimLength) audioTrimLength.textContent = `${len.toFixed(1)} s`;
+  if (audioTrimRangeFill) {
+    const total = Math.max(.001, audioTrimBuffer.duration);
+    audioTrimRangeFill.style.left = `${(start / total) * 100}%`;
+    audioTrimRangeFill.style.width = `${(len / total) * 100}%`;
+  }
+  const valid = len >= 5 && len <= 10;
+  if (audioTrimStatus) {
+    audioTrimStatus.textContent = valid
+      ? `Recorte válido · ${len.toFixed(1)} segundos.`
+      : `Ajusta el recorte: ahora dura ${len.toFixed(1)} s y debe quedar entre 5 y 10 s.`;
+    audioTrimStatus.classList.toggle("valid", valid);
+  }
+  if (applyAudioTrim) applyAudioTrim.disabled = !valid;
+}
+
+async function decodeAudioArrayBuffer(arrayBuffer) {
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) throw new Error("Tu navegador no permite editar audio.");
+  const ctx = new AudioCtx();
+  try {
+    return await ctx.decodeAudioData(arrayBuffer.slice(0));
+  } finally {
+    await ctx.close().catch(() => {});
+  }
+}
+
+async function loadAudioIntoEditor(blob, label = "Audio cargado") {
+  if (!blob) throw new Error("No se recibió ningún archivo.");
+  if (blob.size > 25 * 1024 * 1024) throw new Error("El archivo supera 25 MB. Usa un audio o video más corto.");
+  const buffer = await decodeAudioArrayBuffer(await blob.arrayBuffer());
+  if (!Number.isFinite(buffer.duration) || buffer.duration < 5) throw new Error("El archivo debe contener al menos 5 segundos de audio.");
+  audioTrimBuffer = buffer;
+  revokeAudioObjectUrl();
+  audioTrimObjectUrl = URL.createObjectURL(blob);
+  if (audioTrimPlayer) { audioTrimPlayer.src = audioTrimObjectUrl; audioTrimPlayer.load(); }
+  if (audioTrimFileName) audioTrimFileName.textContent = label;
+  if (audioTrimDuration) audioTrimDuration.textContent = `${formatAudioTime(buffer.duration)} · ${buffer.duration.toFixed(1)} s`;
+  if (audioTrimStart) { audioTrimStart.min = "0"; audioTrimStart.max = String(buffer.duration); audioTrimStart.value = "0.0"; }
+  if (audioTrimEnd) { audioTrimEnd.min = "0"; audioTrimEnd.max = String(buffer.duration); audioTrimEnd.value = Math.min(10, buffer.duration).toFixed(1); }
+  if (audioTrimmer) audioTrimmer.hidden = false;
+  updateAudioTrimUi();
+}
+
+function audioBufferToTrimmedMonoWavDataUrl(buffer, startSeconds, endSeconds, targetRate = 22050) {
+  const sourceRate = buffer.sampleRate;
+  const startFrame = Math.max(0, Math.floor(startSeconds * sourceRate));
+  const endFrame = Math.min(buffer.length, Math.floor(endSeconds * sourceRate));
+  const sourceLength = Math.max(1, endFrame - startFrame);
+  const outputLength = Math.max(1, Math.floor(sourceLength * targetRate / sourceRate));
+  const mono = new Float32Array(outputLength);
+  const channels = Array.from({ length: buffer.numberOfChannels }, (_, i) => buffer.getChannelData(i));
+
+  for (let i = 0; i < outputLength; i++) {
+    const srcPos = startFrame + (i * sourceRate / targetRate);
+    const idx = Math.min(endFrame - 1, Math.floor(srcPos));
+    const next = Math.min(endFrame - 1, idx + 1);
+    const frac = srcPos - idx;
+    let sample = 0;
+    for (const channel of channels) sample += channel[idx] * (1 - frac) + channel[next] * frac;
+    mono[i] = Math.max(-1, Math.min(1, sample / Math.max(1, channels.length)));
+  }
+
+  const bytesPerSample = 2;
+  const dataSize = mono.length * bytesPerSample;
+  const ab = new ArrayBuffer(44 + dataSize);
+  const view = new DataView(ab);
+  const writeString = (offset, text) => { for (let i = 0; i < text.length; i++) view.setUint8(offset + i, text.charCodeAt(i)); };
+  writeString(0, "RIFF"); view.setUint32(4, 36 + dataSize, true); writeString(8, "WAVE"); writeString(12, "fmt ");
+  view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true); view.setUint32(24, targetRate, true);
+  view.setUint32(28, targetRate * bytesPerSample, true); view.setUint16(32, bytesPerSample, true); view.setUint16(34, 16, true);
+  writeString(36, "data"); view.setUint32(40, dataSize, true);
+  let offset = 44;
+  for (let i = 0; i < mono.length; i++, offset += 2) view.setInt16(offset, mono[i] < 0 ? mono[i] * 0x8000 : mono[i] * 0x7fff, true);
+  const bytes = new Uint8Array(ab);
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  return `data:audio/wav;base64,${btoa(binary)}`;
 }
 
 keyboardSoundUrl?.addEventListener("input", renderKeyboardSoundPreview);
+[audioTrimStart, audioTrimEnd].filter(Boolean).forEach(input => input.addEventListener("input", updateAudioTrimUi));
+
 keyboardSoundFile?.addEventListener("change", async () => {
+  const file = keyboardSoundFile.files?.[0];
+  if (!file) return;
   try {
-    keyboardSoundUrl.value = await audioFileToDataUrl(keyboardSoundFile.files?.[0]);
-    renderKeyboardSoundPreview();
+    if (audioTrimStatus) audioTrimStatus.textContent = "Procesando audio del archivo...";
+    await loadAudioIntoEditor(file, `${file.name}${String(file.type || "").startsWith("video/") ? " · audio extraído del video" : ""}`);
   } catch (error) {
-    alert(error.message);
+    clearAudioEditor();
+    alert(`No se pudo abrir ese formato en el navegador: ${error.message}`);
   } finally {
     keyboardSoundFile.value = "";
   }
 });
+
+loadAudioUrlForTrim?.addEventListener("click", async () => {
+  const url = safeExternalUrl(keyboardSoundUrl?.value || "");
+  if (!url) return alert("Escribe primero una URL de audio válida.");
+  try {
+    loadAudioUrlForTrim.disabled = true;
+    loadAudioUrlForTrim.textContent = "CARGANDO...";
+    const response = await fetch(url, { mode: "cors" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const blob = await response.blob();
+    await loadAudioIntoEditor(blob, "Audio desde URL");
+  } catch (error) {
+    alert("No se pudo cargar esa URL en el editor. El servidor del audio debe permitir CORS. Puedes descargar el archivo y subirlo desde tu PC.");
+  } finally {
+    loadAudioUrlForTrim.disabled = false;
+    loadAudioUrlForTrim.textContent = "EDITAR URL";
+  }
+});
+
+previewAudioTrim?.addEventListener("click", () => {
+  if (!audioTrimBuffer || !audioTrimPlayer) return;
+  updateAudioTrimUi();
+  const start = Number(audioTrimStart.value || 0);
+  const end = Number(audioTrimEnd.value || 0);
+  audioTrimPlayer.currentTime = start;
+  audioTrimPlayer.play().catch(() => {});
+  if (audioPreviewStopTimer) clearTimeout(audioPreviewStopTimer);
+  audioPreviewStopTimer = setTimeout(() => audioTrimPlayer.pause(), Math.max(0, end - start) * 1000);
+});
+
+applyAudioTrim?.addEventListener("click", () => {
+  if (!audioTrimBuffer) return;
+  const start = Number(audioTrimStart.value || 0);
+  const end = Number(audioTrimEnd.value || 0);
+  const duration = end - start;
+  if (duration < 5 || duration > 10) return alert("El recorte final debe durar entre 5 y 10 segundos.");
+  try {
+    applyAudioTrim.disabled = true;
+    applyAudioTrim.textContent = "GENERANDO...";
+    keyboardSoundUrl.value = audioBufferToTrimmedMonoWavDataUrl(audioTrimBuffer, start, end);
+    renderKeyboardSoundPreview();
+    showAdminToast(`Audio recortado a ${duration.toFixed(1)} segundos`);
+  } catch (error) {
+    alert(`No se pudo generar el recorte: ${error.message}`);
+  } finally {
+    applyAudioTrim.disabled = false;
+    applyAudioTrim.textContent = "USAR ESTE RECORTE ↗";
+  }
+});
+
+clearAudioTrim?.addEventListener("click", clearAudioEditor);
 
 function parseProPlayers() {
   return proPlayerNames.map((input, index) => ({
@@ -1333,36 +1522,61 @@ contactsSettingsForm?.addEventListener("submit", async event => {
   }
 });
 
-/* ---------------- ADMIN SESSION ---------------- */
+/* ---------------- ADMIN / STAFF SESSION ---------------- */
+
+function sessionPermissions() {
+  return Array.isArray(adminSession?.permissions) ? adminSession.permissions : [];
+}
+
+function can(permission) {
+  return adminSession?.role === "admin" || sessionPermissions().includes("*") || sessionPermissions().includes(permission);
+}
+
+function canAny(...permissions) {
+  return adminSession?.role === "admin" || permissions.some(can);
+}
+
+function configurePanelPermissions() {
+  document.querySelectorAll(".admin-nav button[data-permission]").forEach(button => {
+    button.hidden = !can(button.dataset.permission);
+  });
+  document.querySelectorAll(".admin-nav button[data-permission-any]").forEach(button => {
+    const permissions = String(button.dataset.permissionAny || "").split(",").map(v => v.trim()).filter(Boolean);
+    button.hidden = !permissions.some(can);
+  });
+
+  const importer = document.querySelector(".admin-import-grid");
+  if (importer) importer.hidden = !can("products.import");
+  const saveProduct = document.getElementById("saveProduct");
+  if (saveProduct) saveProduct.hidden = !(can("products.create") || can("products.edit"));
+  const keyGeneratorCard = keyGeneratorForm?.closest(".admin-card");
+  if (keyGeneratorCard) keyGeneratorCard.hidden = !can("keys.manage");
+
+  const active = document.querySelector(".admin-nav button.active:not([hidden])");
+  if (!active) {
+    const first = document.querySelector(".admin-nav button:not([hidden])");
+    if (first) activateAdminPanel(first.dataset.panel);
+  }
+}
 
 async function restoreAdminSession() {
-  if (!adminToken) {
-    showAdminLogin();
-    return;
-  }
-
-  // IMPORTANTE:
-  // Solo invalidamos la sesión si /session/me dice que el token no sirve.
-  // Un fallo al cargar productos, keys o configuración NO debe cerrar al admin.
+  if (!adminToken) { showAdminLogin(); return; }
   try {
     const me = await api("/session/me");
-    if (me.role !== "admin") {
-      throw Object.assign(new Error("not admin"), { status: 403 });
-    }
-
-    showAdminDashboard(me.profileName || "Administrador");
+    const staffAllowed = me.role === "admin" || (me.role === "user" && Array.isArray(me.permissions) && me.permissions.length > 0);
+    if (!staffAllowed) throw Object.assign(new Error("staff access required"), { status: 403 });
+    adminSession = me;
+    showAdminDashboard(me);
     await loadAdminDashboardData();
   } catch (error) {
-    console.warn("No se pudo restaurar la sesión admin:", error);
-
+    console.warn("No se pudo restaurar la sesión del panel:", error);
     if (error?.status === 401 || error?.status === 403) {
       localStorage.removeItem("madetech_admin_token");
       adminToken = "";
-      showAdminLogin("Tu sesión de administrador expiró. Inicia sesión nuevamente.");
+      adminSession = null;
+      showAdminLogin(error?.status === 403 ? "Tu usuario no tiene un rol con permisos para entrar al panel." : "Tu sesión expiró. Inicia sesión nuevamente.");
       return;
     }
-
-    // Un error temporal del API o de red no debe destruir el token guardado.
     showAdminLogin(`No se pudo comprobar la sesión: ${error?.message || "error de conexión"}.`);
   }
 }
@@ -1371,109 +1585,93 @@ function showAdminLogin(message = "") {
   document.body.classList.remove("admin-authenticated");
   adminLogin.hidden = false;
   adminApp.hidden = true;
-
-  if (message) {
-    adminLoginError.textContent = message;
-    adminLoginError.hidden = false;
-  }
+  if (message) { adminLoginError.textContent = message; adminLoginError.hidden = false; }
+  else adminLoginError.hidden = true;
 }
 
-function showAdminDashboard(identity = "Administrador") {
-  adminIdentity.textContent = identity;
+function showAdminDashboard(me = {}) {
+  adminSession = me;
+  const roleName = me.role === "admin" ? "Administrador" : (me.staffRole?.name || "Colaborador");
+  adminIdentity.textContent = `${me.profileName || "Usuario"} · ${roleName}`;
   adminLogin.hidden = true;
   adminApp.hidden = false;
   adminLoginError.hidden = true;
   document.body.classList.add("admin-authenticated");
-
-  if (productCategory) {
-    renderCategoryFields(productCategory.value, {});
-  }
+  configurePanelPermissions();
+  if (productCategory) renderCategoryFields(productCategory.value, {});
 }
 
 async function loadAdminDashboardData() {
-  const tasks = [
-    ["productos", loadProducts],
-    ["access keys", loadKeys],
-    ["apariencia y configuración", loadBrandingSettings]
-  ];
-
-  const results = await Promise.allSettled(
-    tasks.map(([, task]) => Promise.resolve().then(() => task()))
-  );
-
-  const failures = results
-    .map((result, index) => ({ result, label: tasks[index][0] }))
-    .filter(item => item.result.status === "rejected");
-
+  const tasks = [];
+  if (canAny("products.view_drafts","products.create","products.edit","products.delete","products.import")) tasks.push(["productos", loadProducts]);
+  if (canAny("keys.view","keys.manage")) tasks.push(["access keys", loadKeys]);
+  if (can("settings.branding")) tasks.push(["apariencia", loadBrandingSettings]);
+  if (can("roles.manage")) tasks.push(["roles", loadRolesAdmin]);
+  if (can("users.manage_roles")) tasks.push(["usuarios", loadStaffUsers]);
+  if (can("audit.view")) tasks.push(["auditoría", loadAudit]);
+  if (!tasks.length) return;
+  const results = await Promise.allSettled(tasks.map(([, task]) => Promise.resolve().then(() => task())));
+  const failures = results.map((result,index)=>({result,label:tasks[index][0]})).filter(item=>item.result.status==="rejected");
   if (failures.length) {
     console.warn("El panel abrió, pero algunas secciones fallaron:", failures);
-    const labels = failures.map(item => item.label).join(", ");
-    showAdminToast(`Sesión iniciada. No se pudo cargar: ${labels}`);
+    showAdminToast(`No se pudo cargar: ${failures.map(item=>item.label).join(", ")}`);
   }
 }
 
 adminLoginForm?.addEventListener("submit", async event => {
   event.preventDefault();
   adminLoginError.hidden = true;
-
   const email = document.getElementById("adminEmail").value.trim();
   const password = document.getElementById("adminPassword").value;
   const submitButton = adminLoginForm.querySelector('button[type="submit"]');
   const originalText = submitButton?.textContent || "INICIAR SESIÓN";
-
-  if (submitButton) {
-    submitButton.disabled = true;
-    submitButton.textContent = "ENTRANDO...";
-  }
-
+  if (submitButton) { submitButton.disabled = true; submitButton.textContent = "ENTRANDO..."; }
   try {
-    // La autenticación y la carga del dashboard están separadas.
-    // Si una sección secundaria falla, la sesión NO se destruye.
-    const result = await api("/admin/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password })
-    }, null);
-
-    if (!result?.token || result.role !== "admin") {
-      throw Object.assign(new Error("invalid admin login response"), { code: "invalid_login_response" });
-    }
-
+    const result = await api("/admin/login", { method:"POST", body:JSON.stringify({ email, password }) }, null);
+    if (!result?.token || result.role !== "admin") throw Object.assign(new Error("invalid admin login response"), { code:"invalid_login_response" });
     adminToken = result.token;
     localStorage.setItem("madetech_admin_token", result.token);
-
-    showAdminDashboard(email || "Administrador");
+    const me = await api("/session/me");
+    showAdminDashboard(me);
     await loadAdminDashboardData();
   } catch (error) {
-    console.error("Error de login admin:", error);
-
-    // Solo quitamos el token cuando la autenticación realmente falló.
-    if (!adminToken) {
-      localStorage.removeItem("madetech_admin_token");
-      showAdminLogin(
-        error?.code === "invalid_credentials"
-          ? "Correo o contraseña incorrectos."
-          : `No se pudo iniciar sesión: ${error?.message || "error desconocido"}`
-      );
-    } else {
-      // Si el token ya fue creado, mantenemos el panel abierto aunque una
-      // sección secundaria tenga problemas.
-      showAdminDashboard(email || "Administrador");
-    }
+    localStorage.removeItem("madetech_admin_token"); adminToken = ""; adminSession = null;
+    showAdminLogin(error?.code === "invalid_credentials" ? "Correo o contraseña incorrectos." : `No se pudo iniciar sesión: ${error?.message || "error desconocido"}`);
   } finally {
-    if (submitButton) {
-      submitButton.disabled = false;
-      submitButton.textContent = originalText;
-    }
+    if (submitButton) { submitButton.disabled = false; submitButton.textContent = originalText; }
+  }
+});
+
+staffKeyLoginForm?.addEventListener("submit", async event => {
+  event.preventDefault();
+  adminLoginError.hidden = true;
+  const key = staffAccessKey?.value.trim() || "";
+  const button = staffKeyLoginForm.querySelector('button[type="submit"]');
+  const old = button?.textContent || "ENTRAR CON MI ROL ↗";
+  if (!key) return showAdminLogin("Escribe tu Access Key.");
+  try {
+    if (button) { button.disabled = true; button.textContent = "COMPROBANDO ROL..."; }
+    const result = await api("/access/login", { method:"POST", body:JSON.stringify({ key }) }, null);
+    const me = await api("/session/me", {}, result.token);
+    if (!Array.isArray(me.permissions) || me.permissions.length === 0) throw Object.assign(new Error("Este usuario no tiene un rol asignado."), { status:403 });
+    adminToken = result.token;
+    localStorage.setItem("madetech_admin_token", result.token);
+    showAdminDashboard(me);
+    await loadAdminDashboardData();
+  } catch (error) {
+    adminToken = ""; adminSession = null; localStorage.removeItem("madetech_admin_token");
+    showAdminLogin(error?.status === 403 ? "Esta Access Key no tiene un rol con permisos asignados." : "Access Key inválida o vencida.");
+  } finally {
+    if (button) { button.disabled = false; button.textContent = old; }
   }
 });
 
 adminLogout?.addEventListener("click", async () => {
-  try { await api("/session/logout", { method: "POST" }); } catch {}
+  try { await api("/session/logout", { method:"POST" }); } catch {}
   localStorage.removeItem("madetech_admin_token");
-  adminToken = "";
+  adminToken = ""; adminSession = null;
   showAdminLogin();
 });
-
 
 function fillAnnouncementSettings(messages = []) {
   const values = Array.isArray(messages) ? messages : [];
@@ -1542,7 +1740,7 @@ function updateReleaseAutoPreview() {
 
 function fillReleaseSettings(release = {}) {
   if (String(release.version || "") !== ADMIN_BUILD_RELEASE.version) release = ADMIN_BUILD_RELEASE;
-  if (releaseVersion) releaseVersion.value = String(release.version || "5.21").replace(/^v/i, "");
+  if (releaseVersion) releaseVersion.value = String(release.version || "5.24").replace(/^v/i, "");
   if (releaseDate) releaseDate.value = String(release.date || "");
   if (releaseTitle) releaseTitle.value = String(release.title || "");
 
@@ -1598,6 +1796,184 @@ releaseSettingsForm?.addEventListener("submit", async event => {
 });
 
 
+/* ---------------- ROLES / USERS / AUDIT ---------------- */
+
+async function loadRolesAdmin() {
+  if (!can("roles.manage") || !rolesList) return;
+  const data = await api("/admin/roles");
+  adminRoles = Array.isArray(data.roles) ? data.roles : [];
+  permissionDefinitions = Array.isArray(data.permissions) ? data.permissions : [];
+  renderRolesList();
+  if (selectedRoleId && !adminRoles.some(role => Number(role.id) === Number(selectedRoleId))) selectedRoleId = null;
+  if (selectedRoleId) selectRoleForEdit(selectedRoleId);
+}
+
+function renderRolesList() {
+  if (!rolesList) return;
+  rolesList.innerHTML = adminRoles.length ? adminRoles.map(role => `
+    <button type="button" class="role-list-item ${Number(role.id)===Number(selectedRoleId)?"active":""}" data-role-id="${role.id}">
+      <span class="role-dot" style="--role-color:${escapeAttr(role.color || "#5865F2")}"></span>
+      <span><strong>${escapeHtml(role.name)}</strong><small>${role.usersCount || 0} usuario${Number(role.usersCount||0)===1?"":"s"}</small></span>
+      <b>›</b>
+    </button>`).join("") : `<div class="empty-admin-state">No hay roles creados.</div>`;
+  rolesList.querySelectorAll("[data-role-id]").forEach(btn => btn.addEventListener("click", () => selectRoleForEdit(Number(btn.dataset.roleId))));
+}
+
+function selectRoleForEdit(id) {
+  const role = adminRoles.find(item => Number(item.id) === Number(id));
+  if (!role) return;
+  selectedRoleId = Number(role.id);
+  if (roleEditorEmpty) roleEditorEmpty.hidden = true;
+  if (roleEditor) roleEditor.hidden = false;
+  if (roleEditorTitle) roleEditorTitle.textContent = role.name;
+  if (roleName) roleName.value = role.name || "";
+  if (roleDescription) roleDescription.value = role.description || "";
+  if (roleColor) roleColor.value = role.color || "#5865F2";
+  if (roleColorValue) roleColorValue.textContent = roleColor.value.toUpperCase();
+  renderPermissionToggles(role.permissions || []);
+  renderRolesList();
+  if (deleteRoleButton) deleteRoleButton.hidden = false;
+}
+
+function startNewRole() {
+  selectedRoleId = null;
+  if (roleEditorEmpty) roleEditorEmpty.hidden = true;
+  if (roleEditor) roleEditor.hidden = false;
+  if (roleEditorTitle) roleEditorTitle.textContent = "Nuevo rol";
+  if (roleName) roleName.value = "";
+  if (roleDescription) roleDescription.value = "";
+  if (roleColor) roleColor.value = "#5865F2";
+  if (roleColorValue) roleColorValue.textContent = "#5865F2";
+  if (deleteRoleButton) deleteRoleButton.hidden = true;
+  renderPermissionToggles([]);
+  renderRolesList();
+}
+
+function renderPermissionToggles(enabledPermissions = []) {
+  if (!rolePermissionsList) return;
+  const enabled = new Set(enabledPermissions);
+  const groups = new Map();
+  for (const permission of permissionDefinitions) {
+    const key = permission.group || "General";
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(permission);
+  }
+  rolePermissionsList.innerHTML = [...groups.entries()].map(([group, items]) => `
+    <section class="permission-group">
+      <div class="permission-group-title">${escapeHtml(group)}</div>
+      ${items.map(item => `
+        <label class="discord-permission-row">
+          <span><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.description || "")}</small></span>
+          <input type="checkbox" data-role-permission="${escapeAttr(item.key)}" ${enabled.has(item.key)?"checked":""}>
+          <i class="discord-toggle"></i>
+        </label>`).join("")}
+    </section>`).join("");
+  rolePermissionsList.querySelectorAll("input").forEach(input => input.addEventListener("change", () => { if (roleUnsavedState) roleUnsavedState.textContent = "Cambios sin guardar"; }));
+}
+
+function selectedRolePermissions() {
+  return [...document.querySelectorAll("[data-role-permission]:checked")].map(input => input.dataset.rolePermission);
+}
+
+createRoleButton?.addEventListener("click", startNewRole);
+roleColor?.addEventListener("input", () => { if (roleColorValue) roleColorValue.textContent = roleColor.value.toUpperCase(); if (roleUnsavedState) roleUnsavedState.textContent = "Cambios sin guardar"; });
+[roleName, roleDescription].filter(Boolean).forEach(el => el.addEventListener("input", () => { if (roleUnsavedState) roleUnsavedState.textContent = "Cambios sin guardar"; }));
+clearRolePermissions?.addEventListener("click", () => { document.querySelectorAll("[data-role-permission]").forEach(input => input.checked = false); if (roleUnsavedState) roleUnsavedState.textContent = "Cambios sin guardar"; });
+
+saveRoleButton?.addEventListener("click", async () => {
+  const payload = { name: roleName?.value.trim() || "", description: roleDescription?.value.trim() || "", color: roleColor?.value || "#5865F2", permissions: selectedRolePermissions() };
+  if (!payload.name) return alert("Escribe el nombre del rol.");
+  try {
+    saveRoleButton.disabled = true;
+    if (selectedRoleId) await api(`/admin/roles/${selectedRoleId}`, { method:"PUT", body:JSON.stringify(payload) });
+    else {
+      const data = await api("/admin/roles", { method:"POST", body:JSON.stringify(payload) });
+      selectedRoleId = data.id;
+    }
+    if (roleUnsavedState) roleUnsavedState.textContent = "Guardado";
+    await loadRolesAdmin();
+    if (can("users.manage_roles")) await loadStaffUsers();
+    showAdminToast("Rol guardado correctamente");
+  } catch (error) { alert(`No se pudo guardar el rol: ${error.message}`); }
+  finally { saveRoleButton.disabled = false; }
+});
+
+deleteRoleButton?.addEventListener("click", async () => {
+  if (!selectedRoleId || !confirm("¿Eliminar este rol? Los usuarios asignados quedarán sin rol.")) return;
+  try { await api(`/admin/roles/${selectedRoleId}`, { method:"DELETE" }); selectedRoleId = null; startNewRole(); await loadRolesAdmin(); if (can("users.manage_roles")) await loadStaffUsers(); showAdminToast("Rol eliminado"); }
+  catch (error) { alert(`No se pudo eliminar: ${error.message}`); }
+});
+
+async function loadStaffUsers() {
+  if (!can("users.manage_roles") || !staffUsersList) return;
+  if (!adminRoles.length && can("roles.manage")) await loadRolesAdmin();
+  if (!adminRoles.length) {
+    try { const roleData = await api("/admin/roles"); adminRoles = roleData.roles || []; permissionDefinitions = roleData.permissions || []; } catch {}
+  }
+  const data = await api("/admin/users");
+  staffUsers = Array.isArray(data.users) ? data.users : [];
+  if (staffUsersCount) staffUsersCount.textContent = String(staffUsers.length);
+  renderStaffUsers();
+}
+
+function renderStaffUsers() {
+  if (!staffUsersList) return;
+  const q = String(staffUsersSearch?.value || "").trim().toLowerCase();
+  const visible = staffUsers.filter(user => !q || String(user.label || "").toLowerCase().includes(q) || String(user.role?.name || "").toLowerCase().includes(q));
+  staffUsersList.innerHTML = visible.length ? visible.map(user => `
+    <article class="staff-user-row">
+      <span class="staff-user-avatar">${escapeHtml((user.label || "U").charAt(0).toUpperCase())}</span>
+      <div class="staff-user-copy"><strong>${escapeHtml(user.label || "Usuario")}</strong><small>${user.expiresAt ? `Expira ${escapeHtml(new Date(user.expiresAt).toLocaleString("es-EC"))}` : "Sin fecha de expiración"} · ${user.uses || 0} usos</small></div>
+      <label class="staff-role-select"><span>ROL</span><select data-user-role="${user.id}"><option value="">Sin rol</option>${adminRoles.map(role => `<option value="${role.id}" ${Number(user.role?.id)===Number(role.id)?"selected":""}>${escapeHtml(role.name)}</option>`).join("")}</select></label>
+      <span class="staff-role-chip" style="--role-color:${escapeAttr(user.role?.color || "#555")}">${escapeHtml(user.role?.name || "Sin acceso al panel")}</span>
+    </article>`).join("") : `<div class="empty-admin-state">No hay usuarios que coincidan.</div>`;
+  staffUsersList.querySelectorAll("[data-user-role]").forEach(select => select.addEventListener("change", async () => {
+    const id = Number(select.dataset.userRole);
+    const roleId = select.value ? Number(select.value) : null;
+    select.disabled = true;
+    try { await api(`/admin/users/${id}/role`, { method:"PUT", body:JSON.stringify({ roleId }) }); await loadStaffUsers(); if (can("audit.view")) loadAudit().catch(()=>{}); showAdminToast("Rol del usuario actualizado"); }
+    catch (error) { alert(`No se pudo asignar el rol: ${error.message}`); }
+    finally { select.disabled = false; }
+  }));
+}
+
+staffUsersSearch?.addEventListener("input", renderStaffUsers);
+reloadStaffUsers?.addEventListener("click", () => loadStaffUsers().catch(error => alert(error.message)));
+
+async function loadAudit() {
+  if (!can("audit.view") || !auditList) return;
+  const data = await api("/admin/audit?limit=180");
+  auditEntries = Array.isArray(data.entries) ? data.entries : [];
+  renderAudit();
+}
+
+const AUDIT_LABELS = {
+  "product.create":"Producto agregado", "product.update":"Producto editado", "product.delete":"Producto eliminado",
+  "role.create":"Rol creado", "role.update":"Rol editado", "role.delete":"Rol eliminado", "user.role.assign":"Rol de usuario cambiado",
+  "key.create":"Access Key creada", "key.update":"Access Key actualizada", "key.revoke":"Access Key revocada", "key.regenerate":"Access Key regenerada", "key_archive.delete":"Key vencida eliminada"
+};
+
+function renderAudit() {
+  if (!auditList) return;
+  const q = String(auditSearch?.value || "").trim().toLowerCase();
+  const type = auditTypeFilter?.value || "all";
+  const visible = auditEntries.filter(entry => {
+    const matchType = type === "all" || String(entry.entityType || "").includes(type);
+    const hay = `${entry.actorLabel||""} ${entry.action||""} ${entry.entityType||""} ${JSON.stringify(entry.details||{})}`.toLowerCase();
+    return matchType && (!q || hay.includes(q));
+  });
+  auditList.innerHTML = visible.length ? visible.map(entry => `
+    <article class="audit-row">
+      <span class="audit-icon">${String(entry.action||"").startsWith("product")?"▣":String(entry.action||"").startsWith("role")?"◆":String(entry.action||"").startsWith("key")?"⌁":"•"}</span>
+      <div class="audit-copy"><strong>${escapeHtml(AUDIT_LABELS[entry.action] || entry.action || "Acción")}</strong><span>${escapeHtml(entry.actorLabel || "Sistema")} · ${escapeHtml(entry.entityType || "general")}${entry.entityId ? ` #${escapeHtml(entry.entityId)}` : ""}</span></div>
+      <time>${escapeHtml(entry.createdAt ? new Date(entry.createdAt).toLocaleString("es-EC") : "")}</time>
+    </article>`).join("") : `<div class="empty-admin-state">No hay movimientos para mostrar.</div>`;
+}
+
+auditSearch?.addEventListener("input", renderAudit);
+auditTypeFilter?.addEventListener("change", renderAudit);
+reloadAudit?.addEventListener("click", () => loadAudit().catch(error => alert(error.message)));
+
 /* ---------------- PANELS ---------------- */
 
 function activateAdminPanel(panelId) {
@@ -1605,6 +1981,9 @@ function activateAdminPanel(panelId) {
     productsPanel: "Agregar producto",
     libraryPanel: "Biblioteca",
     keysPanel: "Access Keys",
+    rolesPanel: "Roles y permisos",
+    usersPanel: "Usuarios y roles",
+    auditPanel: "Registro de auditoría",
     brandingPanel: "Apariencia",
     contactsPanel: "Contactos",
     announcementsPanel: "Noticias",
@@ -1613,6 +1992,9 @@ function activateAdminPanel(panelId) {
   document.querySelectorAll(".admin-nav button").forEach(item => item.classList.toggle("active", item.dataset.panel === panelId));
   document.querySelectorAll(".admin-panel").forEach(panel => panel.classList.toggle("active", panel.id === panelId));
   document.getElementById("adminTitle").textContent = titles[panelId] || "MadeLesh Control";
+  if (panelId === "rolesPanel" && can("roles.manage")) loadRolesAdmin().catch(console.warn);
+  if (panelId === "usersPanel" && can("users.manage_roles")) loadStaffUsers().catch(console.warn);
+  if (panelId === "auditPanel" && can("audit.view")) loadAudit().catch(console.warn);
   window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
 }
 
@@ -1665,8 +2047,8 @@ function renderLibraryProducts() {
             </div>
 
             <div class="item-actions">
-              <button data-edit-product="${product.id}">EDITAR</button>
-              <button class="danger" data-delete-product="${product.id}">ELIMINAR</button>
+              ${can("products.edit") ? `<button data-edit-product="${product.id}">EDITAR</button>` : ""}
+              ${can("products.delete") ? `<button class="danger" data-delete-product="${product.id}">ELIMINAR</button>` : ""}
             </div>
           </article>`;
       }).join("")
@@ -1758,6 +2140,8 @@ productForm.addEventListener("submit", async event => {
   event.preventDefault();
 
   const id = document.getElementById("productId").value.trim();
+  if (id && !can("products.edit")) return alert("Tu rol no permite editar productos.");
+  if (!id && !can("products.create")) return alert("Tu rol no permite agregar productos.");
 
   const payload = {
     category: productCategory.value,
@@ -1948,6 +2332,7 @@ async function loadKeys() {
 
   const keys = Array.isArray(activeData.keys) ? activeData.keys : [];
   const archived = Array.isArray(archiveData.keys) ? archiveData.keys : [];
+  const manageKeys = can("keys.manage");
 
   keysCount.textContent = String(keys.length);
   if (archivedKeysCount) archivedKeysCount.textContent = String(archived.length);
@@ -1973,9 +2358,9 @@ async function loadKeys() {
 
             <div class="key-secret-row">
               <code id="keyRevealValue_${key.id}">${canReveal ? "MT-•••••-•••••-•••••-•••••" : "NO RECUPERABLE"}</code>
-              ${canReveal ? `<button type="button" data-reveal-key="${key.id}">VER KEY</button>` : ""}
-              ${canReveal ? `<button type="button" data-copy-key="${key.id}" hidden>COPIAR</button>` : ""}
-              ${!canReveal && active ? `<button type="button" data-regenerate-key="${key.id}">REGENERAR KEY</button>` : ""}
+              ${manageKeys && canReveal ? `<button type="button" data-reveal-key="${key.id}">VER KEY</button>` : ""}
+              ${manageKeys && canReveal ? `<button type="button" data-copy-key="${key.id}" hidden>COPIAR</button>` : ""}
+              ${manageKeys && !canReveal && active ? `<button type="button" data-regenerate-key="${key.id}">REGENERAR KEY</button>` : ""}
             </div>
 
             <p class="key-meta-line">
@@ -1983,7 +2368,7 @@ async function loadKeys() {
               ${key.last_used_at ? ` · último acceso ${escapeHtml(key.last_used_at)}` : ""}
             </p>
 
-            <div class="key-edit-grid">
+            ${manageKeys ? `<div class="key-edit-grid">
               <label>
                 NOMBRE DEL DUEÑO
                 <input data-key-owner="${key.id}" type="text" value="${escapeAttr(key.label || "")}" />
@@ -1993,9 +2378,9 @@ async function loadKeys() {
                 <input data-key-expiry="${key.id}" type="datetime-local" value="${escapeAttr(isoToLocalDateTime(key.expires_at))}" />
               </label>
               <button class="key-save-btn" type="button" data-save-key="${key.id}">GUARDAR DATOS</button>
-            </div>
+            </div>` : ""}
 
-            ${active ? `
+            ${manageKeys && active ? `
               <div class="key-extension-row">
                 <span>EXTENDER TIEMPO</span>
                 <button type="button" data-extend-key="${key.id}" data-days="1">+1 día</button>
@@ -2005,7 +2390,7 @@ async function loadKeys() {
           </div>
 
           <div class="item-actions key-admin-actions">
-            ${active ? `<button class="danger" data-revoke-key="${key.id}">REVOCAR</button>` : ""}
+            ${manageKeys && active ? `<button class="danger" data-revoke-key="${key.id}">REVOCAR</button>` : ""}
           </div>
         </article>
       `;
@@ -2024,7 +2409,7 @@ async function loadKeys() {
                 · ${Number(key.uses || 0)} usos
               </p>
             </div>
-            <button class="danger" type="button" data-delete-archived-key="${key.archive_id}">ELIMINAR</button>
+            ${manageKeys ? `<button class="danger" type="button" data-delete-archived-key="${key.archive_id}">ELIMINAR</button>` : ""}
           </article>
         `).join("")
       : `<div class="empty-admin-state">No hay keys vencidas archivadas.</div>`;

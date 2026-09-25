@@ -89,22 +89,20 @@ let publicAnnouncements = [];
 let publicAppVersion = "5.18";
 let publicRelease = { version: "5.18", title: "", date: "", notes: [] };
 const CURRENT_BUILD_RELEASE = {
-  version: "5.23-A",
-  title: "Interfaz visual y vista previa en tiempo real",
-  date: "2026-09-21",
+  version: "5.24",
+  title: "Roles, auditoría, comparación visual y audio",
+  date: "2026-09-24",
   changes: {
     added: [
-      "Vista previa en tiempo real dentro del editor de productos.",
-      "Marco visual neutro para imágenes con fondo blanco o transparente.",
-      "Botón Ver producto con interacción dinámica."
+      "Roles personalizables con permisos individuales para colaboradores.",
+      "Asignación de roles a usuarios con Access Key y registro de auditoría.",
+      "Editor para recortar audio de teclados desde archivos de audio o video.",
+      "Selector visual con imágenes dentro del comparador."
     ],
-    removed: [
-      "Texto IMG en los selectores de color.",
-      "Bloque redundante Información del producto en la ficha."
-    ],
+    removed: [],
     fixed: [
-      "Tarjetas del catálogo más anchas y simétricas para imágenes cuadradas.",
-      "Miniaturas de la galería fuera del marco de la imagen principal."
+      "Comparador rediseñado con resultado visual, métricas y balance dinámico.",
+      "Animación del perfil invertida: avatar a la izquierda y nombre hacia la derecha."
     ]
   }
 };
@@ -1102,38 +1100,17 @@ const compareProductA = document.getElementById("compareProductA");
 const compareProductB = document.getElementById("compareProductB");
 const compareResult = document.getElementById("compareResult");
 const compareCategoryLock = document.getElementById("compareCategoryLock");
+const comparePickerAButton = document.getElementById("comparePickerAButton");
+const comparePickerBButton = document.getElementById("comparePickerBButton");
+const comparePickerAMenu = document.getElementById("comparePickerAMenu");
+const comparePickerBMenu = document.getElementById("comparePickerBMenu");
 
 const COMPARISON_TEXT_SPECS = {
-  Mouse: [
-    ["weight","Peso","weight"],
-    ["sensor","Sensor","sensor"],
-    ["pollingRate","Polling Rate","pollingRate"],
-    ["__connections","Conexión","connection"]
-  ],
-  Teclados: [
-    ["switchType","Switch","switch"],
-    ["layout","Formato","layout"],
-    ["pollingRate","Polling Rate","pollingRate"],
-    ["rapidTrigger","Rapid Trigger","rapid"]
-  ],
-  IEM: [
-    ["driverConfig","Drivers","driver"],
-    ["impedance","Impedancia","impedance"],
-    ["soundSignature","Firma sonora","sound"],
-    ["__connections","Conexión","connection"]
-  ],
-  Headsets: [
-    ["driver","Driver","driver"],
-    ["weight","Peso","weight"],
-    ["batteryHours","Autonomía","battery"],
-    ["__connections","Conexión","connection"]
-  ],
-  DAC: [
-    ["dacChip","Chip DAC","chip"],
-    ["outputs","Salidas","output"],
-    ["maxPcm","PCM máximo","pcm"],
-    ["bluetooth","Bluetooth","bluetooth"]
-  ]
+  Mouse: [["weight","Peso","weight"],["sensor","Sensor","sensor"],["pollingRate","Polling Rate","pollingRate"],["__connections","Conexión","connection"]],
+  Teclados: [["switchType","Switch","switch"],["layout","Formato","layout"],["pollingRate","Polling Rate","pollingRate"],["rapidTrigger","Rapid Trigger","rapid"]],
+  IEM: [["driverConfig","Drivers","driver"],["impedance","Impedancia","impedance"],["soundSignature","Firma sonora","sound"],["__connections","Conexión","connection"]],
+  Headsets: [["driver","Driver","driver"],["weight","Peso","weight"],["batteryHours","Autonomía","battery"],["__connections","Conexión","connection"]],
+  DAC: [["dacChip","Chip DAC","chip"],["outputs","Salidas","output"],["maxPcm","PCM máximo","pcm"],["bluetooth","Bluetooth","bluetooth"]]
 };
 
 function comparisonSpecIcon(icon) {
@@ -1152,283 +1129,65 @@ function comparisonSpecIcon(icon) {
     chip:`<svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M9 3v4M15 3v4M9 17v4M15 17v4M3 9h4M17 9h4M3 15h4M17 15h4"/></svg>`,
     output:`<svg viewBox="0 0 24 24"><path d="M4 12h12"/><path d="m12 8 4 4-4 4"/><path d="M18 6h2v12h-2"/></svg>`,
     pcm:`<svg viewBox="0 0 24 24"><path d="M3 12h3l2-6 4 12 3-8 2 2h4"/></svg>`,
-    bluetooth:`<svg viewBox="0 0 24 24"><path d="m7 7 10 10V7L7 17l10-10"/></svg>`
+    bluetooth:`<svg viewBox="0 0 24 24"><path d="m7 7 10 10V7L7 17l10-10"/></svg>`,
+    score:`<svg viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/></svg>`
   };
   return icons[icon] || icons.chip;
 }
 
 function comparisonImage(product) {
-  return safeImageSrc(product?.imageUrl)
-    || safeImageSrc(Array.isArray(product?.images) ? product.images[0] : "")
-    || categoryPlaceholderDataUrl(product?.category);
+  return safeImageSrc(product?.imageUrl) || safeImageSrc(Array.isArray(product?.images) ? product.images[0] : "") || categoryPlaceholderDataUrl(product?.category);
 }
 
 function parseFirstNumber(value) {
-  if (Array.isArray(value)) {
-    const nums = value.map(parseFirstNumber).filter(Number.isFinite);
-    return nums.length ? Math.max(...nums) : NaN;
-  }
-  const match = String(value ?? "").replace(",", ".").match(/-?\d+(?:\.\d+)?/);
-  return match ? Number(match[0]) : NaN;
+  if (Array.isArray(value)) { const nums=value.map(parseFirstNumber).filter(Number.isFinite); return nums.length?Math.max(...nums):NaN; }
+  const match=String(value??"").replace(",", ".").match(/-?\d+(?:\.\d+)?/); return match?Number(match[0]):NaN;
 }
+function maxPolling(product){const s=product?.specs||{};const source=Array.isArray(s.pollingRate)?s.pollingRate:[s.pollingRate||s.pollingRateMax];const values=source.map(parseFirstNumber).filter(Number.isFinite);return values.length?Math.max(...values):NaN;}
+function batteryHours(product){const s=product?.specs||{};const direct=parseFirstNumber(s.batteryHours);if(Number.isFinite(direct))return direct;const text=String(s.battery||"");const hour=text.match(/(\d+(?:[.,]\d+)?)\s*(?:h|hora)/i);return hour?Number(hour[1].replace(",",".")):NaN;}
+function featureCount(product,keys){const s=product?.specs||{};return keys.reduce((total,key)=>total+(s[key]===true?1:0),0);}
+function pcmRate(product){const text=String(product?.specs?.maxPcm||"");const matches=[...text.matchAll(/(\d+(?:\.\d+)?)\s*(?:k?hz)/ig)].map(m=>Number(m[1]));return matches.length?Math.max(...matches):parseFirstNumber(text);}
+function dsdRate(product){const text=String(product?.specs?.maxDsd||"");const match=text.match(/dsd\s*(\d+)/i);return match?Number(match[1]):parseFirstNumber(text);}
+function powerOutput(product){const text=String(product?.specs?.powerOutput||"");const value=parseFirstNumber(text);if(!Number.isFinite(value))return NaN;return /\bw\b/i.test(text)&&!/\bmw\b/i.test(text)?value*1000:value;}
 
-function parsePrice(value) {
-  const raw = String(value || "").replace(/[^\d.,-]/g, "").replace(",", ".");
-  const n = Number(raw);
-  return Number.isFinite(n) ? n : NaN;
+function comparisonMetrics(category){
+  const score={key:"score",label:"MadeLesh Score",icon:"score",unit:"/10",direction:"high",weight:2,value:p=>Number(p?.score)>0?Number(p.score):NaN};
+  const map={
+    Mouse:[{key:"polling",label:"Polling Rate",icon:"pollingRate",unit:" Hz",direction:"high",weight:1,value:maxPolling},{key:"weight",label:"Peso",icon:"weight",unit:" g",direction:"low",weight:1,value:p=>parseFirstNumber(p?.specs?.weight)},{key:"battery",label:"Autonomía",icon:"battery",unit:" h",direction:"high",weight:1,value:batteryHours},score],
+    Teclados:[{key:"polling",label:"Polling Rate",icon:"pollingRate",unit:" Hz",direction:"high",weight:1,value:maxPolling},{key:"battery",label:"Autonomía",icon:"battery",unit:" h",direction:"high",weight:1,value:batteryHours},{key:"features",label:"Funciones competitivas",icon:"rapid",unit:"/2",direction:"high",weight:1,value:p=>featureCount(p,["hotSwap","rapidTrigger"])},score],
+    IEM:[{key:"weight",label:"Peso por lado",icon:"weight",unit:" g",direction:"low",weight:1,value:p=>parseFirstNumber(p?.specs?.weightPerSide)},{key:"detachable",label:"Cable desmontable",icon:"connection",unit:"",direction:"high",weight:1,value:p=>p?.specs?.detachableCable===true?1:(p?.specs?.detachableCable===false?0:NaN),format:v=>v?"Sí":"No"},score],
+    Headsets:[{key:"battery",label:"Autonomía",icon:"battery",unit:" h",direction:"high",weight:1,value:batteryHours},{key:"weight",label:"Peso",icon:"weight",unit:" g",direction:"low",weight:1,value:p=>parseFirstNumber(p?.specs?.weight)},score],
+    DAC:[{key:"power",label:"Potencia de salida",icon:"output",unit:" mW",direction:"high",weight:1,value:powerOutput},{key:"pcm",label:"PCM máximo",icon:"pcm",unit:" kHz",direction:"high",weight:1,value:pcmRate},{key:"dsd",label:"DSD máximo",icon:"chip",unit:"",direction:"high",weight:1,value:dsdRate,format:v=>`DSD${Math.round(v)}`},score]
+  };return map[category]||[score];
 }
+function metricAdvantage(value,other,direction){if(!Number.isFinite(value)||!Number.isFinite(other))return 0;if(value===other)return 100;if(direction==="low"){const min=Math.min(value,other);return Math.max(10,Math.min(100,(min/Math.max(value,.0001))*100));}const max=Math.max(value,other);return max<=0?0:Math.max(10,Math.min(100,(value/max)*100));}
+function metricWinner(a,b,direction){if(!Number.isFinite(a)||!Number.isFinite(b)||a===b)return "tie";return direction==="low"?(a<b?"a":"b"):(a>b?"a":"b");}
+function formatMetricValue(metric,value){if(!Number.isFinite(value))return "No disponible";if(typeof metric.format==="function")return metric.format(value);const digits=Number.isInteger(value)?0:1;return `${value.toFixed(digits)}${metric.unit||""}`;}
+function comparisonTextValue(product,key){if(key==="__connections")return arrayLabel(product?.connections)||"No disponible";const value=product?.specs?.[key];if(typeof value==="boolean")return value?"Sí":"No";if(Array.isArray(value))return arrayLabel(value)||"No disponible";return value===undefined||value===null||value===""?"No disponible":String(value);}
 
-function maxPolling(product) {
-  const s = product?.specs || {};
-  const source = Array.isArray(s.pollingRate) ? s.pollingRate : [s.pollingRate || s.pollingRateMax];
-  const values = source.map(parseFirstNumber).filter(Number.isFinite);
-  return values.length ? Math.max(...values) : NaN;
-}
+function comparePickerItem(product){return `<button type="button" class="compare-picker-item" data-compare-pick="${product.id}"><span class="compare-picker-thumb"><img src="${escapeHtml(comparisonImage(product))}" alt=""></span><span><strong>${escapeHtml(product.name||"Producto")}</strong><small>${escapeHtml(`${product.brand||""} · ${product.category||""}`)}</small></span><b>›</b></button>`;}
+function updateComparePickerButton(which,product){const button=which==="a"?comparePickerAButton:comparePickerBButton;if(!button)return;if(!product){button.innerHTML=`<span class="compare-picker-empty-icon">${which.toUpperCase()}</span><span><strong>${which==="a"?"Seleccionar producto":"Primero elige el producto A"}</strong><small>${which==="a"?"Ver catálogo compatible":"Misma categoría obligatoria"}</small></span><b>⌄</b>`;return;}button.innerHTML=`<span class="compare-picker-thumb"><img src="${escapeHtml(comparisonImage(product))}" alt=""></span><span><strong>${escapeHtml(product.name||"Producto")}</strong><small>${escapeHtml(`${product.brand||""} · ${product.category||""}`)}</small></span><b>⌄</b>`;}
+function closeCompareMenus(){if(comparePickerAMenu)comparePickerAMenu.hidden=true;if(comparePickerBMenu)comparePickerBMenu.hidden=true;comparePickerAButton?.setAttribute("aria-expanded","false");comparePickerBButton?.setAttribute("aria-expanded","false");}
+function bindComparePicker(menu,select,which){menu?.querySelectorAll("[data-compare-pick]").forEach(btn=>btn.addEventListener("click",()=>{select.value=btn.dataset.comparePick;closeCompareMenus();select.dispatchEvent(new Event("change",{bubbles:true}));const product=reviews.find(item=>String(item.id)===String(select.value));updateComparePickerButton(which,product);}));}
 
-function batteryHours(product) {
-  const s = product?.specs || {};
-  const direct = parseFirstNumber(s.batteryHours);
-  if (Number.isFinite(direct)) return direct;
-  const text = String(s.battery || "");
-  const hour = text.match(/(\d+(?:[.,]\d+)?)\s*(?:h|hora)/i);
-  return hour ? Number(hour[1].replace(",", ".")) : NaN;
-}
+function populateComparisonSelectors(){if(!compareProductA||!compareProductB)return;const products=[...reviews].sort((a,b)=>String(a.category||"").localeCompare(String(b.category||""))||String(a.name||"").localeCompare(String(b.name||"")));compareProductA.innerHTML=`<option value="">Seleccionar producto</option>${products.map(item=>`<option value="${item.id}">${escapeHtml(`${item.category} · ${item.brand||""} ${item.name||""}`.trim())}</option>`).join("")}`;compareProductB.innerHTML=`<option value="">Primero elige el producto A</option>`;compareProductB.disabled=true;if(comparePickerAMenu){comparePickerAMenu.innerHTML=`<div class="compare-picker-menu-head"><strong>Elegir producto A</strong><small>${products.length} productos</small></div>${products.map(comparePickerItem).join("")}`;bindComparePicker(comparePickerAMenu,compareProductA,"a");}updateComparePickerButton("a",null);updateComparePickerButton("b",null);if(comparePickerBButton)comparePickerBButton.disabled=true;}
 
-function featureCount(product, keys) {
-  const s = product?.specs || {};
-  return keys.reduce((total, key) => total + (s[key] === true ? 1 : 0), 0);
-}
+function refreshCompareProductB(){if(!compareProductA||!compareProductB)return;const selectedA=reviews.find(item=>String(item.id)===String(compareProductA.value||""));updateComparePickerButton("a",selectedA||null);if(!selectedA){compareProductB.innerHTML=`<option value="">Primero elige el producto A</option>`;compareProductB.disabled=true;if(comparePickerBButton)comparePickerBButton.disabled=true;if(comparePickerBMenu)comparePickerBMenu.innerHTML="";updateComparePickerButton("b",null);if(compareCategoryLock)compareCategoryLock.textContent="Solo se permiten comparaciones entre productos de la misma categoría.";renderComparison();return;}const same=reviews.filter(item=>item.category===selectedA.category&&String(item.id)!==String(selectedA.id));compareProductB.innerHTML=`<option value="">Seleccionar ${escapeHtml(selectedA.category)}</option>${same.map(item=>`<option value="${item.id}">${escapeHtml(`${item.brand||""} ${item.name||""}`.trim())}</option>`).join("")}`;compareProductB.disabled=same.length===0;if(comparePickerBButton)comparePickerBButton.disabled=same.length===0;if(comparePickerBMenu){comparePickerBMenu.innerHTML=`<div class="compare-picker-menu-head"><strong>Elegir rival</strong><small>Solo ${escapeHtml(selectedA.category)}</small></div>${same.map(comparePickerItem).join("")}`;bindComparePicker(comparePickerBMenu,compareProductB,"b");}updateComparePickerButton("b",null);if(compareCategoryLock)compareCategoryLock.innerHTML=`<strong>${escapeHtml(selectedA.category)}</strong> bloqueado como categoría · ${same.length} alternativa${same.length===1?"":"s"}.`;renderComparison();}
 
-function pcmRate(product) {
-  const text = String(product?.specs?.maxPcm || "");
-  const matches = [...text.matchAll(/(\d+(?:\.\d+)?)\s*(?:k?hz)/ig)].map(match => Number(match[1]));
-  return matches.length ? Math.max(...matches) : parseFirstNumber(text);
-}
+function comparisonProductCard(product,isWinner,side){return `<article class="compare-duel-product ${side} ${isWinner?"overall-winner":""}">${isWinner?`<span class="compare-winner-badge">DESTACADO</span>`:""}<div class="compare-duel-image"><img src="${escapeHtml(comparisonImage(product))}" alt="${escapeHtml(product.name||"Producto")}"></div><small>${escapeHtml(product.brand||"")}</small><h3>${escapeHtml(product.name||"")}</h3><button type="button" data-open-compare-product="${product.id}">Ver ficha ↗</button></article>`;}
 
-function dsdRate(product) {
-  const text = String(product?.specs?.maxDsd || "");
-  const match = text.match(/dsd\s*(\d+)/i);
-  return match ? Number(match[1]) : parseFirstNumber(text);
-}
+function renderComparison(){if(!compareResult)return;const a=reviews.find(item=>String(item.id)===String(compareProductA?.value||""));const b=reviews.find(item=>String(item.id)===String(compareProductB?.value||""));updateComparePickerButton("a",a||null);updateComparePickerButton("b",b||null);if(!a||!b){compareResult.innerHTML=`<div class="compare-empty"><strong>Elige dos productos para empezar.</strong><span>Las estadísticas aparecerán aquí de forma automática.</span></div>`;return;}if(a.category!==b.category){compareResult.innerHTML=`<div class="compare-empty compare-error"><strong>Comparación no permitida.</strong><span>Solo puedes comparar productos de la misma categoría.</span></div>`;return;}
+  const metrics=comparisonMetrics(a.category);let pointsA=0,pointsB=0,comparable=0;const lanes=[];for(const metric of metrics){const av=metric.value(a),bv=metric.value(b),winner=metricWinner(av,bv,metric.direction);if(Number.isFinite(av)&&Number.isFinite(bv)&&metric.weight>0){comparable++;if(winner==="a")pointsA+=metric.weight;else if(winner==="b")pointsB+=metric.weight;else{pointsA+=metric.weight/2;pointsB+=metric.weight/2;}}lanes.push(`<article class="compare-metric-lane"><div class="lane-side lane-a ${winner==="a"?"lane-winner":""}"><strong>${escapeHtml(formatMetricValue(metric,av))}</strong><div><i style="width:${Number.isFinite(av)?metricAdvantage(av,bv,metric.direction):0}%"></i></div></div><div class="lane-label"><span>${comparisonSpecIcon(metric.icon||"chip")}</span><strong>${escapeHtml(metric.label)}</strong><small>${winner==="tie"?"Empate":"Ventaja"}</small></div><div class="lane-side lane-b ${winner==="b"?"lane-winner":""}"><strong>${escapeHtml(formatMetricValue(metric,bv))}</strong><div><i style="width:${Number.isFinite(bv)?metricAdvantage(bv,av,metric.direction):0}%"></i></div></div></article>`);}
+  let winner=null,winnerLabel="Empate técnico",winnerNote="Los datos disponibles están muy igualados.";if(comparable>0&&pointsA!==pointsB){winner=pointsA>pointsB?a:b;winnerLabel=`${winner.name||"Producto"}`;winnerNote=`Destaca en ${Math.max(pointsA,pointsB)} puntos frente a ${Math.min(pointsA,pointsB)} según métricas comparables.`;}else if(!comparable){winnerLabel="Sin datos suficientes";winnerNote="Completa más especificaciones para obtener un resultado.";}const total=Math.max(1,pointsA+pointsB);const shareA=Math.round((pointsA/total)*100),shareB=100-shareA;
+  const quick=(COMPARISON_TEXT_SPECS[a.category]||[]).map(([key,label,icon])=>`<article class="compare-quick-row"><div><span>${comparisonSpecIcon(icon)}</span><strong>${escapeHtml(label)}</strong></div><p>${escapeHtml(comparisonTextValue(a,key))}</p><i>vs</i><p>${escapeHtml(comparisonTextValue(b,key))}</p></article>`).join("");
+  compareResult.innerHTML=`<div class="compare-duel-arena">${comparisonProductCard(a,winner?.id===a.id,"side-a")}<div class="compare-duel-center"><span class="duel-kicker">RESULTADO</span><div class="duel-orb" style="--share-a:${shareA}%;--share-b:${shareB}%"><div><strong>${comparable?`${shareA}/${shareB}`:"—"}</strong><small>balance</small></div></div><h3>${escapeHtml(winnerLabel)}</h3><p>${escapeHtml(winnerNote)}</p></div>${comparisonProductCard(b,winner?.id===b.id,"side-b")}</div><div class="compare-metric-lanes">${lanes.join("")}</div><div class="compare-quick-specs"><div class="compare-quick-head"><span>COMPARACIÓN RÁPIDA</span><strong>${escapeHtml(a.name||"A")} <i>vs</i> ${escapeHtml(b.name||"B")}</strong></div>${quick}</div>`;
+  compareResult.querySelectorAll("[data-open-compare-product]").forEach(btn=>btn.addEventListener("click",()=>openReview(Number(btn.dataset.openCompareProduct))));}
 
-function powerOutput(product) {
-  const text = String(product?.specs?.powerOutput || "");
-  const value = parseFirstNumber(text);
-  if (!Number.isFinite(value)) return NaN;
-  return /\bw\b/i.test(text) && !/\bmw\b/i.test(text) ? value * 1000 : value;
-}
-
-function comparisonMetrics(category) {
-  const scoreMetric = {
-    key:"score", label:"MadeLesh Score", icon:"score", unit:"/10", direction:"high", weight:2,
-    value:p => Number(p?.score) > 0 ? Number(p.score) : NaN
-  };
-
-  const map = {
-    Mouse: [
-      {key:"polling",label:"Polling Rate",icon:"pollingRate",unit:" Hz",direction:"high",weight:1,value:maxPolling},
-      {key:"weight",label:"Peso",icon:"weight",unit:" g",direction:"low",weight:1,value:p=>parseFirstNumber(p?.specs?.weight)},
-      {key:"battery",label:"Autonomía",icon:"battery",unit:" h",direction:"high",weight:1,value:batteryHours},
-      scoreMetric
-    ],
-    Teclados: [
-      {key:"polling",label:"Polling Rate",icon:"pollingRate",unit:" Hz",direction:"high",weight:1,value:maxPolling},
-      {key:"battery",label:"Autonomía",icon:"battery",unit:" h",direction:"high",weight:1,value:batteryHours},
-      {key:"features",label:"Funciones competitivas",icon:"rapid",unit:"/2",direction:"high",weight:1,value:p=>featureCount(p,["hotSwap","rapidTrigger"])},
-      scoreMetric
-    ],
-    IEM: [
-      {key:"weight",label:"Peso por lado",icon:"weight",unit:" g",direction:"low",weight:1,value:p=>parseFirstNumber(p?.specs?.weightPerSide)},
-      {key:"detachable",label:"Cable desmontable",icon:"connection",unit:"",direction:"high",weight:1,value:p=>p?.specs?.detachableCable===true?1:(p?.specs?.detachableCable===false?0:NaN),format:v=>v?"Sí":"No"},
-      scoreMetric
-    ],
-    Headsets: [
-      {key:"battery",label:"Autonomía",icon:"battery",unit:" h",direction:"high",weight:1,value:batteryHours},
-      {key:"weight",label:"Peso",icon:"weight",unit:" g",direction:"low",weight:1,value:p=>parseFirstNumber(p?.specs?.weight)},
-      scoreMetric
-    ],
-    DAC: [
-      {key:"power",label:"Potencia de salida",icon:"output",unit:" mW",direction:"high",weight:1,value:powerOutput},
-      {key:"pcm",label:"PCM máximo",icon:"pcm",unit:" kHz",direction:"high",weight:1,value:pcmRate},
-      {key:"dsd",label:"DSD máximo",icon:"chip",unit:"",direction:"high",weight:1,value:dsdRate,format:v=>`DSD${Math.round(v)}`},
-      scoreMetric
-    ]
-  };
-  return map[category] || [scoreMetric];
-}
-
-function metricAdvantage(value, other, direction) {
-  if (!Number.isFinite(value) || !Number.isFinite(other)) return 0;
-  if (value === other) return 100;
-  if (direction === "low") {
-    const min = Math.min(value, other);
-    return Math.max(10, Math.min(100, (min / Math.max(value, .0001)) * 100));
-  }
-  const max = Math.max(value, other);
-  return max <= 0 ? 0 : Math.max(10, Math.min(100, (value / max) * 100));
-}
-
-function metricWinner(a,b,direction) {
-  if (!Number.isFinite(a) || !Number.isFinite(b) || a === b) return "tie";
-  return direction === "low" ? (a < b ? "a" : "b") : (a > b ? "a" : "b");
-}
-
-function formatMetricValue(metric,value) {
-  if (!Number.isFinite(value)) return "No disponible";
-  if (typeof metric.format === "function") return metric.format(value);
-  const digits = Number.isInteger(value) ? 0 : 1;
-  return `${value.toFixed(digits)}${metric.unit || ""}`;
-}
-
-function comparisonTextValue(product,key) {
-  if (key === "__connections") return arrayLabel(product?.connections) || "No disponible";
-  const value = product?.specs?.[key];
-  if (typeof value === "boolean") return value ? "Sí" : "No";
-  if (Array.isArray(value)) return arrayLabel(value) || "No disponible";
-  return value === undefined || value === null || value === "" ? "No disponible" : String(value);
-}
-
-function populateComparisonSelectors() {
-  if (!compareProductA || !compareProductB) return;
-  const products = [...reviews].sort((a,b) =>
-    String(a.category||"").localeCompare(String(b.category||""))
-    || String(a.name||"").localeCompare(String(b.name||""))
-  );
-  compareProductA.innerHTML = `<option value="">Seleccionar producto</option>${products.map(item =>
-    `<option value="${item.id}">${escapeHtml(`${item.category} · ${item.brand||""} ${item.name||""}`.trim())}</option>`
-  ).join("")}`;
-  compareProductB.innerHTML = `<option value="">Primero elige el producto A</option>`;
-  compareProductB.disabled = true;
-}
-
-function refreshCompareProductB() {
-  if (!compareProductA || !compareProductB) return;
-  const selectedA = reviews.find(item => String(item.id) === String(compareProductA.value || ""));
-  if (!selectedA) {
-    compareProductB.innerHTML = `<option value="">Primero elige el producto A</option>`;
-    compareProductB.disabled = true;
-    if (compareCategoryLock) compareCategoryLock.textContent = "Solo se permiten comparaciones entre productos de la misma categoría.";
-    renderComparison();
-    return;
-  }
-
-  const sameCategory = reviews.filter(item => item.category === selectedA.category && String(item.id) !== String(selectedA.id));
-  compareProductB.innerHTML = `<option value="">Seleccionar ${escapeHtml(selectedA.category)}</option>${sameCategory.map(item =>
-    `<option value="${item.id}">${escapeHtml(`${item.brand||""} ${item.name||""}`.trim())}</option>`
-  ).join("")}`;
-  compareProductB.disabled = sameCategory.length === 0;
-  if (compareCategoryLock) {
-    compareCategoryLock.innerHTML = `<strong>${escapeHtml(selectedA.category)}</strong> bloqueado como categoría de comparación · ${sameCategory.length} alternativa${sameCategory.length===1?"":"s"} disponible${sameCategory.length===1?"":"s"}.`;
-  }
-  renderComparison();
-}
-
-function comparisonProductCard(product,isWinner) {
-  return `
-    <article class="compare-product-card ${isWinner ? "overall-winner" : ""}">
-      ${isWinner ? `<span class="compare-winner-badge">DESTACADO</span>` : ""}
-      <img src="${escapeHtml(comparisonImage(product))}" alt="${escapeHtml(product.name || "Producto")}">
-      <small>${escapeHtml(product.category || "")}</small>
-      <h3>${escapeHtml(`${product.brand||""} ${product.name||""}`.trim())}</h3>
-      <button type="button" data-open-compare-product="${product.id}">Ver producto</button>
-    </article>`;
-}
-
-function renderComparison() {
-  if (!compareResult) return;
-  const a = reviews.find(item => String(item.id) === String(compareProductA?.value || ""));
-  const b = reviews.find(item => String(item.id) === String(compareProductB?.value || ""));
-
-  if (!a || !b) {
-    compareResult.innerHTML = `<div class="compare-empty"><strong>Elige dos productos para empezar.</strong><span>Las estadísticas aparecerán aquí de forma automática.</span></div>`;
-    return;
-  }
-
-  if (a.category !== b.category) {
-    compareResult.innerHTML = `<div class="compare-empty compare-error"><strong>Comparación no permitida.</strong><span>Solo puedes comparar productos de la misma categoría.</span></div>`;
-    return;
-  }
-
-  const metrics = comparisonMetrics(a.category);
-  let pointsA = 0, pointsB = 0, comparableMetrics = 0;
-
-  const metricCards = metrics.map(metric => {
-    const av = metric.value(a), bv = metric.value(b);
-    const winner = metricWinner(av,bv,metric.direction);
-
-    if (Number.isFinite(av) && Number.isFinite(bv) && metric.weight > 0) {
-      comparableMetrics++;
-      if (winner === "a") pointsA += metric.weight;
-      else if (winner === "b") pointsB += metric.weight;
-      else { pointsA += metric.weight/2; pointsB += metric.weight/2; }
-    }
-
-    return `
-      <article class="compare-stat-card">
-        <div class="compare-stat-head">
-          <strong><span class="compare-mini-icon">${comparisonSpecIcon(metric.icon || "chip")}</span>${escapeHtml(metric.label)}</strong>
-          <span>${winner==="tie" ? "Empate" : "Ventaja detectada"}</span>
-        </div>
-        <div class="compare-stat-side ${winner==="a" ? "metric-winner" : ""}">
-          <span>${escapeHtml(a.name || "Producto A")}</span>
-          <b>${escapeHtml(formatMetricValue(metric,av))}</b>
-          <div class="compare-stat-bar"><i style="width:${Number.isFinite(av) ? metricAdvantage(av,bv,metric.direction) : 0}%"></i></div>
-        </div>
-        <div class="compare-stat-side ${winner==="b" ? "metric-winner" : ""}">
-          <span>${escapeHtml(b.name || "Producto B")}</span>
-          <b>${escapeHtml(formatMetricValue(metric,bv))}</b>
-          <div class="compare-stat-bar"><i style="width:${Number.isFinite(bv) ? metricAdvantage(bv,av,metric.direction) : 0}%"></i></div>
-        </div>
-      </article>`;
-  }).join("");
-
-  let winnerProduct = null;
-  let winnerLabel = "Empate técnico";
-  let winnerNote = "Los datos objetivos disponibles no separan claramente a ninguno.";
-
-  if (comparableMetrics > 0 && pointsA !== pointsB) {
-    winnerProduct = pointsA > pointsB ? a : b;
-    winnerLabel = `${winnerProduct.brand||""} ${winnerProduct.name||""}`.trim();
-    winnerNote = `Es el producto más destacado de esta comparación según las métricas comparables disponibles (${Math.max(pointsA,pointsB)} vs ${Math.min(pointsA,pointsB)} puntos).`;
-  } else if (comparableMetrics === 0) {
-    winnerLabel = "Sin datos suficientes";
-    winnerNote = "Añade más especificaciones comparables para calcular un producto destacado.";
-  }
-
-  const textRows = (COMPARISON_TEXT_SPECS[a.category] || []).map(([key,label,icon]) => `
-    <div class="compare-spec-row">
-      <span><i class="compare-spec-icon">${comparisonSpecIcon(icon)}</i>${escapeHtml(label)}</span>
-      <strong>${escapeHtml(comparisonTextValue(a,key))}</strong>
-      <strong>${escapeHtml(comparisonTextValue(b,key))}</strong>
-    </div>`).join("");
-
-  compareResult.innerHTML = `
-    <div class="compare-products-head">
-      ${comparisonProductCard(a,winnerProduct?.id===a.id)}
-      <div class="compare-score-summary">
-        <span>RESULTADO</span>
-        <strong>${escapeHtml(winnerLabel)}</strong>
-        <p>${escapeHtml(winnerNote)}</p>
-      </div>
-      ${comparisonProductCard(b,winnerProduct?.id===b.id)}
-    </div>
-    <div class="compare-stats-grid">${metricCards}</div>
-    <div class="compare-spec-table">
-      <div class="compare-spec-row compare-spec-header">
-        <span>Especificación</span>
-        <strong>${escapeHtml(a.name||"Producto A")}</strong>
-        <strong>${escapeHtml(b.name||"Producto B")}</strong>
-      </div>
-      ${textRows}
-    </div>`;
-
-  compareResult.querySelectorAll("[data-open-compare-product]").forEach(button => {
-    button.addEventListener("click", () => openReview(Number(button.dataset.openCompareProduct)));
-  });
-}
-
-compareProductA?.addEventListener("change", refreshCompareProductB);
-compareProductB?.addEventListener("change", renderComparison);
+comparePickerAButton?.addEventListener("click",event=>{event.stopPropagation();const open=comparePickerAMenu?.hidden!==false;closeCompareMenus();if(comparePickerAMenu){comparePickerAMenu.hidden=!open;comparePickerAButton.setAttribute("aria-expanded",String(open));}});
+comparePickerBButton?.addEventListener("click",event=>{event.stopPropagation();if(comparePickerBButton.disabled)return;const open=comparePickerBMenu?.hidden!==false;closeCompareMenus();if(comparePickerBMenu){comparePickerBMenu.hidden=!open;comparePickerBButton.setAttribute("aria-expanded",String(open));}});
+document.addEventListener("click",event=>{if(!event.target.closest(".compare-visual-select-card"))closeCompareMenus();});
+compareProductA?.addEventListener("change",refreshCompareProductB);
+compareProductB?.addEventListener("change",renderComparison);
 
 function focusProductsHome() {
   const home = document.getElementById("home");
