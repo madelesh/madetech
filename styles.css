@@ -3885,3 +3885,116 @@ html[data-theme="light"] .product-card-footer{border-color:rgba(0,0,0,.1)!import
 .duel-orb{background:transparent!important;position:relative;border:0!important}.duel-orb:before{content:""!important;position:absolute!important;inset:2px!important;border-radius:50%!important;background:conic-gradient(var(--accent) 0 var(--share-a),rgba(128,132,142,.5) var(--share-a) 100%)!important;-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 8px),#000 0)!important;mask:radial-gradient(farthest-side,transparent calc(100% - 8px),#000 0)!important}.duel-orb:after{content:"";position:absolute;inset:15px;border:1px solid color-mix(in srgb,var(--line) 75%,transparent);border-radius:50%;opacity:.75}.duel-orb>div{position:relative;z-index:2}
 
 @media(max-width:760px){.site-announcement-bar{width:calc(100% - 16px);margin:7px 8px 0;display:flex!important}.site-announcement-bar.is-static .header-news-group{justify-content:flex-start;overflow-x:auto;flex-wrap:nowrap}.profile-avatar-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+
+/* ==========================================================
+   MADELESH V5.26 — FAVORITOS / CUENTA / HEADER CENTRADO
+   ========================================================== */
+
+/* Navegación realmente centrada aunque logo y perfil tengan anchos distintos. */
+.topbar{
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;
+}
+.topbar>.brand{justify-self:start!important}
+.desktop-nav{justify-self:center!important;justify-content:center!important}
+.header-actions{justify-self:end!important}
+
+/* Noticias: tira libre bajo el header, sin caja exterior. */
+.site-announcement-bar{
+  width:100%!important;
+  margin:5px 0 2px!important;
+  min-height:34px!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.site-announcement-bar .header-news-track{min-height:34px;align-items:center}
+.site-announcement-bar .header-news-group{padding:0 6px!important}
+
+/* Favorito fuera de la imagen: ahora forma parte del cuerpo de la tarjeta. */
+.product-card-head{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:10px;
+  align-items:center;
+}
+.product-card-head h3{margin:0!important;min-width:0}
+.product-card-head .product-favorite-button{
+  position:static!important;
+  top:auto!important;
+  right:auto!important;
+  z-index:auto!important;
+  width:34px!important;
+  height:34px!important;
+  flex:0 0 34px;
+  background:var(--surface-3)!important;
+  backdrop-filter:none!important;
+}
+.product-card-head .product-favorite-button.active{
+  background:var(--accent)!important;
+  color:#080808!important;
+}
+
+/* Páginas personales accesibles desde el perfil. */
+.personal-page{display:grid;gap:18px}
+.personal-page-head{
+  padding:26px;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:24px;
+  align-items:end;
+  border:1px solid var(--line);
+  border-radius:24px;
+  background:var(--panel);
+}
+.personal-page-kicker{
+  display:block;margin-top:18px;color:var(--accent);font-size:.62rem;font-weight:900;letter-spacing:.11em
+}
+.personal-page-head h2{margin:6px 0 8px;font-size:clamp(2rem,4vw,3.8rem);line-height:1}
+.personal-page-head p{max-width:650px;margin:0;color:var(--muted);font-size:.78rem;line-height:1.55}
+.personal-page-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.personal-page-actions>a,.personal-empty-state>a{
+  min-height:38px;padding:0 13px;display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;color:var(--text);font-size:.66rem;font-weight:800;text-decoration:none
+}
+.personal-page-actions>a:hover,.personal-empty-state>a:hover{border-color:var(--accent);color:var(--accent)}
+.personal-count-pill{min-height:38px;padding:0 12px;display:inline-flex;align-items:center;gap:5px;border-radius:999px;background:color-mix(in srgb,var(--accent) 9%,transparent);color:var(--muted);font-size:.64rem}
+.personal-count-pill b{color:var(--accent);font-size:.8rem}
+.favorites-page-grid{padding-top:2px}
+.personal-empty-state{
+  min-height:300px;padding:28px;display:grid;place-items:center;align-content:center;gap:9px;text-align:center;border:1px dashed var(--line);border-radius:22px;color:var(--muted)
+}
+.personal-empty-state strong{color:var(--text);font-size:1rem}
+.personal-empty-state>span:not(.personal-empty-icon){font-size:.7rem}
+.personal-empty-icon{width:48px;height:48px;display:grid;place-items:center;border-radius:50%;background:color-mix(in srgb,var(--accent) 9%,transparent);color:var(--accent)}
+.personal-empty-icon svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.7}
+
+.account-settings-layout{display:grid;grid-template-columns:minmax(220px,.42fr) minmax(0,1fr);gap:14px;align-items:start}
+.account-summary-card,.account-settings-card{padding:20px;border:1px solid var(--line);border-radius:20px;background:var(--panel)}
+.account-summary-card{display:grid;place-items:center;text-align:center;gap:9px;position:sticky;top:105px}
+.account-settings-avatar{width:90px!important;height:90px!important;flex-basis:90px!important;margin-bottom:3px}
+.account-summary-card>div:nth-child(2){display:grid;gap:3px}.account-summary-card strong{font-size:.95rem}.account-summary-card>div:nth-child(2)>span{font-size:.65rem;color:var(--muted)}
+.account-session-line{width:100%;margin-top:8px;padding-top:12px;display:flex!important;justify-content:center;align-items:center;gap:7px;border-top:1px solid var(--line);color:var(--muted);font-size:.63rem}
+.account-session-icon{width:26px;height:26px;display:grid;place-items:center;border-radius:8px;background:color-mix(in srgb,var(--accent) 8%,transparent);color:var(--accent)}
+.account-session-icon svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8}
+.account-settings-title{display:flex;gap:10px;align-items:flex-start;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.account-settings-title>div{display:grid;gap:3px}.account-settings-title strong{font-size:.84rem}.account-settings-title span{font-size:.64rem;color:var(--muted)}
+.account-avatar-grid{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))!important;gap:10px!important}
+.account-avatar-grid .profile-avatar-choice{min-height:116px!important;padding:9px!important}
+.account-avatar-grid .profile-avatar-choice img,.account-avatar-grid .profile-avatar-choice>span{width:68px!important;height:68px!important}
+
+/* Ya no se usan subpaneles internos de favoritos/avatar dentro del perfil. */
+.profile-subpanel{display:none!important}
+
+@media(max-width:900px){
+  .account-settings-layout{grid-template-columns:1fr}
+  .account-summary-card{position:static}
+}
+@media(max-width:760px){
+  .topbar{grid-template-columns:auto 1fr auto!important}
+  .desktop-nav{justify-self:auto!important}
+  .personal-page-head{grid-template-columns:1fr;padding:20px}
+  .personal-page-actions{justify-content:flex-start}
+  .site-announcement-bar{margin-top:4px!important}
+}

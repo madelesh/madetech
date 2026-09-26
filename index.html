@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es" data-theme="light">
 <head>
-  <meta name="madelesh-build" content="5.25" />
+  <meta name="madelesh-build" content="5.26" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="MadeLesh — Reviews de mouse, teclados, IEM, headsets y DACs." />
@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link id="siteFavicon" rel="icon" type="image/png" href="" />
-  <link rel="stylesheet" href="styles.css?v=5.25" />
+  <link rel="stylesheet" href="styles.css?v=5.26" />
 </head>
 
 <body class="auth-pending">
@@ -134,23 +134,15 @@
               </div>
             </div>
 
-            <button class="profile-menu-item profile-feature-item" id="profileFavoritesButton" type="button">
+            <a class="profile-menu-item profile-feature-item" id="profileFavoritesButton" href="index.html?view=favoritos">
               <span class="profile-menu-icon"><svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg></span>
               <span>Favoritos</span><b id="profileFavoritesCount">0</b>
-            </button>
-            <div class="profile-subpanel profile-favorites-panel" id="profileFavoritesPanel" hidden>
-              <div class="profile-subpanel-head"><strong>Mis favoritos</strong><span>Productos guardados</span></div>
-              <div class="profile-favorites-list" id="profileFavoritesList"></div>
-            </div>
+            </a>
 
-            <button class="profile-menu-item profile-feature-item" id="profileAvatarButton" type="button">
-              <span class="profile-menu-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4.5 21a7.5 7.5 0 0 1 15 0"></path></svg></span>
-              <span>Foto de perfil</span><b>›</b>
-            </button>
-            <div class="profile-subpanel profile-avatar-panel" id="profileAvatarPanel" hidden>
-              <div class="profile-subpanel-head"><strong>Elegir foto</strong><span>Solo imágenes disponibles en MadeLesh</span></div>
-              <div class="profile-avatar-grid" id="profileAvatarGrid"></div>
-            </div>
+            <a class="profile-menu-item profile-feature-item" id="profileAvatarButton" href="index.html?view=cuenta">
+              <span class="profile-menu-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.1A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.1A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 .6 1 1.7 1.7 0 0 0 1.1.4H21v4h-.1a1.7 1.7 0 0 0-1.5.6z"></path></svg></span>
+              <span>Ajustes de cuenta</span><b>›</b>
+            </a>
 
             <a class="profile-menu-item admin-shortcut" id="adminShortcut" href="admin.html" hidden>
               <span>Panel de administrador</span><span>↗</span>
@@ -381,6 +373,58 @@
         <p class="empty-message" id="emptyMessage" hidden>No hay reviews que coincidan con tu búsqueda.</p>
       </section>
 
+      <section class="section personal-page favorites-page" id="favoritos" data-view="favoritos">
+        <div class="personal-page-head">
+          <div>
+            <span class="section-index">(04)</span>
+            <span class="personal-page-kicker">TU BIBLIOTECA</span>
+            <h2>Mis favoritos</h2>
+            <p>Todos los productos que guardaste aparecen aquí, fuera del menú del perfil.</p>
+          </div>
+          <div class="personal-page-actions">
+            <span class="personal-count-pill"><b id="favoritesPageCount">0</b> guardados</span>
+            <a href="index.html?view=home">Volver al catálogo →</a>
+          </div>
+        </div>
+        <div class="reviews-grid favorites-page-grid" id="favoritesPageGrid"></div>
+        <div class="personal-empty-state" id="favoritesPageEmpty" hidden>
+          <span class="personal-empty-icon"><svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg></span>
+          <strong>Aún no tienes favoritos</strong>
+          <span>Guarda productos con el icono de corazón y aparecerán en esta sección.</span>
+          <a href="index.html?view=home">Explorar productos</a>
+        </div>
+      </section>
+
+      <section class="section personal-page account-settings-page" id="cuenta" data-view="cuenta">
+        <div class="personal-page-head">
+          <div>
+            <span class="section-index">(05)</span>
+            <span class="personal-page-kicker">CUENTA</span>
+            <h2>Ajustes de cuenta</h2>
+            <p>Personaliza tu cuenta MadeLesh y elige una foto de perfil disponible.</p>
+          </div>
+          <div class="personal-page-actions"><a href="index.html?view=home">Volver al inicio →</a></div>
+        </div>
+
+        <div class="account-settings-layout">
+          <aside class="account-summary-card">
+            <span class="profile-avatar account-settings-avatar" id="accountSettingsAvatar" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4.5 21a7.5 7.5 0 0 1 15 0"></path></svg>
+            </span>
+            <div><strong id="accountSettingsName">Usuario MadeLesh</strong><span id="accountSettingsRole">Acceso por key</span></div>
+            <div class="account-session-line"><span class="account-session-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 7v5l3 2"></path></svg></span><span id="accountSettingsExpiry">Comprobando expiración...</span></div>
+          </aside>
+
+          <div class="account-settings-card">
+            <div class="account-settings-title">
+              <span class="profile-menu-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4.5 21a7.5 7.5 0 0 1 15 0"></path></svg></span>
+              <div><strong>Foto de perfil</strong><span>Solo puedes usar las imágenes habilitadas por MadeLesh.</span></div>
+            </div>
+            <div class="profile-avatar-grid account-avatar-grid" id="profileAvatarGrid"></div>
+          </div>
+        </div>
+      </section>
+
       <section class="section compare-section" id="comparacion" data-view="comparacion">
         <div class="compare-page-head">
           <div>
@@ -464,7 +508,7 @@
       </div>
 
       <div class="footer-version-row">
-        <span id="siteVersionLabel">MadeLesh v5.25</span>
+        <span id="siteVersionLabel">MadeLesh v5.26</span>
         <button id="footerReleaseToggle" type="button" aria-expanded="false">
           Ver cambios
         </button>
@@ -480,7 +524,7 @@
     </article>
   </div>
 
-  <script type="module" src="app.js?v=5.25"></script>
+  <script type="module" src="app.js?v=5.26"></script>
   </div>
 </body>
 </html>

@@ -19,11 +19,15 @@ const profileAvatarSmall = document.getElementById("profileAvatarSmall");
 const profileAvatarLarge = document.getElementById("profileAvatarLarge");
 const profileFavoritesButton = document.getElementById("profileFavoritesButton");
 const profileFavoritesCount = document.getElementById("profileFavoritesCount");
-const profileFavoritesPanel = document.getElementById("profileFavoritesPanel");
-const profileFavoritesList = document.getElementById("profileFavoritesList");
+const favoritesPageGrid = document.getElementById("favoritesPageGrid");
+const favoritesPageEmpty = document.getElementById("favoritesPageEmpty");
+const favoritesPageCount = document.getElementById("favoritesPageCount");
 const profileAvatarButton = document.getElementById("profileAvatarButton");
-const profileAvatarPanel = document.getElementById("profileAvatarPanel");
 const profileAvatarGrid = document.getElementById("profileAvatarGrid");
+const accountSettingsAvatar = document.getElementById("accountSettingsAvatar");
+const accountSettingsName = document.getElementById("accountSettingsName");
+const accountSettingsRole = document.getElementById("accountSettingsRole");
+const accountSettingsExpiry = document.getElementById("accountSettingsExpiry");
 
 const root = document.documentElement;
 const themeToggle = document.getElementById("themeToggle");
@@ -103,8 +107,8 @@ let currentAvatarUrl = "";
 let publicAppVersion = "5.18";
 let publicRelease = { version: "5.18", title: "", date: "", notes: [] };
 const CURRENT_BUILD_RELEASE = {
-  version: "5.25",
-  title: "Favoritos, avatares y comparador mejorado",
+  version: "5.26",
+  title: "Favoritos separados, cuenta y encabezado centrado",
   date: "2026-09-25",
   changes: {
     added: [
@@ -459,6 +463,8 @@ function updateProfileMenu() {
   profileName.textContent = displayName;
   profileButtonLabel.textContent = displayName;
   profileRole.textContent = isAdmin ? "Cuenta de administrador" : "Acceso por key";
+  if (accountSettingsName) accountSettingsName.textContent = displayName;
+  if (accountSettingsRole) accountSettingsRole.textContent = isAdmin ? "Cuenta de administrador" : "Acceso por key";
 
   // Solo una sesión ADMIN puede ver y usar este acceso.
   adminShortcut.hidden = !isAdmin;
@@ -487,17 +493,22 @@ function startKeyCountdown() {
   }
 }
 
+function setProfileExpiryText(value) {
+  profileExpiryText.textContent = value;
+  if (accountSettingsExpiry) accountSettingsExpiry.textContent = value;
+}
+
 function updateKeyCountdown() {
   if (currentRole === "admin") {
     profileSessionLabel.textContent = "Sesión activa";
-    profileExpiryText.textContent = "Cuenta de administrador";
+    setProfileExpiryText("Cuenta de administrador");
     return;
   }
 
   profileSessionLabel.textContent = "Key activa";
 
   if (!currentKeyExpiresAt) {
-    profileExpiryText.textContent = "Sin fecha de expiración";
+    setProfileExpiryText("Sin fecha de expiración");
     return;
   }
 
@@ -505,13 +516,13 @@ function updateKeyCountdown() {
   const remainingMs = expiration - Date.now();
 
   if (!Number.isFinite(expiration)) {
-    profileExpiryText.textContent = "Expiración no disponible";
+    setProfileExpiryText("Expiración no disponible");
     return;
   }
 
   if (remainingMs <= 0) {
     profileSessionLabel.textContent = "Key expirada";
-    profileExpiryText.textContent = "0 h 0 min restantes";
+    setProfileExpiryText("0 h 0 min restantes");
     if (keyCountdownTimer) {
       clearInterval(keyCountdownTimer);
       keyCountdownTimer = null;
@@ -523,7 +534,7 @@ function updateKeyCountdown() {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
 
-  profileExpiryText.textContent = `Expira en ${hours} h ${minutes} min`;
+  setProfileExpiryText(`Expira en ${hours} h ${minutes} min`);
 }
 
 function closeProfileMenu() {
@@ -580,7 +591,7 @@ function defaultProfileAvatarSvg() {
 
 function paintProfileAvatar(url = currentAvatarUrl) {
   const safe = safeImageSrc(url);
-  [profileAvatarSmall, profileAvatarLarge].forEach(target => {
+  [profileAvatarSmall, profileAvatarLarge, accountSettingsAvatar].forEach(target => {
     if (!target) return;
     target.innerHTML = safe ? `<img src="${escapeHtml(safe)}" alt="Foto de perfil">` : defaultProfileAvatarSvg();
     target.classList.toggle("has-photo", Boolean(safe));
@@ -640,22 +651,14 @@ function renderProfileAvatarChoices() {
 
 function renderProfileFavorites() {
   if (profileFavoritesCount) profileFavoritesCount.textContent = String(favoriteProductIds.size);
-  if (!profileFavoritesList) return;
+  if (favoritesPageCount) favoritesPageCount.textContent = String(favoriteProductIds.size);
+  if (!favoritesPageGrid) return;
+
   const favorites = reviews.filter(product => favoriteProductIds.has(Number(product.id)));
-  profileFavoritesList.innerHTML = favorites.length
-    ? favorites.map(product => `
-      <button type="button" class="profile-favorite-item" data-profile-favorite-open="${product.id}">
-        <img src="${escapeHtml(comparisonImage(product))}" alt="">
-        <span><strong>${escapeHtml(product.name || "Producto")}</strong><small>${escapeHtml(product.brand || product.category || "")}</small></span>
-        <b>↗</b>
-      </button>`).join("")
-    : `<div class="profile-subpanel-empty">Todavía no tienes productos favoritos.</div>`;
-  profileFavoritesList.querySelectorAll("[data-profile-favorite-open]").forEach(button => {
-    button.addEventListener("click", () => {
-      closeProfileMenu();
-      openReview(Number(button.dataset.profileFavoriteOpen));
-    });
-  });
+  favoritesPageGrid.innerHTML = favorites.map(cardTemplate).join("");
+  if (favoritesPageEmpty) favoritesPageEmpty.hidden = favorites.length > 0;
+  favoritesPageGrid.hidden = favorites.length === 0;
+  bindCards(favoritesPageGrid);
 }
 
 function favoriteIcon(active = false) {
@@ -696,16 +699,8 @@ function updateFavoriteUI(productId = 0) {
   }
 }
 
-profileFavoritesButton?.addEventListener("click", () => {
-  if (profileFavoritesPanel) profileFavoritesPanel.hidden = !profileFavoritesPanel.hidden;
-  if (profileAvatarPanel) profileAvatarPanel.hidden = true;
-  renderProfileFavorites();
-});
-profileAvatarButton?.addEventListener("click", () => {
-  if (profileAvatarPanel) profileAvatarPanel.hidden = !profileAvatarPanel.hidden;
-  if (profileFavoritesPanel) profileFavoritesPanel.hidden = true;
-  renderProfileAvatarChoices();
-});
+profileFavoritesButton?.addEventListener("click", () => closeProfileMenu());
+profileAvatarButton?.addEventListener("click", () => closeProfileMenu());
 
 async function restoreSession() {
   const userToken = localStorage.getItem("madetech_user_token");
@@ -945,14 +940,16 @@ function cardTemplate(review) {
     <article class="review-card" data-category="${escapeHtml(review.category || "Producto")}" data-review="${review.id}"
              tabindex="0" role="button" aria-label="Abrir ${escapeHtml(review.name || "")}">
       <div class="review-visual">
-        <button class="product-favorite-button ${favoriteProductIds.has(Number(review.id)) ? "active" : ""}" type="button" data-favorite-toggle="${review.id}" aria-pressed="${favoriteProductIds.has(Number(review.id))}" aria-label="${favoriteProductIds.has(Number(review.id)) ? "Quitar de favoritos" : "Agregar a favoritos"}">${favoriteIcon(favoriteProductIds.has(Number(review.id)))}</button>
         <div class="review-image-frame">
           <img src="${image}" alt="${escapeHtml(review.name || "Producto")}" class="review-product-image">
         </div>
       </div>
 
       <div class="review-content compact-product-card">
-        <h3>${escapeHtml(review.name || "Producto")}</h3>
+        <div class="product-card-head">
+          <h3>${escapeHtml(review.name || "Producto")}</h3>
+          <button class="product-favorite-button ${favoriteProductIds.has(Number(review.id)) ? "active" : ""}" type="button" data-favorite-toggle="${review.id}" aria-pressed="${favoriteProductIds.has(Number(review.id))}" aria-label="${favoriteProductIds.has(Number(review.id)) ? "Quitar de favoritos" : "Agregar a favoritos"}">${favoriteIcon(favoriteProductIds.has(Number(review.id)))}</button>
+        </div>
 
         <div class="card-data-block">
           <span class="card-data-label">Conexión</span>
@@ -1135,8 +1132,9 @@ function renderReviews() {
   bindCards();
 }
 
-function bindCards() {
-  reviewsGrid.querySelectorAll(".review-card").forEach(card => {
+function bindCards(container = reviewsGrid) {
+  if (!container) return;
+  container.querySelectorAll(".review-card").forEach(card => {
     const open = () => openReview(Number(card.dataset.review));
 
     card.addEventListener("click", event => {
@@ -1151,7 +1149,7 @@ function bindCards() {
       }
     });
   });
-  reviewsGrid.querySelectorAll("[data-favorite-toggle]").forEach(button => {
+  container.querySelectorAll("[data-favorite-toggle]").forEach(button => {
     button.addEventListener("click", event => {
       event.preventDefault();
       event.stopPropagation();
@@ -2251,11 +2249,13 @@ loadPublicSettings();
 
 function currentPageView() {
   const requested = new URLSearchParams(window.location.search).get("view") || "home";
-  return ["home", "categorias", "comparacion"].includes(requested) ? requested : "home";
+  return ["home", "categorias", "comparacion", "favoritos", "cuenta"].includes(requested) ? requested : "home";
 }
 
 function applyPageView() {
   const view = currentPageView();
+  if (view === "favoritos") renderProfileFavorites();
+  if (view === "cuenta") renderProfileAvatarChoices();
   document.querySelectorAll("[data-view]").forEach(section => {
     const views = String(section.dataset.view || "").split(/\s+/).filter(Boolean);
     section.hidden = !views.includes(view);
