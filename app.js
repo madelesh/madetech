@@ -107,22 +107,23 @@ let currentAvatarUrl = "";
 let publicAppVersion = "5.18";
 let publicRelease = { version: "5.18", title: "", date: "", notes: [] };
 const CURRENT_BUILD_RELEASE = {
-  version: "5.26",
-  title: "Favoritos separados, cuenta y encabezado centrado",
-  date: "2026-09-25",
+  version: "5.27",
+  title: "Optimización de rendimiento y fluidez",
+  date: "2026-09-26",
   changes: {
     added: [
-      "Favoritos personales por usuario con acceso desde el perfil.",
-      "Biblioteca de fotos de perfil administrada desde MadeLesh.",
-      "Buscador de productos dentro de comparación con favoritos en prioridad.",
-      "Noticias debajo del encabezado con modo deslizante o estático."
+      "Carga diferida de imágenes fuera de pantalla.",
+      "Renderizado progresivo del catálogo para catálogos grandes.",
+      "Pausa automática de animaciones cuando están fuera de pantalla."
     ],
     removed: [
-      "MadeLesh Score y Funciones competitivas como métricas del comparador."
+      "Desenfoques y sombras costosas durante el desplazamiento.",
+      "Animaciones hover mientras el usuario está haciendo scroll."
     ],
     fixed: [
-      "Resultado del comparador convertido a un aro hueco de grosor moderado.",
-      "Métricas de compra ajustadas para cada categoría."
+      "Fluidez del desplazamiento en escritorio y móvil.",
+      "Uso de memoria y trabajo de renderizado del catálogo.",
+      "Eventos de las tarjetas consolidados mediante delegación."
     ]
   }
 };
@@ -133,6 +134,29 @@ const selectedProductFilters = {
   connection: new Set(),
   brand: new Set()
 };
+
+/* ---------------- PERFORMANCE V5.27 ---------------- */
+
+const REVIEW_BATCH_SIZE = 20;
+let currentFilteredReviews = [];
+let renderedReviewCount = 0;
+let reviewBatchObserver = null;
+let featuredIsVisible = true;
+let newsTickerIsVisible = true;
+let scrollStateTimer = null;
+let scrollStateRaf = 0;
+
+function scheduleIdle(callback, timeout = 900) {
+  if ("requestIdleCallback" in window) {
+    return window.requestIdleCallback(callback, { timeout });
+  }
+  return window.setTimeout(callback, 48);
+}
+
+function isDocumentActive() {
+  return document.visibilityState === "visible";
+}
+
 
 const multiFilterConfig = {
   category: {
@@ -369,7 +393,7 @@ function renderPublicContacts(contacts = {}) {
     const target = key === "email" ? "" : ' target="_blank" rel="noopener noreferrer"';
     const customIcon = safeImageSrc(customIcons?.[key]);
     const iconHtml = customIcon
-      ? `<img class="social-contact-custom-icon" src="${escapeHtml(customIcon)}" alt="">`
+      ? `<img class="social-contact-custom-icon" src="${escapeHtml(customIcon)}" alt="" loading="lazy" decoding="async">`
       : icon;
     return [`<a class="social-contact-card social-${key}" href="${escapeHtml(href)}"${target}>${iconHtml}<span>${escapeHtml(label)}</span><b>↗</b></a>`];
   });
@@ -630,7 +654,7 @@ function renderProfileAvatarChoices() {
     </button>
     ${availableProfileAvatars.map(avatar => `
       <button type="button" class="profile-avatar-choice ${Number(avatar.id) === Number(currentAvatarId) ? "active" : ""}" data-profile-avatar="${avatar.id}" title="${escapeHtml(avatar.label || "Foto de perfil")}">
-        <img src="${escapeHtml(safeImageSrc(avatar.imageDataUrl || ""))}" alt="${escapeHtml(avatar.label || "Foto de perfil")}">
+        <img src="${escapeHtml(safeImageSrc(avatar.imageDataUrl || ""))}" alt="${escapeHtml(avatar.label || "Foto de perfil")}" loading="lazy" decoding="async">
         <small>${escapeHtml(avatar.label || `Foto ${avatar.id}`)}</small>
       </button>`).join("")}`;
   profileAvatarGrid.querySelectorAll("[data-profile-avatar]").forEach(button => {
@@ -884,7 +908,7 @@ function renderProductNotifications() {
   productNotificationList.innerHTML = total
     ? currentNewProducts.map(product => `
         <button type="button" data-notification-product="${product.id}">
-          <img src="${escapeHtml(comparisonImage(product))}" alt="">
+          <img src="${escapeHtml(comparisonImage(product))}" alt="" loading="lazy" decoding="async">
           <span>
             <strong>${escapeHtml(product.name || "Producto")}</strong>
             <small>${escapeHtml(product.category || "")} · Nuevo</small>
@@ -931,17 +955,19 @@ document.addEventListener("click", event => {
 });
 
 
-function cardTemplate(review) {
+function cardTemplate(review, index = 0) {
   const image = safeImageSrc(review.imageUrl) || safeImageSrc(Array.isArray(review.images) ? review.images[0] : "") || categoryPlaceholderDataUrl(review.category);
   const connections = Array.isArray(review.connections) ? review.connections.filter(Boolean).slice(0, 2) : [];
   const price = review.price || "Precio no disponible";
+  const priority = index < 4;
 
   return `
     <article class="review-card" data-category="${escapeHtml(review.category || "Producto")}" data-review="${review.id}"
              tabindex="0" role="button" aria-label="Abrir ${escapeHtml(review.name || "")}">
       <div class="review-visual">
         <div class="review-image-frame">
-          <img src="${image}" alt="${escapeHtml(review.name || "Producto")}" class="review-product-image">
+          <img src="${image}" alt="${escapeHtml(review.name || "Producto")}" class="review-product-image"
+               loading="${priority ? "eager" : "lazy"}" decoding="async" fetchpriority="${priority ? "high" : "low"}">
         </div>
       </div>
 
@@ -1127,36 +1153,91 @@ function renderReviews() {
     });
   }
 
-  reviewsGrid.innerHTML = filtered.map(cardTemplate).join("");
+  currentFilteredReviews = filtered;
+  renderedReviewCount = 0;
+  reviewsGrid.innerHTML = "";
   emptyMessage.hidden = filtered.length > 0;
-  bindCards();
+
+  bindCards(reviewsGrid);
+  appendNextReviewBatch();
+}
+
+function appendNextReviewBatch() {
+  if (!reviewsGrid || renderedReviewCount >= currentFilteredReviews.length) {
+    reviewBatchObserver?.disconnect();
+    return;
+  }
+
+  const start = renderedReviewCount;
+  const end = Math.min(start + REVIEW_BATCH_SIZE, currentFilteredReviews.length);
+  const chunk = currentFilteredReviews.slice(start, end);
+
+  reviewsGrid.insertAdjacentHTML(
+    "beforeend",
+    chunk.map((review, index) => cardTemplate(review, start + index)).join("")
+  );
+  renderedReviewCount = end;
+
+  installReviewBatchSentinel();
+}
+
+function installReviewBatchSentinel() {
+  reviewBatchObserver?.disconnect();
+  reviewsGrid.querySelector(".review-load-sentinel")?.remove();
+
+  if (renderedReviewCount >= currentFilteredReviews.length) return;
+
+  const sentinel = document.createElement("div");
+  sentinel.className = "review-load-sentinel";
+  sentinel.setAttribute("aria-hidden", "true");
+  reviewsGrid.appendChild(sentinel);
+
+  if (!("IntersectionObserver" in window)) {
+    scheduleIdle(() => {
+      sentinel.remove();
+      appendNextReviewBatch();
+    }, 350);
+    return;
+  }
+
+  reviewBatchObserver = new IntersectionObserver(entries => {
+    if (!entries.some(entry => entry.isIntersecting)) return;
+    reviewBatchObserver.disconnect();
+    sentinel.remove();
+    scheduleIdle(appendNextReviewBatch, 250);
+  }, { rootMargin: "900px 0px" });
+
+  reviewBatchObserver.observe(sentinel);
 }
 
 function bindCards(container = reviewsGrid) {
-  if (!container) return;
-  container.querySelectorAll(".review-card").forEach(card => {
-    const open = () => openReview(Number(card.dataset.review));
+  if (!container || container.dataset.cardDelegationBound === "1") return;
+  container.dataset.cardDelegationBound = "1";
 
-    card.addEventListener("click", event => {
-      if (event.target.closest("[data-favorite-toggle]")) return;
-      open();
-    });
-    card.addEventListener("keydown", event => {
-      if (event.target.closest?.("[data-favorite-toggle]")) return;
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        open();
-      }
-    });
-  });
-  container.querySelectorAll("[data-favorite-toggle]").forEach(button => {
-    button.addEventListener("click", event => {
+  container.addEventListener("click", event => {
+    const favorite = event.target.closest("[data-favorite-toggle]");
+    if (favorite) {
       event.preventDefault();
       event.stopPropagation();
-      toggleFavorite(Number(button.dataset.favoriteToggle), button);
-    });
+      toggleFavorite(Number(favorite.dataset.favoriteToggle), favorite);
+      return;
+    }
+
+    const card = event.target.closest(".review-card");
+    if (!card || !container.contains(card)) return;
+    openReview(Number(card.dataset.review));
+  });
+
+  container.addEventListener("keydown", event => {
+    if (event.target.closest?.("[data-favorite-toggle]")) return;
+    if (event.key !== "Enter" && event.key !== " ") return;
+    const card = event.target.closest?.(".review-card");
+    if (!card || !container.contains(card)) return;
+    event.preventDefault();
+    openReview(Number(card.dataset.review));
   });
 }
+
 
 function updateFeatured() {
   featuredProducts = reviews.filter(item => item.featured === true);
@@ -1226,8 +1307,10 @@ function renderFeaturedBanner() {
 
 function startFeaturedRotation() {
   if (featuredTimer) clearInterval(featuredTimer);
-  if (featuredProducts.length <= 1) return;
+  featuredTimer = null;
+  if (featuredProducts.length <= 1 || !featuredIsVisible || !isDocumentActive()) return;
   featuredTimer = setInterval(() => {
+    if (!featuredIsVisible || !isDocumentActive()) return;
     featuredIndex = (featuredIndex + 1) % featuredProducts.length;
     renderFeaturedBanner();
   }, 6500);
@@ -1253,6 +1336,48 @@ featuredPrev?.addEventListener("click", event => {
 }, { capture: true });
 
 featuredDots?.addEventListener("click", event => event.stopPropagation());
+
+/* Pausa trabajo visual cuando los componentes animados no están visibles. */
+if ("IntersectionObserver" in window) {
+  if (monthlyBanner) {
+    const featuredVisibilityObserver = new IntersectionObserver(entries => {
+      featuredIsVisible = Boolean(entries[0]?.isIntersecting);
+      startFeaturedRotation();
+    }, { rootMargin: "180px 0px" });
+    featuredVisibilityObserver.observe(monthlyBanner);
+  }
+
+  if (headerNewsTicker) {
+    const tickerVisibilityObserver = new IntersectionObserver(entries => {
+      newsTickerIsVisible = Boolean(entries[0]?.isIntersecting);
+      headerNewsTicker.classList.toggle("performance-paused", !newsTickerIsVisible || !isDocumentActive());
+    });
+    tickerVisibilityObserver.observe(headerNewsTicker);
+  }
+}
+
+document.addEventListener("visibilitychange", () => {
+  startFeaturedRotation();
+  if (headerNewsTicker) {
+    headerNewsTicker.classList.toggle("performance-paused", !newsTickerIsVisible || !isDocumentActive());
+  }
+});
+
+/* Durante el desplazamiento se desactivan transiciones hover costosas. */
+window.addEventListener("scroll", () => {
+  if (!scrollStateRaf) {
+    scrollStateRaf = requestAnimationFrame(() => {
+      document.body.classList.add("is-scrolling");
+      scrollStateRaf = 0;
+    });
+  }
+  clearTimeout(scrollStateTimer);
+  scrollStateTimer = setTimeout(() => {
+    document.body.classList.remove("is-scrolling");
+  }, 140);
+}, { passive: true });
+
+
 
 featuredBannerReadMore?.addEventListener("click", event => {
   event.stopPropagation();
@@ -1365,12 +1490,12 @@ function comparisonTextValue(product,key){if(key==="__connections")return arrayL
 function comparePickerItem(product){
   const favorite = favoriteProductIds.has(Number(product.id));
   return `<button type="button" class="compare-picker-item ${favorite?"is-favorite":""}" data-compare-pick="${product.id}">
-    <span class="compare-picker-thumb"><img src="${escapeHtml(comparisonImage(product))}" alt=""></span>
+    <span class="compare-picker-thumb"><img src="${escapeHtml(comparisonImage(product))}" alt="" loading="lazy" decoding="async"></span>
     <span><strong>${escapeHtml(product.name||"Producto")}</strong><small>${escapeHtml(`${product.brand||""} · ${product.category||""}`)}</small></span>
     ${favorite?`<i class="compare-favorite-mark" title="Favorito">${favoriteIcon(true)}</i>`:""}<b>›</b>
   </button>`;
 }
-function updateComparePickerButton(which,product){const button=which==="a"?comparePickerAButton:comparePickerBButton;if(!button)return;if(!product){button.innerHTML=`<span class="compare-picker-empty-icon">${which.toUpperCase()}</span><span><strong>${which==="a"?"Seleccionar producto":"Primero elige el producto A"}</strong><small>${which==="a"?"Busca por nombre, marca o modelo":"Misma categoría obligatoria"}</small></span><b>⌄</b>`;return;}button.innerHTML=`<span class="compare-picker-thumb"><img src="${escapeHtml(comparisonImage(product))}" alt=""></span><span><strong>${escapeHtml(product.name||"Producto")}</strong><small>${escapeHtml(`${product.brand||""} · ${product.category||""}`)}</small></span>${favoriteProductIds.has(Number(product.id))?`<i class="compare-trigger-favorite">${favoriteIcon(true)}</i>`:""}<b>⌄</b>`;}
+function updateComparePickerButton(which,product){const button=which==="a"?comparePickerAButton:comparePickerBButton;if(!button)return;if(!product){button.innerHTML=`<span class="compare-picker-empty-icon">${which.toUpperCase()}</span><span><strong>${which==="a"?"Seleccionar producto":"Primero elige el producto A"}</strong><small>${which==="a"?"Busca por nombre, marca o modelo":"Misma categoría obligatoria"}</small></span><b>⌄</b>`;return;}button.innerHTML=`<span class="compare-picker-thumb"><img src="${escapeHtml(comparisonImage(product))}" alt="" loading="lazy" decoding="async"></span><span><strong>${escapeHtml(product.name||"Producto")}</strong><small>${escapeHtml(`${product.brand||""} · ${product.category||""}`)}</small></span>${favoriteProductIds.has(Number(product.id))?`<i class="compare-trigger-favorite">${favoriteIcon(true)}</i>`:""}<b>⌄</b>`;}
 function closeCompareMenus(){if(comparePickerAMenu)comparePickerAMenu.hidden=true;if(comparePickerBMenu)comparePickerBMenu.hidden=true;comparePickerAButton?.setAttribute("aria-expanded","false");comparePickerBButton?.setAttribute("aria-expanded","false");}
 function bindComparePicker(root,select,which){root?.querySelectorAll("[data-compare-pick]").forEach(btn=>btn.addEventListener("click",()=>{select.value=btn.dataset.comparePick;closeCompareMenus();select.dispatchEvent(new Event("change",{bubbles:true}));const product=reviews.find(item=>String(item.id)===String(select.value));updateComparePickerButton(which,product);}));}
 function compareProductHaystack(product){return `${product?.name||""} ${product?.brand||""} ${product?.model||""} ${product?.category||""}`.toLowerCase();}
@@ -1395,7 +1520,7 @@ function refreshComparePickerMenus(){
 function populateComparisonSelectors(){if(!compareProductA||!compareProductB)return;const products=sortCompareProducts(reviews);compareProductA.innerHTML=`<option value="">Seleccionar producto</option>${products.map(item=>`<option value="${item.id}">${escapeHtml(`${item.category} · ${item.brand||""} ${item.name||""}`.trim())}</option>`).join("")}`;compareProductB.innerHTML=`<option value="">Primero elige el producto A</option>`;compareProductB.disabled=true;renderComparePickerMenu(comparePickerAMenu,products,compareProductA,"a","Elegir producto A",`${products.length} productos · favoritos primero`);updateComparePickerButton("a",null);updateComparePickerButton("b",null);if(comparePickerBButton)comparePickerBButton.disabled=true;}
 function refreshCompareProductB(){if(!compareProductA||!compareProductB)return;const selectedA=reviews.find(item=>String(item.id)===String(compareProductA.value||""));updateComparePickerButton("a",selectedA||null);if(!selectedA){compareProductB.innerHTML=`<option value="">Primero elige el producto A</option>`;compareProductB.disabled=true;if(comparePickerBButton)comparePickerBButton.disabled=true;if(comparePickerBMenu)comparePickerBMenu.innerHTML="";updateComparePickerButton("b",null);if(compareCategoryLock)compareCategoryLock.textContent="Solo se permiten comparaciones entre productos de la misma categoría.";renderComparison();return;}const same=sortCompareProducts(reviews.filter(item=>item.category===selectedA.category&&String(item.id)!==String(selectedA.id)));compareProductB.innerHTML=`<option value="">Seleccionar ${escapeHtml(selectedA.category)}</option>${same.map(item=>`<option value="${item.id}">${escapeHtml(`${item.brand||""} ${item.name||""}`.trim())}</option>`).join("")}`;compareProductB.disabled=same.length===0;if(comparePickerBButton)comparePickerBButton.disabled=same.length===0;renderComparePickerMenu(comparePickerBMenu,same,compareProductB,"b","Elegir rival",`Solo ${selectedA.category} · favoritos primero`);updateComparePickerButton("b",null);if(compareCategoryLock)compareCategoryLock.innerHTML=`<strong>${escapeHtml(selectedA.category)}</strong> bloqueado como categoría · ${same.length} alternativa${same.length===1?"":"s"}.`;renderComparison();}
 
-function comparisonProductCard(product,isWinner,side){return `<article class="compare-duel-product ${side} ${isWinner?"overall-winner":""}">${isWinner?`<span class="compare-winner-badge">DESTACADO</span>`:""}<div class="compare-duel-image"><img src="${escapeHtml(comparisonImage(product))}" alt="${escapeHtml(product.name||"Producto")}"></div><small>${escapeHtml(product.brand||"")}</small><h3>${escapeHtml(product.name||"")}</h3><button type="button" data-open-compare-product="${product.id}">Ver ficha ↗</button></article>`;}
+function comparisonProductCard(product,isWinner,side){return `<article class="compare-duel-product ${side} ${isWinner?"overall-winner":""}">${isWinner?`<span class="compare-winner-badge">DESTACADO</span>`:""}<div class="compare-duel-image"><img src="${escapeHtml(comparisonImage(product))}" alt="${escapeHtml(product.name||"Producto")}" loading="lazy" decoding="async"></div><small>${escapeHtml(product.brand||"")}</small><h3>${escapeHtml(product.name||"")}</h3><button type="button" data-open-compare-product="${product.id}">Ver ficha ↗</button></article>`;}
 
 function renderComparison(){if(!compareResult)return;const a=reviews.find(item=>String(item.id)===String(compareProductA?.value||""));const b=reviews.find(item=>String(item.id)===String(compareProductB?.value||""));updateComparePickerButton("a",a||null);updateComparePickerButton("b",b||null);if(!a||!b){compareResult.innerHTML=`<div class="compare-empty"><strong>Elige dos productos para empezar.</strong><span>Las estadísticas aparecerán aquí de forma automática.</span></div>`;return;}if(a.category!==b.category){compareResult.innerHTML=`<div class="compare-empty compare-error"><strong>Comparación no permitida.</strong><span>Solo puedes comparar productos de la misma categoría.</span></div>`;return;}
   const metrics=comparisonMetrics(a.category);let pointsA=0,pointsB=0,comparable=0;const lanes=[];for(const metric of metrics){const av=metric.value(a),bv=metric.value(b),winner=metricWinner(av,bv,metric.direction);if(Number.isFinite(av)&&Number.isFinite(bv)&&metric.weight>0){comparable++;if(winner==="a")pointsA+=metric.weight;else if(winner==="b")pointsB+=metric.weight;else{pointsA+=metric.weight/2;pointsB+=metric.weight/2;}}lanes.push(`<article class="compare-metric-lane"><div class="lane-side lane-a ${winner==="a"?"lane-winner":""}"><strong>${escapeHtml(formatMetricValue(metric,av))}</strong><div><i style="width:${Number.isFinite(av)?metricAdvantage(av,bv,metric.direction):0}%"></i></div></div><div class="lane-label"><span>${comparisonSpecIcon(metric.icon||"chip")}</span><strong>${escapeHtml(metric.label)}</strong><small>${winner==="tie"?"Empate":"Ventaja"}</small></div><div class="lane-side lane-b ${winner==="b"?"lane-winner":""}"><strong>${escapeHtml(formatMetricValue(metric,bv))}</strong><div><i style="width:${Number.isFinite(bv)?metricAdvantage(bv,av,metric.direction):0}%"></i></div></div></article>`);}
@@ -1551,7 +1676,7 @@ function productImageHtml(review) {
     <div class="product-media-viewer">
       <div class="product-media-main-frame">
         <div class="product-media-stage" id="productMediaStage">
-          <img class="product-detail-image" src="${escapeHtml(images[0])}" alt="${escapeHtml(review.name || "Producto")}">
+          <img class="product-detail-image" src="${escapeHtml(images[0])}" alt="${escapeHtml(review.name || "Producto")}" decoding="async">
         </div>
 
         ${sound ? `
@@ -1569,7 +1694,7 @@ function productImageHtml(review) {
           <div class="product-media-thumbs" aria-label="Fotos y video del producto">
           ${images.map((src,index) => `
             <button class="product-media-thumb ${index===0 ? "active" : ""}" type="button" data-media-image="${escapeHtml(src)}" aria-label="Imagen ${index+1}">
-              <img src="${escapeHtml(src)}" alt="">
+              <img src="${escapeHtml(src)}" alt="" loading="lazy" decoding="async">
             </button>`).join("")}
           ${video ? `
             <button class="product-media-thumb product-video-thumb" type="button" data-media-video="${escapeHtml(video)}" aria-label="Video del producto">
@@ -1624,7 +1749,7 @@ function bindProductMedia(review) {
     button.addEventListener("click", () => {
       const image = safeImageSrc(button.dataset.mediaImage || "");
       const video = safeVideoSrc(button.dataset.mediaVideo || "");
-      if (image) stage.innerHTML = `<img class="product-detail-image" src="${escapeHtml(image)}" alt="${escapeHtml(review.name || "Producto")}">`;
+      if (image) stage.innerHTML = `<img class="product-detail-image" src="${escapeHtml(image)}" alt="${escapeHtml(review.name || "Producto")}" decoding="async">`;
       else if (video) stage.innerHTML = videoStageHtml(video);
       thumbs.forEach(item => item.classList.toggle("active", item === button));
     });
@@ -1998,7 +2123,7 @@ function renderPurchaseLinks(product) {
           const customIcon = safeImageSrc(store.icon || "");
           return `
             <a class="purchase-card" href="${url}" target="_blank" rel="noopener noreferrer">
-              <div><span class="link-icon">${customIcon ? `<img class="store-custom-icon" src="${escapeHtml(customIcon)}" alt="">` : storeIcon()}</span><span class="link-copy"><span>TIENDA DE CONFIANZA</span><strong>${escapeHtml(store.name || "Tienda")}</strong></span></div><span>↗</span>
+              <div><span class="link-icon">${customIcon ? `<img class="store-custom-icon" src="${escapeHtml(customIcon)}" alt="" loading="lazy" decoding="async">` : storeIcon()}</span><span class="link-copy"><span>TIENDA DE CONFIANZA</span><strong>${escapeHtml(store.name || "Tienda")}</strong></span></div><span>↗</span>
             </a>`;
         }).join("")}
       </div>

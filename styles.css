@@ -39,7 +39,7 @@ html[data-theme="dark"] {
 }
 
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
 }
 
 body {
@@ -3997,4 +3997,133 @@ html[data-theme="light"] .product-card-footer{border-color:rgba(0,0,0,.1)!import
   .personal-page-head{grid-template-columns:1fr;padding:20px}
   .personal-page-actions{justify-content:flex-start}
   .site-announcement-bar{margin-top:4px!important}
+}
+
+
+/* ==========================================================
+   MADELESH V5.27 — PERFORMANCE / SCROLL FLUIDO
+   ========================================================== */
+
+/*
+  El encabezado sticky ya no usa blur en tiempo real.
+  El aspecto se conserva con un fondo sólido y una sombra más ligera.
+*/
+.topbar{
+  background:var(--surface)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:0 6px 18px rgba(0,0,0,.045)!important;
+  transform:translateZ(0);
+  backface-visibility:hidden;
+}
+
+/* Evita pintar tarjetas muy alejadas del viewport. */
+.review-card{
+  content-visibility:auto;
+  contain:layout paint style;
+  contain-intrinsic-size:420px;
+  isolation:isolate;
+}
+.review-visual,
+.review-image-frame{
+  contain:paint;
+}
+
+/* Menos trabajo de composición en el catálogo durante scroll. */
+.review-product-image{
+  filter:none!important;
+}
+.review-image-frame{
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.035),0 6px 16px rgba(0,0,0,.10)!important;
+}
+
+/* La primera pantalla conserva el diseño, pero evita sombras GPU costosas. */
+.monthly-banner-media img{
+  filter:none!important;
+}
+.monthly-banner-track{
+  contain:paint;
+}
+
+/* El ticker solo anima su transform; JS lo pausa al salir de pantalla. */
+.site-announcement-bar{
+  contain:layout paint;
+}
+.site-announcement-bar .header-news-track{
+  will-change:transform;
+  backface-visibility:hidden;
+  transform:translateZ(0);
+}
+.site-announcement-bar.performance-paused .header-news-track{
+  animation-play-state:paused!important;
+}
+
+/* El catálogo progresivo usa un sentinel invisible fuera del grid visual. */
+.review-load-sentinel{
+  grid-column:1/-1;
+  width:100%;
+  height:1px;
+  min-height:1px;
+  pointer-events:none;
+}
+
+/*
+  Cuando el usuario hace scroll, el puntero puede cruzar muchas tarjetas.
+  Evitamos activar hover/transiciones sucesivas durante ese momento.
+*/
+body.is-scrolling .review-card,
+body.is-scrolling .review-card *,
+body.is-scrolling .product-card-cta i{
+  transition:none!important;
+}
+body.is-scrolling .review-card:hover{
+  transform:none!important;
+  border-color:var(--line)!important;
+}
+body.is-scrolling .review-card:hover .product-card-cta i{
+  transform:none!important;
+}
+body.is-scrolling .review-card:hover .review-image-frame{
+  border-color:rgba(255,255,255,.12)!important;
+}
+
+/* Blurs secundarios: solo fondos sólidos para evitar repaints. */
+.profile-popover,
+.keyboard-sound-button,
+.product-favorite-button{
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+.profile-popover{
+  background:var(--surface)!important;
+}
+
+/* Secciones pesadas fuera de pantalla pueden omitir pintura. */
+.compare-section,
+.personal-page,
+footer{
+  content-visibility:auto;
+  contain-intrinsic-size:600px;
+}
+
+/* En móviles priorizamos aún más la fluidez. */
+@media(max-width:760px){
+  .topbar{
+    box-shadow:0 3px 10px rgba(0,0,0,.04)!important;
+  }
+  .review-card{
+    contain-intrinsic-size:360px;
+  }
+}
+
+/* Respeta usuarios que pidan menos animación y reduce trabajo gráfico. */
+@media(prefers-reduced-motion:reduce){
+  *,
+  *::before,
+  *::after{
+    scroll-behavior:auto!important;
+    animation-duration:.001ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.001ms!important;
+  }
 }
