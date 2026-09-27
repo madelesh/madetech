@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es" data-theme="light">
 <head>
-  <meta name="madelesh-build" content="5.27" />
+  <meta name="madelesh-build" content="5.28" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="MadeLesh — Reviews de mouse, teclados, IEM, headsets y DACs." />
@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link id="siteFavicon" rel="icon" type="image/png" href="" />
-  <link rel="stylesheet" href="styles.css?v=5.27" />
+  <link rel="stylesheet" href="styles.css?v=5.28" />
 </head>
 
 <body class="auth-pending">
@@ -87,6 +87,15 @@
             <div class="product-notification-list" id="productNotificationList"></div>
           </div>
         </div>
+
+        <a class="header-favorites-box" id="headerFavoritesBox" href="index.html?view=favoritos" aria-label="Abrir favoritos" title="Favoritos">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5z"></path>
+            <path d="m4 7.5 8 4.5 8-4.5M12 12v9"></path>
+            <path class="box-heart" d="M9.1 7.8a2 2 0 0 1 2.9 0 2 2 0 0 1 2.9 0 2.1 2.1 0 0 1 0 3L12 13.5l-2.9-2.7a2.1 2.1 0 0 1 0-3z"></path>
+          </svg>
+          <span class="header-favorites-count" id="headerFavoritesCount">0</span>
+        </a>
 
         <button class="theme-toggle" id="themeToggle" type="button" aria-label="Cambiar tema">
           <svg class="sun-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -214,7 +223,7 @@
               <button class="banner-read-more" id="featuredBannerReadMore" type="button" hidden>Leer más</button>
             </div>
             <div class="monthly-banner-actions">
-              <button id="featuredBannerButton" type="button">VER PRODUCTO</button>
+              <button id="featuredBannerButton" type="button"><span>Ver</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"></path><circle cx="12" cy="12" r="2.5"></circle></svg></button>
               <strong id="featuredBannerPrice"></strong>
             </div>
           </div>
@@ -379,19 +388,86 @@
             <span class="section-index">(04)</span>
             <span class="personal-page-kicker">TU BIBLIOTECA</span>
             <h2>Mis favoritos</h2>
-            <p>Todos los productos que guardaste aparecen aquí, fuera del menú del perfil.</p>
+            <p>Guarda tus productos, filtra tu colección y organízalos en Setups que puedes compartir.</p>
           </div>
           <div class="personal-page-actions">
             <span class="personal-count-pill"><b id="favoritesPageCount">0</b> guardados</span>
             <a href="index.html?view=home">Volver al catálogo →</a>
           </div>
         </div>
-        <div class="reviews-grid favorites-page-grid" id="favoritesPageGrid"></div>
-        <div class="personal-empty-state" id="favoritesPageEmpty" hidden>
-          <span class="personal-empty-icon"><svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg></span>
-          <strong>Aún no tienes favoritos</strong>
-          <span>Guarda productos con el icono de corazón y aparecerán en esta sección.</span>
-          <a href="index.html?view=home">Explorar productos</a>
+
+        <div class="favorites-toolbar">
+          <label class="favorites-search">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+            <input id="favoritesSearch" type="search" placeholder="Buscar en favoritos..." autocomplete="off">
+          </label>
+          <label class="favorites-filter">
+            <span>Categoría</span>
+            <select id="favoritesCategoryFilter"><option value="">Todas</option></select>
+          </label>
+          <label class="favorites-filter">
+            <span>Marca</span>
+            <select id="favoritesBrandFilter"><option value="">Todas</option></select>
+          </label>
+          <button class="favorites-clear" id="favoritesClearFilters" type="button">Limpiar</button>
+        </div>
+
+        <div class="favorites-layout">
+          <div class="favorites-products-column">
+            <div class="reviews-grid favorites-page-grid" id="favoritesPageGrid"></div>
+            <div class="personal-empty-state" id="favoritesPageEmpty" hidden>
+              <span class="personal-empty-icon"><svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg></span>
+              <strong>Aún no tienes favoritos</strong>
+              <span>Guarda productos con el icono de corazón y aparecerán en esta sección.</span>
+              <a href="index.html?view=home">Explorar productos</a>
+            </div>
+          </div>
+
+          <aside class="setups-panel">
+            <div class="setups-panel-head">
+              <div>
+                <span>SETUPS</span>
+                <strong>Mis configuraciones</strong>
+              </div>
+              <button id="createSetupButton" type="button">+ Crear Setup</button>
+            </div>
+            <p class="setups-help">Agrupa productos favoritos y comparte el enlace con otro usuario de MadeLesh.</p>
+            <div class="setups-list" id="setupsList"></div>
+          </aside>
+        </div>
+
+        <div class="setup-editor-modal" id="setupEditorModal" hidden>
+          <div class="setup-editor-card">
+            <button class="setup-editor-close" id="setupEditorClose" type="button" aria-label="Cerrar">×</button>
+            <span class="setup-editor-kicker">SETUP</span>
+            <h3 id="setupEditorTitle">Crear Setup</h3>
+            <label>NOMBRE<input id="setupNameInput" type="text" maxlength="60" placeholder="Ej. Mi setup competitivo"></label>
+            <div class="setup-product-selector" id="setupProductSelector"></div>
+            <div class="setup-editor-actions">
+              <button class="setup-secondary-button" id="setupCancelButton" type="button">Cancelar</button>
+              <button class="setup-primary-button" id="setupSaveButton" type="button">Guardar Setup</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section personal-page shared-setup-page" id="setupCompartido" data-view="setup">
+        <div class="personal-page-head">
+          <div>
+            <span class="section-index">(S)</span>
+            <span class="personal-page-kicker">SETUP COMPARTIDO</span>
+            <h2 id="sharedSetupTitle">Setup</h2>
+            <p id="sharedSetupMeta">Cargando configuración compartida...</p>
+          </div>
+          <div class="personal-page-actions">
+            <button class="setup-copy-button" id="copySharedSetupButton" type="button" hidden>Guardar copia</button>
+            <a href="index.html?view=favoritos">Mis favoritos →</a>
+          </div>
+        </div>
+        <div class="reviews-grid shared-setup-grid" id="sharedSetupGrid"></div>
+        <div class="personal-empty-state" id="sharedSetupEmpty" hidden>
+          <strong>No se pudo abrir este Setup</strong>
+          <span>El enlace pudo haber sido eliminado o ya no está disponible.</span>
         </div>
       </section>
 
@@ -508,7 +584,7 @@
       </div>
 
       <div class="footer-version-row">
-        <span id="siteVersionLabel">MadeLesh v5.27</span>
+        <span id="siteVersionLabel">MadeLesh v5.28</span>
         <button id="footerReleaseToggle" type="button" aria-expanded="false">
           Ver cambios
         </button>
@@ -524,7 +600,7 @@
     </article>
   </div>
 
-  <script type="module" src="app.js?v=5.27"></script>
+  <script type="module" src="app.js?v=5.28"></script>
   </div>
 </body>
 </html>

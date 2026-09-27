@@ -2052,3 +2052,61 @@ body.admin-authenticated #adminApp {
 .profile-avatar-upload-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0 6px}.profile-avatar-admin-hint{margin:0 0 14px;color:#74747c;font-size:.68rem}.profile-avatar-admin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:9px}.profile-avatar-admin-item{min-height:82px;padding:10px;display:grid;grid-template-columns:58px minmax(0,1fr) auto;gap:10px;align-items:center;border:1px solid rgba(255,255,255,.09);border-radius:13px;background:#151517}.profile-avatar-admin-item img{width:58px;height:58px;object-fit:cover;border-radius:50%;background:#0e0e10}.profile-avatar-admin-item>div{min-width:0;display:grid;gap:3px}.profile-avatar-admin-item strong{font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.profile-avatar-admin-item small{color:#74747c;font-size:.58rem}.profile-avatar-admin-item .danger{min-height:34px;padding:0 8px}
 .announcements-settings-form select{min-height:44px;padding:0 11px;border:1px solid rgba(255,255,255,.12);border-radius:10px;background:#171719;color:#fff}
 @media(max-width:650px){.profile-avatar-admin-item{grid-template-columns:52px 1fr}.profile-avatar-admin-item .danger{grid-column:1/-1}.profile-avatar-admin-item img{width:52px;height:52px}}
+
+
+/* ==========================================================
+   MADELESH V5.28 — IMAGEN PERSONALIZADA DEL BANNER
+   ========================================================== */
+.banner-image-admin-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(320px,.72fr);
+  gap:14px;
+  align-items:start;
+}
+.banner-image-admin-grid>div:first-child{
+  display:grid;
+  gap:10px;
+}
+.banner-image-admin-grid label{
+  display:grid;
+  gap:7px;
+  color:#85858d;
+  font-size:.62rem;
+  letter-spacing:.08em;
+}
+.banner-image-admin-grid input[type="text"]{
+  min-height:44px;
+  padding:0 12px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:10px;
+  background:#171719;
+  color:#fff;
+}
+.banner-image-actions{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+.banner-image-preview-admin{
+  aspect-ratio:900/420;
+  min-height:170px;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.11);
+  border-radius:14px;
+  background:
+    linear-gradient(135deg,rgba(238,255,0,.045),transparent 45%),
+    #0f0f11;
+  color:#6f6f77;
+  font-size:.68rem;
+}
+.banner-image-preview-admin img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+@media(max-width:900px){
+  .banner-image-admin-grid{grid-template-columns:1fr}
+}

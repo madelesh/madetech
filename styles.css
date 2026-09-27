@@ -4127,3 +4127,342 @@ footer{
     transition-duration:.001ms!important;
   }
 }
+
+
+/* ==========================================================
+   MADELESH V5.28 — BANNER / FAVORITOS / SETUPS / COMPARADOR
+   ========================================================== */
+
+/* Banner: más espacio vertical y título sin recortes. */
+.monthly-banner-track{
+  min-height:320px!important;
+  height:auto!important;
+  max-height:none!important;
+  grid-template-columns:minmax(0,1.2fr) minmax(360px,.8fr)!important;
+}
+.monthly-banner-copy{
+  min-height:320px!important;
+  height:auto!important;
+  padding:30px 36px!important;
+  overflow:visible!important;
+}
+.monthly-banner h2,
+#featuredBannerName{
+  max-width:760px!important;
+  max-height:none!important;
+  overflow:visible!important;
+  margin:7px 0 10px!important;
+  font-size:clamp(2.15rem,3.5vw,4rem)!important;
+  line-height:1.02!important;
+  letter-spacing:-.05em!important;
+  text-wrap:balance;
+}
+.monthly-banner-media{
+  min-height:320px!important;
+  height:auto!important;
+  padding:22px 46px 22px 16px!important;
+}
+.monthly-banner-media img{
+  width:100%!important;
+  max-width:620px!important;
+  height:272px!important;
+  object-fit:contain!important;
+}
+.monthly-banner-actions button{
+  display:inline-flex!important;
+  align-items:center;
+  gap:8px;
+  padding:0 17px!important;
+}
+.monthly-banner-actions button svg{
+  width:18px;height:18px;
+  fill:none;stroke:currentColor;stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+
+/* Acceso rápido a Favoritos en forma de caja. */
+.header-favorites-box{
+  position:relative;
+  width:42px;height:42px;
+  display:grid;place-items:center;
+  border:1px solid var(--line);
+  border-radius:12px;
+  color:var(--text);
+  background:transparent;
+  text-decoration:none;
+  transition:transform .2s ease,border-color .2s ease,background .2s ease;
+}
+.header-favorites-box:hover{
+  transform:translateY(-1px);
+  border-color:var(--accent);
+  background:color-mix(in srgb,var(--accent) 6%,transparent);
+}
+.header-favorites-box>svg{
+  width:20px;height:20px;
+  fill:none;stroke:currentColor;stroke-width:1.55;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+.header-favorites-box .box-heart{stroke:var(--accent);fill:none}
+.header-favorites-count{
+  position:absolute;
+  top:-6px;right:-6px;
+  min-width:19px;height:19px;padding:0 5px;
+  display:grid;place-items:center;
+  border:2px solid var(--bg);
+  border-radius:999px;
+  background:var(--accent);
+  color:#090909;
+  font-size:.56rem;font-weight:950;
+}
+.header-favorites-count[hidden]{display:none!important}
+.header-favorites-box.receive-favorite{
+  animation:libraryReceive .55s cubic-bezier(.2,.85,.25,1);
+}
+@keyframes libraryReceive{
+  0%,100%{transform:scale(1)}
+  40%{transform:scale(1.16) rotate(-5deg);box-shadow:0 0 0 8px color-mix(in srgb,var(--accent) 12%,transparent)}
+}
+
+/* Favorito: pop + vuelo hacia la caja del header. */
+.product-favorite-button.favorite-pop,
+.favorite-detail-button.favorite-pop{
+  animation:favoritePop .42s cubic-bezier(.2,.9,.25,1.3);
+}
+.product-favorite-button.favorite-remove-pop{
+  animation:favoriteRemove .32s ease;
+}
+@keyframes favoritePop{
+  0%{transform:scale(1)}
+  45%{transform:scale(1.35) rotate(-8deg)}
+  100%{transform:scale(1)}
+}
+@keyframes favoriteRemove{
+  0%{transform:scale(1)}
+  50%{transform:scale(.78)}
+  100%{transform:scale(1)}
+}
+.favorite-flyer{
+  position:fixed;
+  z-index:9999;
+  width:24px;height:24px;
+  display:grid;place-items:center;
+  pointer-events:none;
+  color:var(--accent);
+  filter:drop-shadow(0 5px 14px rgba(0,0,0,.35));
+}
+.favorite-flyer svg{width:24px;height:24px;fill:currentColor;stroke:currentColor;stroke-width:1.6}
+
+/* Tarjeta: CTA corto "VER" con icono ojo. */
+.product-card-cta{
+  display:inline-flex!important;
+  align-items:center;
+  gap:7px;
+}
+.product-card-eye{
+  width:24px;height:24px;
+  display:grid;place-items:center;
+  border:1px solid var(--line);
+  border-radius:50%;
+  transition:transform .18s ease,border-color .18s ease,background .18s ease;
+}
+.product-card-eye svg{
+  width:14px;height:14px;
+  fill:none;stroke:currentColor;stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+.review-card:hover .product-card-eye{
+  transform:scale(1.08);
+  border-color:var(--accent);
+  background:color-mix(in srgb,var(--accent) 8%,transparent);
+}
+
+/* Favoritos: filtros + Setups. */
+.favorites-toolbar{
+  display:grid;
+  grid-template-columns:minmax(260px,1fr) minmax(150px,.3fr) minmax(150px,.3fr) auto;
+  gap:10px;
+  margin-bottom:18px;
+}
+.favorites-search,
+.favorites-filter{
+  min-height:48px;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:var(--panel);
+}
+.favorites-search{padding:0 14px}
+.favorites-search svg{width:18px;height:18px;fill:none;stroke:var(--muted);stroke-width:1.8}
+.favorites-search input{
+  width:100%;border:0;outline:0;background:transparent;color:var(--text);font:inherit
+}
+.favorites-filter{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  padding:0 11px;
+}
+.favorites-filter>span{
+  color:var(--muted);font-size:.58rem;text-transform:uppercase;letter-spacing:.08em
+}
+.favorites-filter select{
+  min-width:0;border:0;outline:0;background:transparent;color:var(--text);font:inherit
+}
+.favorites-clear{
+  min-width:88px;border:1px solid var(--line);border-radius:14px;background:transparent;color:var(--text);cursor:pointer
+}
+.favorites-layout{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 320px;
+  gap:18px;
+  align-items:start;
+}
+.favorites-products-column{min-width:0}
+.setups-panel{
+  position:sticky;
+  top:92px;
+  padding:16px;
+  border:1px solid var(--line);
+  border-radius:20px;
+  background:var(--panel);
+}
+.setups-panel-head{
+  display:flex;align-items:center;justify-content:space-between;gap:10px
+}
+.setups-panel-head>div{display:grid;gap:2px}
+.setups-panel-head span{color:var(--accent);font-size:.55rem;font-weight:900;letter-spacing:.11em}
+.setups-panel-head strong{font-size:.9rem}
+.setups-panel-head button{
+  min-height:34px;padding:0 10px;border:0;border-radius:10px;background:var(--accent);color:#080808;font-size:.65rem;font-weight:900;cursor:pointer
+}
+.setups-help{margin:9px 0 13px;color:var(--muted);font-size:.66rem;line-height:1.45}
+.setups-list{display:grid;gap:9px}
+.setups-empty{
+  padding:18px 10px;display:grid;gap:4px;text-align:center;border:1px dashed var(--line);border-radius:13px;color:var(--muted)
+}
+.setups-empty strong{color:var(--text);font-size:.74rem}.setups-empty span{font-size:.64rem}
+.setup-card{
+  padding:10px;
+  display:grid;
+  grid-template-columns:62px minmax(0,1fr);
+  gap:10px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:color-mix(in srgb,var(--panel) 94%,var(--accent) 2%);
+}
+.setup-card-thumbs{
+  width:62px;height:62px;
+  display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;
+  gap:2px;overflow:hidden;border-radius:10px;background:rgba(127,127,127,.08)
+}
+.setup-card-thumbs img{width:100%;height:100%;object-fit:cover}
+.setup-card-thumbs>span{grid-column:1/-1;grid-row:1/-1;display:grid;place-items:center;color:var(--muted);font-size:.54rem}
+.setup-card-copy{display:grid;align-content:center;gap:2px;min-width:0}
+.setup-card-copy strong{font-size:.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.setup-card-copy span{color:var(--muted);font-size:.6rem}
+.setup-card-actions{
+  grid-column:1/-1;
+  display:flex;gap:5px;flex-wrap:wrap
+}
+.setup-card-actions button{
+  flex:1;min-height:30px;padding:0 7px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--text);font-size:.58rem;cursor:pointer
+}
+.setup-card-actions button:hover{border-color:var(--accent)}
+.setup-card-actions button.danger:hover{border-color:#ff6464;color:#ff7777}
+
+.setup-editor-modal{
+  position:fixed;inset:0;z-index:110;
+  display:grid;place-items:center;padding:18px;
+  background:rgba(0,0,0,.72)
+}
+.setup-editor-modal[hidden]{display:none!important}
+.setup-editor-card{
+  position:relative;
+  width:min(620px,100%);
+  max-height:min(760px,90vh);
+  overflow:auto;
+  padding:22px;
+  border:1px solid var(--line);
+  border-radius:22px;
+  background:var(--panel);
+  box-shadow:0 28px 90px rgba(0,0,0,.45)
+}
+.setup-editor-close{
+  position:absolute;top:12px;right:12px;width:34px;height:34px;border:1px solid var(--line);border-radius:50%;background:transparent;color:var(--text);font-size:1.1rem;cursor:pointer
+}
+.setup-editor-kicker{color:var(--accent);font-size:.58rem;font-weight:900;letter-spacing:.12em}
+.setup-editor-card h3{margin:6px 0 18px;font-size:1.45rem}
+.setup-editor-card>label{display:grid;gap:6px;color:var(--muted);font-size:.6rem;letter-spacing:.08em}
+.setup-editor-card>label input{min-height:44px;padding:0 11px;border:1px solid var(--line);border-radius:11px;background:var(--bg);color:var(--text)}
+.setup-product-selector{margin-top:13px;display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.setup-product-choice{
+  min-width:0;padding:8px;display:grid;grid-template-columns:auto 46px 1fr;gap:8px;align-items:center;border:1px solid var(--line);border-radius:12px;cursor:pointer
+}
+.setup-product-choice:has(input:checked){border-color:var(--accent);background:color-mix(in srgb,var(--accent) 5%,transparent)}
+.setup-product-choice input{accent-color:var(--accent)}
+.setup-product-choice img{width:46px;height:46px;object-fit:contain;border-radius:8px;background:rgba(127,127,127,.05)}
+.setup-product-choice>span{min-width:0;display:grid;gap:2px}
+.setup-product-choice strong{font-size:.69rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.setup-product-choice small{font-size:.57rem;color:var(--muted)}
+.setup-editor-actions{margin-top:18px;display:flex;justify-content:flex-end;gap:8px}
+.setup-editor-actions button,.setup-copy-button{
+  min-height:38px;padding:0 14px;border-radius:10px;font-weight:800;cursor:pointer
+}
+.setup-secondary-button{border:1px solid var(--line);background:transparent;color:var(--text)}
+.setup-primary-button,.setup-copy-button{border:0;background:var(--accent);color:#080808}
+
+.shared-setup-grid{margin-top:8px}
+
+/* Comparación: aro SVG hueco con grosor moderado y puntas redondeadas. */
+.duel-orb{display:none!important}
+.duel-orb-ring{
+  position:relative;
+  width:158px;height:158px;
+  margin:13px 0 6px;
+  display:grid;place-items:center
+}
+.duel-orb-ring svg{
+  width:100%;height:100%;
+  transform:rotate(-90deg);
+  overflow:visible
+}
+.duel-ring-track,.duel-ring-a,.duel-ring-b{
+  fill:none;
+  stroke-width:8;
+  stroke-linecap:round
+}
+.duel-ring-track{stroke:color-mix(in srgb,var(--text) 12%,transparent)}
+.duel-ring-a{stroke:var(--accent)}
+.duel-ring-b{stroke:color-mix(in srgb,var(--text) 28%,transparent)}
+.duel-ring-dot{
+  position:absolute;width:5px;height:5px;border-radius:50%;background:var(--accent)
+}
+.duel-ring-score{
+  display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:.76rem;color:var(--muted)
+}
+.duel-ring-score strong:first-child{color:var(--accent)}
+.duel-ring-score strong{font-size:.9rem}
+
+/* Light mode */
+html[data-theme="light"] .header-favorites-count{border-color:#f4f4f0}
+html[data-theme="light"] .setups-panel,
+html[data-theme="light"] .setup-editor-card{background:#fff}
+html[data-theme="light"] .setup-editor-modal{background:rgba(25,25,25,.5)}
+
+@media(max-width:1000px){
+  .monthly-banner-track{grid-template-columns:1fr .7fr!important}
+  .favorites-layout{grid-template-columns:1fr}
+  .setups-panel{position:static}
+}
+@media(max-width:760px){
+  .monthly-banner-track{grid-template-columns:1fr!important}
+  .monthly-banner-copy{min-height:auto!important;padding:22px 20px 8px!important}
+  .monthly-banner-media{min-height:190px!important;padding:5px 20px 28px!important}
+  .monthly-banner-media img{height:175px!important}
+  .favorites-toolbar{grid-template-columns:1fr 1fr}
+  .favorites-search{grid-column:1/-1}
+  .favorites-clear{min-height:44px}
+  .setup-product-selector{grid-template-columns:1fr}
+  .header-favorites-box{width:40px;height:40px}
+}

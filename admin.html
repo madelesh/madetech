@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es" data-theme="dark">
 <head>
-  <meta name="madelesh-admin-build" content="5.25" />
+  <meta name="madelesh-admin-build" content="5.28" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0b0b0c" />
@@ -10,8 +10,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link id="siteFavicon" rel="icon" type="image/png" href="" />
-  <link rel="stylesheet" href="styles.css?v=5.25" />
-  <link rel="stylesheet" href="admin.css?v=5.25" />
+  <link rel="stylesheet" href="styles.css?v=5.28" />
+  <link rel="stylesheet" href="admin.css?v=5.28" />
 </head>
 <body class="admin-body">
 
@@ -49,7 +49,7 @@
 
       <p class="admin-error" id="adminLoginError" hidden></p>
       <a class="back-site" href="index.html">← Volver a MadeLesh</a>
-      <small class="admin-build-marker">build 5.25</small>
+      <small class="admin-build-marker">build 5.28</small>
     </div>
   </section>
 
@@ -111,7 +111,7 @@
       <div class="admin-sidebar-footer">
         <span id="adminIdentity"></span>
         <button id="adminLogout">Cerrar sesión</button>
-        <small class="admin-build-marker">build 5.25</small>
+        <small class="admin-build-marker">build 5.28</small>
       </div>
     </aside>
 
@@ -399,6 +399,33 @@
                     <option value="true">Sí</option>
                   </select>
                 </label>
+              </div>
+              <div class="visual-field-block banner-image-admin">
+                <div class="visual-field-heading">
+                  <div>
+                    <span class="visual-field-label">IMAGEN PERSONALIZADA DEL BANNER</span>
+                    <small>Opcional. Si este producto es destacado, esta imagen reemplaza únicamente la imagen visual del lado derecho; el nombre y la descripción seguirán visibles.</small>
+                  </div>
+                </div>
+                <div class="banner-image-admin-grid">
+                  <div>
+                    <label>
+                      URL DE IMAGEN
+                      <input id="productBannerImageUrl" type="text" placeholder="https://... o sube una imagen desde tu PC" />
+                    </label>
+                    <div class="banner-image-actions">
+                      <label class="product-image-file-button">
+                        <input id="productBannerImageFile" type="file" accept="image/png,image/jpeg,image/webp" />
+                        <span>SUBIR DESDE PC</span>
+                      </label>
+                      <button class="ghost-btn" id="clearProductBannerImage" type="button">Quitar</button>
+                    </div>
+                    <small class="image-size-hint"><strong>Medida recomendada:</strong> 900 × 420 px. El banner completo ocupa aproximadamente 1920 × 420 px en escritorio.</small>
+                  </div>
+                  <div class="banner-image-preview-admin" id="productBannerImagePreview">
+                    <span>Vista previa 900 × 420</span>
+                  </div>
+                </div>
               </div>
               <div class="visual-field-block product-downloads-admin">
                 <div class="visual-field-heading">
@@ -884,7 +911,7 @@
   </div>
 
   <script type="module">
-console.info("MadeLesh Admin build 5.25");
+console.info("MadeLesh Admin build 5.28");
 import { API_BASE } from "./config.js";
 
 const adminLogin = document.getElementById("adminLogin");
@@ -943,6 +970,10 @@ const productGalleryUrl = document.getElementById("productGalleryUrl");
 const addProductGalleryUrl = document.getElementById("addProductGalleryUrl");
 const productGalleryList = document.getElementById("productGalleryList");
 const productVideoUrl = document.getElementById("productVideoUrl");
+const productBannerImageUrl = document.getElementById("productBannerImageUrl");
+const productBannerImageFile = document.getElementById("productBannerImageFile");
+const clearProductBannerImage = document.getElementById("clearProductBannerImage");
+const productBannerImagePreview = document.getElementById("productBannerImagePreview");
 const keyboardSoundBlock = document.getElementById("keyboardSoundBlock");
 const keyboardSoundUrl = document.getElementById("keyboardSoundUrl");
 const keyboardSoundFile = document.getElementById("keyboardSoundFile");
@@ -1065,20 +1096,22 @@ let brandingFaviconDarkDataUrl = "";
 let contactIconDataUrls = { discord:"", steam:"", x:"", youtube:"", tiktok:"", email:"" };
 let colorImagesByHex = {};
 const ADMIN_BUILD_RELEASE = {
-  version: "5.25",
-  title: "Favoritos, avatares y comparador mejorado",
-  date: "2026-09-24",
+  version: "5.28",
+  title: "Favoritos, Setups y banner personalizado",
+  date: "2026-09-27",
   changes: {
     added: [
-      "Roles personalizables con permisos individuales.",
-      "Asignación de roles a usuarios registrados y registro de auditoría.",
-      "Editor para recortar audio de teclados desde audio o video.",
-      "Comparador con selección visual de productos."
+      "Setups personales creados desde favoritos y compartibles por enlace.",
+      "Acceso directo a favoritos desde una caja en el encabezado.",
+      "Imagen personalizada para cada producto destacado del banner."
     ],
-    removed: [],
+    removed: [
+      "Texto largo «Ver producto» en tarjetas y banner."
+    ],
     fixed: [
-      "Animación del perfil invertida: avatar a la izquierda y nombre a la derecha.",
-      "Comparativas rediseñadas con resultado visual más dinámico."
+      "Título del producto destacado sin recortes.",
+      "Animación visual al guardar favoritos.",
+      "Aro de comparación hueco con trazos redondeados."
     ]
   }
 };
@@ -1530,6 +1563,38 @@ clearProductImage?.addEventListener("click", () => {
   if (productImageFile) productImageFile.value = "";
   setProductImages([]);
   renderMainImagePreview();
+});
+
+function renderProductBannerImagePreview() {
+  if (!productBannerImagePreview) return;
+  const src = safeImageSource(productBannerImageUrl?.value || "");
+  productBannerImagePreview.innerHTML = src
+    ? `<img src="${escapeAttr(src)}" alt="Vista previa del banner">`
+    : `<span>Vista previa 900 × 420</span>`;
+}
+
+productBannerImageUrl?.addEventListener("input", renderProductBannerImagePreview);
+
+productBannerImageFile?.addEventListener("change", async () => {
+  try {
+    const dataUrl = await imageFileToWebpDataUrl(productBannerImageFile.files?.[0], {
+      maxSize: 1400,
+      quality: 0.82,
+      maxChars: 760000
+    });
+    productBannerImageUrl.value = dataUrl;
+    renderProductBannerImagePreview();
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    if (productBannerImageFile) productBannerImageFile.value = "";
+  }
+});
+
+clearProductBannerImage?.addEventListener("click", () => {
+  if (productBannerImageUrl) productBannerImageUrl.value = "";
+  if (productBannerImageFile) productBannerImageFile.value = "";
+  renderProductBannerImagePreview();
 });
 
 productGalleryFiles?.addEventListener("change", async () => {
@@ -2178,6 +2243,8 @@ function applyImportedWebProduct(product) {
   setConnections(Array.isArray(product.connections) ? product.connections : []);
   setProductImages(Array.isArray(product.images) && product.images.length ? product.images : (product.imageUrl ? [product.imageUrl] : []));
   if (productVideoUrl) productVideoUrl.value = product.specs?.productVideo || "";
+  if (productBannerImageUrl) productBannerImageUrl.value = product.specs?.bannerImageUrl || "";
+  renderProductBannerImagePreview();
   if (keyboardSoundUrl) keyboardSoundUrl.value = product.specs?.keyboardSound || "";
   fillProPlayers(product.specs?.proPlayers || []);
   if (productDriverUrl) productDriverUrl.value = product.specs?.driverDownloadUrl || "";
@@ -3073,6 +3140,9 @@ function resetProductForm() {
   setConnections([]);
   setProductImages([]);
   if (productVideoUrl) productVideoUrl.value = "";
+  if (productBannerImageUrl) productBannerImageUrl.value = "";
+  if (productBannerImageFile) productBannerImageFile.value = "";
+  renderProductBannerImagePreview();
   if (keyboardSoundUrl) keyboardSoundUrl.value = "";
   fillProPlayers([]);
   if (productDriverUrl) productDriverUrl.value = "";
@@ -3121,6 +3191,7 @@ productForm.addEventListener("submit", async event => {
 
   payload.specs.colorImages = getColorImages();
   payload.specs.productVideo = productVideoUrl?.value.trim() || "";
+  payload.specs.bannerImageUrl = productBannerImageUrl?.value.trim() || "";
   payload.specs.keyboardSound = productCategory.value === "Teclados" ? (keyboardSoundUrl?.value.trim() || "") : "";
   payload.specs.proPlayers = parseProPlayers();
   payload.specs.driverDownloadUrl = productDriverUrl?.value.trim() || "";
@@ -3613,6 +3684,7 @@ renderConnectionPicker();
 renderProductGalleryList();
 renderKeyboardSoundVisibility();
 renderKeyboardSoundPreview();
+renderProductBannerImagePreview();
 renderMainImagePreview();
 renderProductLivePreview();
 restoreAdminSession();

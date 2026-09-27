@@ -22,6 +22,26 @@ const profileFavoritesCount = document.getElementById("profileFavoritesCount");
 const favoritesPageGrid = document.getElementById("favoritesPageGrid");
 const favoritesPageEmpty = document.getElementById("favoritesPageEmpty");
 const favoritesPageCount = document.getElementById("favoritesPageCount");
+const headerFavoritesBox = document.getElementById("headerFavoritesBox");
+const headerFavoritesCount = document.getElementById("headerFavoritesCount");
+const favoritesSearch = document.getElementById("favoritesSearch");
+const favoritesCategoryFilter = document.getElementById("favoritesCategoryFilter");
+const favoritesBrandFilter = document.getElementById("favoritesBrandFilter");
+const favoritesClearFilters = document.getElementById("favoritesClearFilters");
+const setupsList = document.getElementById("setupsList");
+const createSetupButton = document.getElementById("createSetupButton");
+const setupEditorModal = document.getElementById("setupEditorModal");
+const setupEditorClose = document.getElementById("setupEditorClose");
+const setupCancelButton = document.getElementById("setupCancelButton");
+const setupSaveButton = document.getElementById("setupSaveButton");
+const setupEditorTitle = document.getElementById("setupEditorTitle");
+const setupNameInput = document.getElementById("setupNameInput");
+const setupProductSelector = document.getElementById("setupProductSelector");
+const sharedSetupTitle = document.getElementById("sharedSetupTitle");
+const sharedSetupMeta = document.getElementById("sharedSetupMeta");
+const sharedSetupGrid = document.getElementById("sharedSetupGrid");
+const sharedSetupEmpty = document.getElementById("sharedSetupEmpty");
+const copySharedSetupButton = document.getElementById("copySharedSetupButton");
 const profileAvatarButton = document.getElementById("profileAvatarButton");
 const profileAvatarGrid = document.getElementById("profileAvatarGrid");
 const accountSettingsAvatar = document.getElementById("accountSettingsAvatar");
@@ -104,26 +124,28 @@ let favoriteProductIds = new Set();
 let availableProfileAvatars = [];
 let currentAvatarId = null;
 let currentAvatarUrl = "";
+let userSetups = [];
+let editingSetupId = null;
+let currentSharedSetupToken = "";
 let publicAppVersion = "5.18";
 let publicRelease = { version: "5.18", title: "", date: "", notes: [] };
 const CURRENT_BUILD_RELEASE = {
-  version: "5.27",
-  title: "Optimización de rendimiento y fluidez",
-  date: "2026-09-26",
+  version: "5.28",
+  title: "Favoritos, Setups y banner personalizado",
+  date: "2026-09-27",
   changes: {
     added: [
-      "Carga diferida de imágenes fuera de pantalla.",
-      "Renderizado progresivo del catálogo para catálogos grandes.",
-      "Pausa automática de animaciones cuando están fuera de pantalla."
+      "Setups personales creados a partir de favoritos y compartibles por enlace.",
+      "Acceso directo a favoritos desde una caja en el encabezado.",
+      "Imagen personalizada para cada producto destacado del banner."
     ],
     removed: [
-      "Desenfoques y sombras costosas durante el desplazamiento.",
-      "Animaciones hover mientras el usuario está haciendo scroll."
+      "Texto largo «Ver producto» de las tarjetas y el banner."
     ],
     fixed: [
-      "Fluidez del desplazamiento en escritorio y móvil.",
-      "Uso de memoria y trabajo de renderizado del catálogo.",
-      "Eventos de las tarjetas consolidados mediante delegación."
+      "Título del producto destacado sin recortes.",
+      "Animación visual al guardar un favorito.",
+      "Aro de comparación con trazo redondeado como referencia visual."
     ]
   }
 };
@@ -673,20 +695,124 @@ function renderProfileAvatarChoices() {
   });
 }
 
+function populateFavoritesFilters() {
+  if (!favoritesCategoryFilter || !favoritesBrandFilter) return;
+  const favorites = reviews.filter(product => favoriteProductIds.has(Number(product.id)));
+  const categories = [...new Set(favorites.map(product => String(product.category || "").trim()).filter(Boolean))]
+    .sort((a,b) => a.localeCompare(b, "es"));
+  const brands = [...new Set(favorites.map(product => String(product.brand || "").trim()).filter(Boolean))]
+    .sort((a,b) => a.localeCompare(b, "es"));
+
+  const currentCategory = favoritesCategoryFilter.value;
+  const currentBrand = favoritesBrandFilter.value;
+  favoritesCategoryFilter.innerHTML = `<option value="">Todas</option>${categories.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
+  favoritesBrandFilter.innerHTML = `<option value="">Todas</option>${brands.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
+  if (categories.includes(currentCategory)) favoritesCategoryFilter.value = currentCategory;
+  if (brands.includes(currentBrand)) favoritesBrandFilter.value = currentBrand;
+}
+
+function filteredFavoriteProducts() {
+  const query = String(favoritesSearch?.value || "").trim().toLowerCase();
+  const category = String(favoritesCategoryFilter?.value || "");
+  const brand = String(favoritesBrandFilter?.value || "");
+
+  return reviews.filter(product => {
+    if (!favoriteProductIds.has(Number(product.id))) return false;
+    if (category && product.category !== category) return false;
+    if (brand && product.brand !== brand) return false;
+    if (query) {
+      const haystack = [product.name, product.brand, product.model, product.category]
+        .map(value => String(value || "").toLowerCase()).join(" ");
+      if (!haystack.includes(query)) return false;
+    }
+    return true;
+  });
+}
+
 function renderProfileFavorites() {
   if (profileFavoritesCount) profileFavoritesCount.textContent = String(favoriteProductIds.size);
   if (favoritesPageCount) favoritesPageCount.textContent = String(favoriteProductIds.size);
+  if (headerFavoritesCount) {
+    headerFavoritesCount.textContent = String(favoriteProductIds.size);
+    headerFavoritesCount.hidden = favoriteProductIds.size === 0;
+  }
+
+  populateFavoritesFilters();
   if (!favoritesPageGrid) return;
 
-  const favorites = reviews.filter(product => favoriteProductIds.has(Number(product.id)));
-  favoritesPageGrid.innerHTML = favorites.map(cardTemplate).join("");
-  if (favoritesPageEmpty) favoritesPageEmpty.hidden = favorites.length > 0;
+  const favorites = filteredFavoriteProducts();
+  favoritesPageGrid.innerHTML = favorites.map((product, index) => cardTemplate(product, index)).join("");
+  if (favoritesPageEmpty) {
+    const emptyTitle = favoritesPageEmpty.querySelector("strong");
+    const emptyCopy = favoritesPageEmpty.querySelector("span:not(.personal-empty-icon)");
+    const emptyLink = favoritesPageEmpty.querySelector("a");
+    if (favoriteProductIds.size === 0) {
+      favoritesPageEmpty.hidden = false;
+      if (emptyTitle) emptyTitle.textContent = "Aún no tienes favoritos";
+      if (emptyCopy) emptyCopy.textContent = "Guarda productos con el icono de corazón y aparecerán en esta sección.";
+      if (emptyLink) emptyLink.hidden = false;
+    } else if (favorites.length === 0) {
+      favoritesPageEmpty.hidden = false;
+      if (emptyTitle) emptyTitle.textContent = "No hay coincidencias";
+      if (emptyCopy) emptyCopy.textContent = "Prueba con otros filtros o limpia la búsqueda.";
+      if (emptyLink) emptyLink.hidden = true;
+    } else {
+      favoritesPageEmpty.hidden = true;
+    }
+  }
   favoritesPageGrid.hidden = favorites.length === 0;
   bindCards(favoritesPageGrid);
+  renderSetupProductSelector();
 }
+
+favoritesSearch?.addEventListener("input", renderProfileFavorites);
+favoritesCategoryFilter?.addEventListener("change", renderProfileFavorites);
+favoritesBrandFilter?.addEventListener("change", renderProfileFavorites);
+favoritesClearFilters?.addEventListener("click", () => {
+  if (favoritesSearch) favoritesSearch.value = "";
+  if (favoritesCategoryFilter) favoritesCategoryFilter.value = "";
+  if (favoritesBrandFilter) favoritesBrandFilter.value = "";
+  renderProfileFavorites();
+});
+
 
 function favoriteIcon(active = false) {
   return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>`;
+}
+
+function animateFavoriteToLibrary(button) {
+  if (!button || !headerFavoritesBox || typeof button.getBoundingClientRect !== "function") return;
+
+  button.classList.remove("favorite-pop");
+  void button.offsetWidth;
+  button.classList.add("favorite-pop");
+
+  const start = button.getBoundingClientRect();
+  const end = headerFavoritesBox.getBoundingClientRect();
+  if (!start.width || !end.width) return;
+
+  const flyer = document.createElement("span");
+  flyer.className = "favorite-flyer";
+  flyer.innerHTML = favoriteIcon(true);
+  flyer.style.left = `${start.left + start.width / 2 - 12}px`;
+  flyer.style.top = `${start.top + start.height / 2 - 12}px`;
+  document.body.appendChild(flyer);
+
+  const dx = (end.left + end.width / 2) - (start.left + start.width / 2);
+  const dy = (end.top + end.height / 2) - (start.top + start.height / 2);
+
+  const animation = flyer.animate([
+    { transform: "translate3d(0,0,0) scale(1)", opacity: 1 },
+    { transform: `translate3d(${dx * .55}px,${dy * .35 - 28}px,0) scale(.85)`, opacity: .95, offset: .55 },
+    { transform: `translate3d(${dx}px,${dy}px,0) scale(.35)`, opacity: .1 }
+  ], { duration: 620, easing: "cubic-bezier(.2,.8,.2,1)" });
+
+  animation.finished.finally(() => {
+    flyer.remove();
+    headerFavoritesBox.classList.remove("receive-favorite");
+    void headerFavoritesBox.offsetWidth;
+    headerFavoritesBox.classList.add("receive-favorite");
+  });
 }
 
 async function toggleFavorite(productId, button = null) {
@@ -694,7 +820,13 @@ async function toggleFavorite(productId, button = null) {
   if (!id) return;
   const wasFavorite = favoriteProductIds.has(id);
   const next = !wasFavorite;
-  if (next) favoriteProductIds.add(id); else favoriteProductIds.delete(id);
+  if (next) {
+    favoriteProductIds.add(id);
+    animateFavoriteToLibrary(button);
+  } else {
+    favoriteProductIds.delete(id);
+    button?.classList.add("favorite-remove-pop");
+  }
   updateFavoriteUI(id);
   try {
     await api(`/favorites/${id}`, { method: next ? "PUT" : "DELETE" });
@@ -704,6 +836,7 @@ async function toggleFavorite(productId, button = null) {
     alert(error.message || "No se pudo actualizar favoritos.");
   }
 }
+
 
 function updateFavoriteUI(productId = 0) {
   renderProfileFavorites();
@@ -726,6 +859,214 @@ function updateFavoriteUI(productId = 0) {
 profileFavoritesButton?.addEventListener("click", () => closeProfileMenu());
 profileAvatarButton?.addEventListener("click", () => closeProfileMenu());
 
+function setupShareUrl(setup) {
+  const token = String(setup?.shareToken || "");
+  if (!token) return "";
+  const url = new URL(window.location.href);
+  url.search = "";
+  url.hash = "";
+  url.searchParams.set("view", "setup");
+  url.searchParams.set("share", token);
+  return url.href;
+}
+
+function setupProducts(setup) {
+  const ids = new Set((setup?.productIds || []).map(Number));
+  return reviews.filter(product => ids.has(Number(product.id)));
+}
+
+function renderUserSetups() {
+  if (!setupsList) return;
+  if (!userSetups.length) {
+    setupsList.innerHTML = `<div class="setups-empty"><strong>Aún no tienes Setups</strong><span>Crea uno usando tus productos favoritos.</span></div>`;
+    return;
+  }
+
+  setupsList.innerHTML = userSetups.map(setup => {
+    const products = setupProducts(setup);
+    const thumbs = products.slice(0, 4).map(product =>
+      `<img src="${escapeHtml(comparisonImage(product))}" alt="${escapeHtml(product.name || "Producto")}" loading="lazy" decoding="async">`
+    ).join("");
+    return `
+      <article class="setup-card" data-setup-id="${setup.id}">
+        <div class="setup-card-thumbs">${thumbs || `<span>SETUP</span>`}</div>
+        <div class="setup-card-copy">
+          <strong>${escapeHtml(setup.name || "Setup")}</strong>
+          <span>${products.length} ${products.length === 1 ? "producto" : "productos"}</span>
+        </div>
+        <div class="setup-card-actions">
+          <button type="button" data-edit-setup="${setup.id}">Editar</button>
+          <button type="button" data-share-setup="${setup.id}">Compartir</button>
+          <button class="danger" type="button" data-delete-setup="${setup.id}">Eliminar</button>
+        </div>
+      </article>`;
+  }).join("");
+
+  setupsList.querySelectorAll("[data-edit-setup]").forEach(button => {
+    button.addEventListener("click", () => openSetupEditor(Number(button.dataset.editSetup)));
+  });
+  setupsList.querySelectorAll("[data-share-setup]").forEach(button => {
+    button.addEventListener("click", async () => {
+      const setup = userSetups.find(item => Number(item.id) === Number(button.dataset.shareSetup));
+      const url = setupShareUrl(setup);
+      if (!url) return;
+      try {
+        await navigator.clipboard.writeText(url);
+        button.textContent = "Enlace copiado";
+        setTimeout(() => { button.textContent = "Compartir"; }, 1400);
+      } catch {
+        prompt("Copia este enlace para compartir tu Setup:", url);
+      }
+    });
+  });
+  setupsList.querySelectorAll("[data-delete-setup]").forEach(button => {
+    button.addEventListener("click", async () => {
+      const id = Number(button.dataset.deleteSetup);
+      const setup = userSetups.find(item => Number(item.id) === id);
+      if (!confirm(`¿Eliminar "${setup?.name || "este Setup"}"?`)) return;
+      try {
+        button.disabled = true;
+        await api(`/setups/${id}`, { method: "DELETE" });
+        userSetups = userSetups.filter(item => Number(item.id) !== id);
+        renderUserSetups();
+      } catch (error) {
+        alert(error.message || "No se pudo eliminar el Setup.");
+      } finally {
+        button.disabled = false;
+      }
+    });
+  });
+}
+
+async function loadUserSetups() {
+  try {
+    const data = await api("/setups");
+    userSetups = Array.isArray(data.setups) ? data.setups : [];
+  } catch (error) {
+    console.warn("No se pudieron cargar los Setups", error);
+    userSetups = [];
+  }
+  renderUserSetups();
+}
+
+function renderSetupProductSelector(selectedIds = null) {
+  if (!setupProductSelector) return;
+  const chosen = selectedIds instanceof Set
+    ? selectedIds
+    : new Set(
+        editingSetupId
+          ? (userSetups.find(item => Number(item.id) === Number(editingSetupId))?.productIds || []).map(Number)
+          : []
+      );
+  const favorites = reviews.filter(product => favoriteProductIds.has(Number(product.id)));
+
+  setupProductSelector.innerHTML = favorites.length
+    ? favorites.map(product => `
+        <label class="setup-product-choice">
+          <input type="checkbox" value="${product.id}" ${chosen.has(Number(product.id)) ? "checked" : ""}>
+          <img src="${escapeHtml(comparisonImage(product))}" alt="" loading="lazy" decoding="async">
+          <span><strong>${escapeHtml(product.name || "Producto")}</strong><small>${escapeHtml(product.category || "")} · ${escapeHtml(product.brand || "")}</small></span>
+        </label>`).join("")
+    : `<div class="setups-empty"><strong>No hay favoritos disponibles</strong><span>Guarda productos primero para añadirlos a un Setup.</span></div>`;
+}
+
+function closeSetupEditor() {
+  if (setupEditorModal) setupEditorModal.hidden = true;
+  editingSetupId = null;
+}
+
+function openSetupEditor(setupId = null) {
+  editingSetupId = setupId ? Number(setupId) : null;
+  const setup = editingSetupId ? userSetups.find(item => Number(item.id) === editingSetupId) : null;
+  if (setupEditorTitle) setupEditorTitle.textContent = setup ? "Editar Setup" : "Crear Setup";
+  if (setupNameInput) setupNameInput.value = setup?.name || "";
+  renderSetupProductSelector(new Set((setup?.productIds || []).map(Number)));
+  if (setupEditorModal) setupEditorModal.hidden = false;
+  setupNameInput?.focus();
+}
+
+createSetupButton?.addEventListener("click", () => openSetupEditor());
+setupEditorClose?.addEventListener("click", closeSetupEditor);
+setupCancelButton?.addEventListener("click", closeSetupEditor);
+setupEditorModal?.addEventListener("click", event => {
+  if (event.target === setupEditorModal) closeSetupEditor();
+});
+
+setupSaveButton?.addEventListener("click", async () => {
+  const name = String(setupNameInput?.value || "").trim();
+  if (!name) return alert("Escribe un nombre para el Setup.");
+  const productIds = [...(setupProductSelector?.querySelectorAll('input[type="checkbox"]:checked') || [])].map(input => Number(input.value));
+  if (!productIds.length) return alert("Selecciona al menos un producto favorito.");
+
+  const isEdit = Boolean(editingSetupId);
+  const endpoint = isEdit ? `/setups/${editingSetupId}` : "/setups";
+  try {
+    setupSaveButton.disabled = true;
+    setupSaveButton.textContent = "Guardando...";
+    const data = await api(endpoint, { method: isEdit ? "PUT" : "POST", body: JSON.stringify({ name, productIds }) });
+    if (isEdit) {
+      userSetups = userSetups.map(item => Number(item.id) === Number(data.setup.id) ? data.setup : item);
+    } else {
+      userSetups.unshift(data.setup);
+    }
+    closeSetupEditor();
+    renderUserSetups();
+  } catch (error) {
+    alert(error.message || "No se pudo guardar el Setup.");
+  } finally {
+    setupSaveButton.disabled = false;
+    setupSaveButton.textContent = "Guardar Setup";
+  }
+});
+
+async function loadSharedSetupFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const token = String(params.get("share") || "");
+  currentSharedSetupToken = token;
+  if (!token || !sharedSetupGrid) return;
+
+  try {
+    const data = await api(`/setups/shared/${encodeURIComponent(token)}`);
+    const setup = data.setup || {};
+    const products = setupProducts(setup);
+    sharedSetupTitle.textContent = setup.name || "Setup compartido";
+    sharedSetupMeta.textContent = `Compartido por ${data.owner?.label || "Usuario MadeLesh"} · ${products.length} ${products.length === 1 ? "producto" : "productos"}`;
+    sharedSetupGrid.innerHTML = products.map((product, index) => cardTemplate(product, index)).join("");
+    sharedSetupGrid.hidden = false;
+    sharedSetupEmpty.hidden = true;
+    bindCards(sharedSetupGrid);
+    if (copySharedSetupButton) {
+      copySharedSetupButton.hidden = Boolean(data.ownedByMe);
+      copySharedSetupButton.textContent = "Guardar copia";
+    }
+  } catch (error) {
+    sharedSetupGrid.innerHTML = "";
+    sharedSetupGrid.hidden = true;
+    sharedSetupEmpty.hidden = false;
+    sharedSetupTitle.textContent = "Setup no disponible";
+    sharedSetupMeta.textContent = error.message || "No se pudo abrir el enlace.";
+    if (copySharedSetupButton) copySharedSetupButton.hidden = true;
+  }
+}
+
+copySharedSetupButton?.addEventListener("click", async () => {
+  if (!currentSharedSetupToken) return;
+  try {
+    copySharedSetupButton.disabled = true;
+    copySharedSetupButton.textContent = "Guardando...";
+    const data = await api(`/setups/shared/${encodeURIComponent(currentSharedSetupToken)}/copy`, { method: "POST" });
+    if (data.setup) userSetups.unshift(data.setup);
+    await loadProfilePersonalization();
+    renderUserSetups();
+    copySharedSetupButton.textContent = "Guardado ✓";
+  } catch (error) {
+    alert(error.message || "No se pudo guardar una copia del Setup.");
+    copySharedSetupButton.textContent = "Guardar copia";
+  } finally {
+    copySharedSetupButton.disabled = false;
+  }
+});
+
 async function restoreSession() {
   const userToken = localStorage.getItem("madetech_user_token");
   const adminToken = localStorage.getItem("madetech_admin_token");
@@ -745,7 +1086,9 @@ async function restoreSession() {
     showApp();
     await loadProfilePersonalization();
     await loadReviews();
-    focusProductsHome();
+    await loadUserSetups();
+    if (new URLSearchParams(window.location.search).get("view") === "setup") await loadSharedSetupFromUrl();
+    if (new URLSearchParams(window.location.search).get("view") === "home" || !new URLSearchParams(window.location.search).get("view")) focusProductsHome();
   } catch {
     localStorage.removeItem("madetech_user_token");
     if (userToken) currentToken = null;
@@ -790,7 +1133,9 @@ keyLoginForm.addEventListener("submit", async event => {
     showApp();
     await loadProfilePersonalization();
     await loadReviews();
-    focusProductsHome();
+    await loadUserSetups();
+    if (new URLSearchParams(window.location.search).get("view") === "setup") await loadSharedSetupFromUrl();
+    if (new URLSearchParams(window.location.search).get("view") === "home" || !new URLSearchParams(window.location.search).get("view")) focusProductsHome();
   } catch (error) {
     const messages = {
       invalid_key: "La key no es válida o fue revocada.",
@@ -987,7 +1332,7 @@ function cardTemplate(review, index = 0) {
         </div>
 
         <div class="review-read product-card-footer">
-          <span class="product-card-cta"><span>VER PRODUCTO</span><i aria-hidden="true">→</i></span>
+          <span class="product-card-cta"><span>VER</span><i class="product-card-eye" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"></path><circle cx="12" cy="12" r="2.5"></circle></svg></i></span>
           <strong>${escapeHtml(price)}</strong>
         </div>
       </div>
@@ -1259,7 +1604,7 @@ function renderFeaturedBanner() {
   const product = featuredProducts[featuredIndex];
   if (!product) return;
 
-  const image = safeImageSrc(product.imageUrl) || safeImageSrc(Array.isArray(product.images) ? product.images[0] : "") || categoryPlaceholderDataUrl(product.category);
+  const image = safeImageSrc(product?.specs?.bannerImageUrl) || safeImageSrc(product.imageUrl) || safeImageSrc(Array.isArray(product.images) ? product.images[0] : "") || categoryPlaceholderDataUrl(product.category);
   featuredBanner?.classList.add("is-changing");
 
   setTimeout(() => {
@@ -1526,7 +1871,8 @@ function renderComparison(){if(!compareResult)return;const a=reviews.find(item=>
   const metrics=comparisonMetrics(a.category);let pointsA=0,pointsB=0,comparable=0;const lanes=[];for(const metric of metrics){const av=metric.value(a),bv=metric.value(b),winner=metricWinner(av,bv,metric.direction);if(Number.isFinite(av)&&Number.isFinite(bv)&&metric.weight>0){comparable++;if(winner==="a")pointsA+=metric.weight;else if(winner==="b")pointsB+=metric.weight;else{pointsA+=metric.weight/2;pointsB+=metric.weight/2;}}lanes.push(`<article class="compare-metric-lane"><div class="lane-side lane-a ${winner==="a"?"lane-winner":""}"><strong>${escapeHtml(formatMetricValue(metric,av))}</strong><div><i style="width:${Number.isFinite(av)?metricAdvantage(av,bv,metric.direction):0}%"></i></div></div><div class="lane-label"><span>${comparisonSpecIcon(metric.icon||"chip")}</span><strong>${escapeHtml(metric.label)}</strong><small>${winner==="tie"?"Empate":"Ventaja"}</small></div><div class="lane-side lane-b ${winner==="b"?"lane-winner":""}"><strong>${escapeHtml(formatMetricValue(metric,bv))}</strong><div><i style="width:${Number.isFinite(bv)?metricAdvantage(bv,av,metric.direction):0}%"></i></div></div></article>`);}
   let winner=null,winnerLabel="Empate técnico",winnerNote="Los datos disponibles están muy igualados.";if(comparable>0&&pointsA!==pointsB){winner=pointsA>pointsB?a:b;winnerLabel=`${winner.name||"Producto"}`;winnerNote=`Destaca en ${Math.max(pointsA,pointsB)} puntos frente a ${Math.min(pointsA,pointsB)} según métricas comparables.`;}else if(!comparable){winnerLabel="Sin datos suficientes";winnerNote="Completa más especificaciones para obtener un resultado.";}const total=Math.max(1,pointsA+pointsB);const shareA=Math.round((pointsA/total)*100),shareB=100-shareA;
   const quick=(COMPARISON_TEXT_SPECS[a.category]||[]).map(([key,label,icon])=>`<article class="compare-quick-row"><div><span>${comparisonSpecIcon(icon)}</span><strong>${escapeHtml(label)}</strong></div><p>${escapeHtml(comparisonTextValue(a,key))}</p><i>vs</i><p>${escapeHtml(comparisonTextValue(b,key))}</p></article>`).join("");
-  compareResult.innerHTML=`<div class="compare-duel-arena">${comparisonProductCard(a,winner?.id===a.id,"side-a")}<div class="compare-duel-center"><span class="duel-kicker">RESULTADO</span><div class="duel-orb" style="--share-a:${shareA}%;--share-b:${shareB}%"><div><strong>${comparable?`${shareA}/${shareB}`:"—"}</strong><small>balance</small></div></div><h3>${escapeHtml(winnerLabel)}</h3><p>${escapeHtml(winnerNote)}</p></div>${comparisonProductCard(b,winner?.id===b.id,"side-b")}</div><div class="compare-metric-lanes">${lanes.join("")}</div><div class="compare-quick-specs"><div class="compare-quick-head"><span>COMPARACIÓN RÁPIDA</span><strong>${escapeHtml(a.name||"A")} <i>vs</i> ${escapeHtml(b.name||"B")}</strong></div>${quick}</div>`;
+  const arcA=Math.max(0,Math.min(100,shareA));const arcB=Math.max(0,Math.min(100,shareB));const gap=2.2;const dashA=Math.max(0,arcA-gap);const dashB=Math.max(0,arcB-gap);
+  compareResult.innerHTML=`<div class="compare-duel-arena">${comparisonProductCard(a,winner?.id===a.id,"side-a")}<div class="compare-duel-center"><span class="duel-kicker">RESULTADO</span><div class="duel-orb-ring" aria-label="Balance ${shareA} a ${shareB}"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="duel-ring-track" cx="60" cy="60" r="48" pathLength="100"></circle><circle class="duel-ring-a" cx="60" cy="60" r="48" pathLength="100" stroke-dasharray="${dashA} ${100-dashA}" stroke-dashoffset="0"></circle><circle class="duel-ring-b" cx="60" cy="60" r="48" pathLength="100" stroke-dasharray="${dashB} ${100-dashB}" stroke-dashoffset="${-(arcA+gap)}"></circle></svg><span class="duel-ring-dot"></span></div><div class="duel-ring-score"><strong>${comparable?`${shareA}`:"—"}</strong><span>/</span><strong>${comparable?`${shareB}`:"—"}</strong></div><h3>${escapeHtml(winnerLabel)}</h3><p>${escapeHtml(winnerNote)}</p></div>${comparisonProductCard(b,winner?.id===b.id,"side-b")}</div><div class="compare-metric-lanes">${lanes.join("")}</div><div class="compare-quick-specs"><div class="compare-quick-head"><span>COMPARACIÓN RÁPIDA</span><strong>${escapeHtml(a.name||"A")} <i>vs</i> ${escapeHtml(b.name||"B")}</strong></div>${quick}</div>`;
   compareResult.querySelectorAll("[data-open-compare-product]").forEach(btn=>btn.addEventListener("click",()=>openReview(Number(btn.dataset.openCompareProduct))));}
 
 comparePickerAButton?.addEventListener("click",event=>{event.stopPropagation();const open=comparePickerAMenu?.hidden!==false;closeCompareMenus();if(comparePickerAMenu){comparePickerAMenu.hidden=!open;comparePickerAButton.setAttribute("aria-expanded",String(open));}});
@@ -2374,13 +2720,14 @@ loadPublicSettings();
 
 function currentPageView() {
   const requested = new URLSearchParams(window.location.search).get("view") || "home";
-  return ["home", "categorias", "comparacion", "favoritos", "cuenta"].includes(requested) ? requested : "home";
+  return ["home", "categorias", "comparacion", "favoritos", "cuenta", "setup"].includes(requested) ? requested : "home";
 }
 
 function applyPageView() {
   const view = currentPageView();
-  if (view === "favoritos") renderProfileFavorites();
+  if (view === "favoritos") { renderProfileFavorites(); renderUserSetups(); }
   if (view === "cuenta") renderProfileAvatarChoices();
+  if (view === "setup" && currentToken && reviews.length) loadSharedSetupFromUrl();
   document.querySelectorAll("[data-view]").forEach(section => {
     const views = String(section.dataset.view || "").split(/\s+/).filter(Boolean);
     section.hidden = !views.includes(view);

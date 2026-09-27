@@ -1,4 +1,4 @@
-console.info("MadeLesh Admin build 5.25");
+console.info("MadeLesh Admin build 5.28");
 import { API_BASE } from "./config.js";
 
 const adminLogin = document.getElementById("adminLogin");
@@ -57,6 +57,10 @@ const productGalleryUrl = document.getElementById("productGalleryUrl");
 const addProductGalleryUrl = document.getElementById("addProductGalleryUrl");
 const productGalleryList = document.getElementById("productGalleryList");
 const productVideoUrl = document.getElementById("productVideoUrl");
+const productBannerImageUrl = document.getElementById("productBannerImageUrl");
+const productBannerImageFile = document.getElementById("productBannerImageFile");
+const clearProductBannerImage = document.getElementById("clearProductBannerImage");
+const productBannerImagePreview = document.getElementById("productBannerImagePreview");
 const keyboardSoundBlock = document.getElementById("keyboardSoundBlock");
 const keyboardSoundUrl = document.getElementById("keyboardSoundUrl");
 const keyboardSoundFile = document.getElementById("keyboardSoundFile");
@@ -179,20 +183,22 @@ let brandingFaviconDarkDataUrl = "";
 let contactIconDataUrls = { discord:"", steam:"", x:"", youtube:"", tiktok:"", email:"" };
 let colorImagesByHex = {};
 const ADMIN_BUILD_RELEASE = {
-  version: "5.25",
-  title: "Favoritos, avatares y comparador mejorado",
-  date: "2026-09-24",
+  version: "5.28",
+  title: "Favoritos, Setups y banner personalizado",
+  date: "2026-09-27",
   changes: {
     added: [
-      "Roles personalizables con permisos individuales.",
-      "Asignación de roles a usuarios registrados y registro de auditoría.",
-      "Editor para recortar audio de teclados desde audio o video.",
-      "Comparador con selección visual de productos."
+      "Setups personales creados desde favoritos y compartibles por enlace.",
+      "Acceso directo a favoritos desde una caja en el encabezado.",
+      "Imagen personalizada para cada producto destacado del banner."
     ],
-    removed: [],
+    removed: [
+      "Texto largo «Ver producto» en tarjetas y banner."
+    ],
     fixed: [
-      "Animación del perfil invertida: avatar a la izquierda y nombre a la derecha.",
-      "Comparativas rediseñadas con resultado visual más dinámico."
+      "Título del producto destacado sin recortes.",
+      "Animación visual al guardar favoritos.",
+      "Aro de comparación hueco con trazos redondeados."
     ]
   }
 };
@@ -644,6 +650,38 @@ clearProductImage?.addEventListener("click", () => {
   if (productImageFile) productImageFile.value = "";
   setProductImages([]);
   renderMainImagePreview();
+});
+
+function renderProductBannerImagePreview() {
+  if (!productBannerImagePreview) return;
+  const src = safeImageSource(productBannerImageUrl?.value || "");
+  productBannerImagePreview.innerHTML = src
+    ? `<img src="${escapeAttr(src)}" alt="Vista previa del banner">`
+    : `<span>Vista previa 900 × 420</span>`;
+}
+
+productBannerImageUrl?.addEventListener("input", renderProductBannerImagePreview);
+
+productBannerImageFile?.addEventListener("change", async () => {
+  try {
+    const dataUrl = await imageFileToWebpDataUrl(productBannerImageFile.files?.[0], {
+      maxSize: 1400,
+      quality: 0.82,
+      maxChars: 760000
+    });
+    productBannerImageUrl.value = dataUrl;
+    renderProductBannerImagePreview();
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    if (productBannerImageFile) productBannerImageFile.value = "";
+  }
+});
+
+clearProductBannerImage?.addEventListener("click", () => {
+  if (productBannerImageUrl) productBannerImageUrl.value = "";
+  if (productBannerImageFile) productBannerImageFile.value = "";
+  renderProductBannerImagePreview();
 });
 
 productGalleryFiles?.addEventListener("change", async () => {
@@ -1292,6 +1330,8 @@ function applyImportedWebProduct(product) {
   setConnections(Array.isArray(product.connections) ? product.connections : []);
   setProductImages(Array.isArray(product.images) && product.images.length ? product.images : (product.imageUrl ? [product.imageUrl] : []));
   if (productVideoUrl) productVideoUrl.value = product.specs?.productVideo || "";
+  if (productBannerImageUrl) productBannerImageUrl.value = product.specs?.bannerImageUrl || "";
+  renderProductBannerImagePreview();
   if (keyboardSoundUrl) keyboardSoundUrl.value = product.specs?.keyboardSound || "";
   fillProPlayers(product.specs?.proPlayers || []);
   if (productDriverUrl) productDriverUrl.value = product.specs?.driverDownloadUrl || "";
@@ -2187,6 +2227,9 @@ function resetProductForm() {
   setConnections([]);
   setProductImages([]);
   if (productVideoUrl) productVideoUrl.value = "";
+  if (productBannerImageUrl) productBannerImageUrl.value = "";
+  if (productBannerImageFile) productBannerImageFile.value = "";
+  renderProductBannerImagePreview();
   if (keyboardSoundUrl) keyboardSoundUrl.value = "";
   fillProPlayers([]);
   if (productDriverUrl) productDriverUrl.value = "";
@@ -2235,6 +2278,7 @@ productForm.addEventListener("submit", async event => {
 
   payload.specs.colorImages = getColorImages();
   payload.specs.productVideo = productVideoUrl?.value.trim() || "";
+  payload.specs.bannerImageUrl = productBannerImageUrl?.value.trim() || "";
   payload.specs.keyboardSound = productCategory.value === "Teclados" ? (keyboardSoundUrl?.value.trim() || "") : "";
   payload.specs.proPlayers = parseProPlayers();
   payload.specs.driverDownloadUrl = productDriverUrl?.value.trim() || "";
@@ -2727,6 +2771,7 @@ renderConnectionPicker();
 renderProductGalleryList();
 renderKeyboardSoundVisibility();
 renderKeyboardSoundPreview();
+renderProductBannerImagePreview();
 renderMainImagePreview();
 renderProductLivePreview();
 restoreAdminSession();
