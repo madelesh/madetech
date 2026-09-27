@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es" data-theme="dark">
 <head>
-  <meta name="madelesh-admin-build" content="5.28" />
+  <meta name="madelesh-admin-build" content="5.29" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0b0b0c" />
@@ -10,8 +10,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link id="siteFavicon" rel="icon" type="image/png" href="" />
-  <link rel="stylesheet" href="styles.css?v=5.28" />
-  <link rel="stylesheet" href="admin.css?v=5.28" />
+  <link rel="stylesheet" href="styles.css?v=5.29" />
+  <link rel="stylesheet" href="admin.css?v=5.29" />
 </head>
 <body class="admin-body">
 
@@ -49,7 +49,7 @@
 
       <p class="admin-error" id="adminLoginError" hidden></p>
       <a class="back-site" href="index.html">← Volver a MadeLesh</a>
-      <small class="admin-build-marker">build 5.28</small>
+      <small class="admin-build-marker">build 5.29</small>
     </div>
   </section>
 
@@ -61,7 +61,7 @@
       </a>
 
       <nav class="admin-nav">
-        <button class="active" data-panel="productsPanel" data-permission-any="products.create,products.edit,products.import">
+        <button class="active" data-panel="productsPanel" data-permission-any="products.create,products.edit">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
           <span>Agregar producto</span>
         </button>
@@ -111,7 +111,7 @@
       <div class="admin-sidebar-footer">
         <span id="adminIdentity"></span>
         <button id="adminLogout">Cerrar sesión</button>
-        <small class="admin-build-marker">build 5.28</small>
+        <small class="admin-build-marker">build 5.29</small>
       </div>
     </aside>
 
@@ -133,50 +133,6 @@
                 <h2 id="productFormTitle">Nuevo producto</h2>
               </div>
               <button class="ghost-btn" id="resetProduct" type="button">Limpiar</button>
-            </div>
-
-            <div class="admin-import-grid general-search-only">
-<section class="web-importer" aria-labelledby="webImporterTitle">
-              <div class="web-importer-head">
-                <div>
-                  <span class="admin-eyebrow">AUTOCOMPLETAR</span>
-                  <h3 id="webImporterTitle">Buscar ficha en Internet</h3>
-                </div>
-                <span class="web-source-badge">TAVILY · WEB</span>
-              </div>
-
-              <p>Escribe marca, modelo y categoría. MadeLesh buscará varias fuentes, dará prioridad a la web oficial y rellenará los datos que pueda confirmar.</p>
-
-              <div class="web-import-grid">
-                <label>
-                  CATEGORÍA
-                  <select id="webSearchCategory">
-                    <option value="Mouse">Mouse</option>
-                    <option value="Teclados">Teclados</option>
-                    <option value="IEM">IEM / In-Ears</option>
-                    <option value="Headsets">Headsets</option>
-                    <option value="DAC">DACs</option>
-                  </select>
-                </label>
-
-                <label>
-                  MARCA
-                  <input id="webSearchBrand" type="text" autocomplete="off" placeholder="Ej. Razer" />
-                </label>
-
-                <label>
-                  MODELO
-                  <input id="webSearchModel" type="text" autocomplete="off" placeholder="Ej. Viper V3 Pro" />
-                </label>
-              </div>
-
-              <button id="webSearchButton" class="web-search-button" type="button">🌐 BUSCAR FICHA TÉCNICA</button>
-
-              <div class="web-import-status" id="webSearchStatus" hidden></div>
-              <div class="web-source-list" id="webSourceList" hidden></div>
-
-              <small class="web-import-note">La búsqueda no publica nada automáticamente. Revisa los campos antes de guardar.</small>
-            </section>
             </div>
 
             <form id="productForm" class="product-form product-form-organized">
@@ -220,9 +176,17 @@
                   MODELO
                   <input id="productModel" type="text" placeholder="Ej. Viper V3 Pro" />
                 </label>
-                <label>
-                  MADETECH SCORE
-                  <input id="productScore" type="number" min="0" max="10" step="0.1" required />
+                <label class="product-score-admin-field">
+                  CALIFICACIÓN
+                  <input id="productScore" type="hidden" value="0" />
+                  <div class="product-score-star-picker" id="productScoreStars" role="radiogroup" aria-label="Calificación del producto">
+                    <button type="button" data-product-star="1" aria-label="1 estrella">★</button>
+                    <button type="button" data-product-star="2" aria-label="2 estrellas">★</button>
+                    <button type="button" data-product-star="3" aria-label="3 estrellas">★</button>
+                    <button type="button" data-product-star="4" aria-label="4 estrellas">★</button>
+                    <button type="button" data-product-star="5" aria-label="5 estrellas">★</button>
+                  </div>
+                  <small id="productScoreHint" class="product-score-hint">Sin calificación</small>
                 </label>
               </div>
 
@@ -422,8 +386,17 @@
                     </div>
                     <small class="image-size-hint"><strong>Medida recomendada:</strong> 900 × 420 px. El banner completo ocupa aproximadamente 1920 × 420 px en escritorio.</small>
                   </div>
-                  <div class="banner-image-preview-admin" id="productBannerImagePreview">
+                  <div class="banner-image-preview-admin" id="productBannerImagePreview" title="Arrastra la imagen para cambiar su posición">
                     <span>Vista previa 900 × 420</span>
+                  </div>
+                </div>
+                <div class="banner-transform-editor">
+                  <div class="banner-transform-head"><strong>AJUSTAR IMAGEN</strong><small>Arrastra la imagen en la vista previa o usa los controles.</small></div>
+                  <div class="banner-transform-controls">
+                    <label>TAMAÑO <input id="productBannerImageScale" type="range" min="60" max="180" step="1" value="100"><output id="productBannerImageScaleValue">100%</output></label>
+                    <label>POSICIÓN HORIZONTAL <input id="productBannerImagePositionX" type="range" min="0" max="100" step="1" value="50"><output id="productBannerImagePositionXValue">50%</output></label>
+                    <label>POSICIÓN VERTICAL <input id="productBannerImagePositionY" type="range" min="0" max="100" step="1" value="50"><output id="productBannerImagePositionYValue">50%</output></label>
+                    <button class="ghost-btn" id="resetProductBannerTransform" type="button">CENTRAR</button>
                   </div>
                 </div>
               </div>
@@ -491,7 +464,7 @@
                 <small class="image-size-hint">Imagen por color: 1000 × 1000 px recomendado. Puedes pegar una URL o subir PNG/JPG/WEBP. Máx. 180 KB por imagen subida.</small>
               </div>
 
-              <div class="product-form-section-title"><span>04</span><div><strong>Ficha técnica</strong><small>Conexiones y especificaciones por categoría</small></div></div>
+              <div class="product-form-section-title"><span>04</span><div><strong>Especificaciones</strong><small>Conexiones y datos técnicos por categoría</small></div></div>
               <div class="visual-field-block">
                 <div class="visual-field-heading">
                   <div>
@@ -911,7 +884,7 @@
   </div>
 
   <script type="module">
-console.info("MadeLesh Admin build 5.28");
+console.info("MadeLesh Admin build 5.29");
 import { API_BASE } from "./config.js";
 
 const adminLogin = document.getElementById("adminLogin");
@@ -974,6 +947,16 @@ const productBannerImageUrl = document.getElementById("productBannerImageUrl");
 const productBannerImageFile = document.getElementById("productBannerImageFile");
 const clearProductBannerImage = document.getElementById("clearProductBannerImage");
 const productBannerImagePreview = document.getElementById("productBannerImagePreview");
+const productBannerImageScale = document.getElementById("productBannerImageScale");
+const productBannerImageScaleValue = document.getElementById("productBannerImageScaleValue");
+const productBannerImagePositionX = document.getElementById("productBannerImagePositionX");
+const productBannerImagePositionXValue = document.getElementById("productBannerImagePositionXValue");
+const productBannerImagePositionY = document.getElementById("productBannerImagePositionY");
+const productBannerImagePositionYValue = document.getElementById("productBannerImagePositionYValue");
+const resetProductBannerTransform = document.getElementById("resetProductBannerTransform");
+const productScoreInput = document.getElementById("productScore");
+const productScoreStars = document.getElementById("productScoreStars");
+const productScoreHint = document.getElementById("productScoreHint");
 const keyboardSoundBlock = document.getElementById("keyboardSoundBlock");
 const keyboardSoundUrl = document.getElementById("keyboardSoundUrl");
 const keyboardSoundFile = document.getElementById("keyboardSoundFile");
@@ -1096,25 +1079,48 @@ let brandingFaviconDarkDataUrl = "";
 let contactIconDataUrls = { discord:"", steam:"", x:"", youtube:"", tiktok:"", email:"" };
 let colorImagesByHex = {};
 const ADMIN_BUILD_RELEASE = {
-  version: "5.28",
-  title: "Favoritos, Setups y banner personalizado",
+  version: "5.29",
+  title: "Audio estable, estrellas y banner ajustable",
   date: "2026-09-27",
   changes: {
     added: [
-      "Setups personales creados desde favoritos y compartibles por enlace.",
-      "Acceso directo a favoritos desde una caja en el encabezado.",
-      "Imagen personalizada para cada producto destacado del banner."
+      "Posición y tamaño configurables para la imagen del banner.",
+      "Calificación editorial mediante estrellas."
     ],
     removed: [
-      "Texto largo «Ver producto» en tarjetas y banner."
+      "Buscador de ficha técnica en Internet.",
+      "MadeLesh Score numérico."
     ],
     fixed: [
-      "Título del producto destacado sin recortes.",
-      "Animación visual al guardar favoritos.",
-      "Aro de comparación hueco con trazos redondeados."
+      "Editor de audio visible de forma consistente para teclados.",
+      "Contraste del modo claro en especificaciones y comparación.",
+      "Fluidez del desplazamiento dentro de la ficha del producto."
     ]
   }
 };
+
+function renderAdminScoreStars(score = productScoreInput?.value) {
+  const numeric = Math.max(0, Math.min(10, Number(score || 0)));
+  if (productScoreInput) productScoreInput.value = String(numeric);
+  productScoreStars?.querySelectorAll("[data-product-star]").forEach(button => {
+    const star = Number(button.dataset.productStar || 0);
+    const threshold = star * 2;
+    button.classList.toggle("active", numeric >= threshold);
+    button.classList.toggle("half", numeric < threshold && numeric >= threshold - 1);
+    button.setAttribute("aria-checked", String(numeric >= threshold - 1));
+  });
+  if (productScoreHint) {
+    const stars = numeric / 2;
+    productScoreHint.textContent = numeric > 0 ? `${stars.toFixed(stars % 1 ? 1 : 0)} de 5 estrellas` : "Sin calificación";
+  }
+}
+
+productScoreStars?.querySelectorAll("[data-product-star]").forEach(button => {
+  button.addEventListener("click", () => {
+    renderAdminScoreStars(Number(button.dataset.productStar || 0) * 2);
+    renderProductLivePreview();
+  });
+});
 
 const PRESET_COLORS = [
   { name: "Negro", hex: "#111111" },
@@ -1238,6 +1244,7 @@ function renderCategoryFields(category, values = {}) {
   categoryFieldsTitle.textContent = category === "IEM" ? "IEM / In-Ears" : category;
   categoryFields.innerHTML = schema.map(item => fieldHtml(item, values[item.key])).join("");
   bindSpecChoiceGroups();
+  renderKeyboardSoundVisibility();
   renderProductLivePreview();
 }
 
@@ -1565,13 +1572,58 @@ clearProductImage?.addEventListener("click", () => {
   renderMainImagePreview();
 });
 
+function clampBannerControl(value, min, max, fallback) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.max(min, Math.min(max, number)) : fallback;
+}
+
+function bannerTransformState() {
+  return {
+    scale: clampBannerControl(productBannerImageScale?.value, 60, 180, 100),
+    x: clampBannerControl(productBannerImagePositionX?.value, 0, 100, 50),
+    y: clampBannerControl(productBannerImagePositionY?.value, 0, 100, 50)
+  };
+}
+
 function renderProductBannerImagePreview() {
   if (!productBannerImagePreview) return;
   const src = safeImageSource(productBannerImageUrl?.value || "");
-  productBannerImagePreview.innerHTML = src
-    ? `<img src="${escapeAttr(src)}" alt="Vista previa del banner">`
-    : `<span>Vista previa 900 × 420</span>`;
+  const { scale, x, y } = bannerTransformState();
+  if (productBannerImageScaleValue) productBannerImageScaleValue.textContent = `${Math.round(scale)}%`;
+  if (productBannerImagePositionXValue) productBannerImagePositionXValue.textContent = `${Math.round(x)}%`;
+  if (productBannerImagePositionYValue) productBannerImagePositionYValue.textContent = `${Math.round(y)}%`;
+  productBannerImagePreview.innerHTML = src ? `<img src="${escapeAttr(src)}" alt="Vista previa del banner" draggable="false" style="--banner-admin-scale:${scale/100};--banner-admin-x:${(x-50)*0.8}%;--banner-admin-y:${(y-50)*0.8}%">` : `<span>Vista previa 900 × 420</span>`;
 }
+
+[productBannerImageScale, productBannerImagePositionX, productBannerImagePositionY].filter(Boolean).forEach(input => input.addEventListener("input", renderProductBannerImagePreview));
+resetProductBannerTransform?.addEventListener("click", () => {
+  if (productBannerImageScale) productBannerImageScale.value = "100";
+  if (productBannerImagePositionX) productBannerImagePositionX.value = "50";
+  if (productBannerImagePositionY) productBannerImagePositionY.value = "50";
+  renderProductBannerImagePreview();
+});
+
+let bannerDragState = null;
+productBannerImagePreview?.addEventListener("pointerdown", event => {
+  if (!safeImageSource(productBannerImageUrl?.value || "")) return;
+  const rect = productBannerImagePreview.getBoundingClientRect();
+  const state = bannerTransformState();
+  bannerDragState = { pointerId:event.pointerId,startClientX:event.clientX,startClientY:event.clientY,startX:state.x,startY:state.y,width:rect.width||1,height:rect.height||1 };
+  productBannerImagePreview.setPointerCapture?.(event.pointerId);
+  productBannerImagePreview.classList.add("is-dragging");
+  event.preventDefault();
+});
+productBannerImagePreview?.addEventListener("pointermove", event => {
+  if (!bannerDragState || bannerDragState.pointerId !== event.pointerId) return;
+  const nextX = clampBannerControl(bannerDragState.startX + ((event.clientX-bannerDragState.startClientX)/bannerDragState.width)*100,0,100,50);
+  const nextY = clampBannerControl(bannerDragState.startY + ((event.clientY-bannerDragState.startClientY)/bannerDragState.height)*100,0,100,50);
+  if (productBannerImagePositionX) productBannerImagePositionX.value = String(Math.round(nextX));
+  if (productBannerImagePositionY) productBannerImagePositionY.value = String(Math.round(nextY));
+  renderProductBannerImagePreview();
+});
+const finishBannerDrag = () => { bannerDragState=null; productBannerImagePreview?.classList.remove("is-dragging"); };
+productBannerImagePreview?.addEventListener("pointerup", finishBannerDrag);
+productBannerImagePreview?.addEventListener("pointercancel", finishBannerDrag);
 
 productBannerImageUrl?.addEventListener("input", renderProductBannerImagePreview);
 
@@ -1625,8 +1677,15 @@ addProductGalleryUrl?.addEventListener("click", () => {
   productGalleryUrl.value = "";
 });
 
+function isKeyboardCategory(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return normalized === "teclados" || normalized === "teclado" || normalized.startsWith("teclad") || normalized === "keyboard" || normalized === "keyboards";
+}
+
 function renderKeyboardSoundVisibility() {
-  if (keyboardSoundBlock) keyboardSoundBlock.hidden = productCategory.value !== "Teclados";
+  if (!keyboardSoundBlock) return;
+  const hasExistingAudio = Boolean(safeAudioSource(keyboardSoundUrl?.value || ""));
+  keyboardSoundBlock.hidden = !(isKeyboardCategory(productCategory?.value) || hasExistingAudio);
 }
 
 function safeAudioSource(value) {
@@ -2505,8 +2564,6 @@ function configurePanelPermissions() {
     button.hidden = !permissions.some(can);
   });
 
-  const importer = document.querySelector(".admin-import-grid");
-  if (importer) importer.hidden = !can("products.import");
   const saveProduct = document.getElementById("saveProduct");
   if (saveProduct) saveProduct.hidden = !(can("products.create") || can("products.edit"));
   const keyGeneratorCard = keyGeneratorForm?.closest(".admin-card");
@@ -2563,7 +2620,7 @@ function showAdminDashboard(me = {}) {
 
 async function loadAdminDashboardData() {
   const tasks = [];
-  if (canAny("products.view_drafts","products.create","products.edit","products.delete","products.import")) tasks.push(["productos", loadProducts]);
+  if (canAny("products.view_drafts","products.create","products.edit","products.delete")) tasks.push(["productos", loadProducts]);
   if (canAny("keys.view","keys.manage")) tasks.push(["access keys", loadKeys]);
   if (can("settings.branding")) tasks.push(["apariencia", loadBrandingSettings]);
   if (can("profiles.manage_avatars")) tasks.push(["fotos de perfil", loadProfileAvatarsAdmin]);
@@ -3056,7 +3113,7 @@ function renderLibraryProducts() {
               <p>
                 ${escapeHtml(product.category || "")}
                 ${product.model ? ` · ${escapeHtml(product.model)}` : ""}
-                · ${Number(product.score || 0).toFixed(1)}/10
+                · <span class="admin-library-rating" aria-label="Calificación">${"★".repeat(Math.max(0,Math.min(5,Math.round(Number(product.score||0)/2))))}${"☆".repeat(5-Math.max(0,Math.min(5,Math.round(Number(product.score||0)/2))))}</span>
                 · <span class="${product.status === "draft" ? "draft-badge" : "published-badge"}">
                   ${product.status === "draft" ? "BORRADOR" : "PUBLICADO"}
                 </span>
@@ -3112,6 +3169,18 @@ function editProduct(id) {
   renderColorPicker(product.colors || []);
   setConnections(product.connections || []);
   setProductImages(Array.isArray(product.images) && product.images.length ? product.images : (product.imageUrl ? [product.imageUrl] : []));
+  if (productVideoUrl) productVideoUrl.value = product.specs?.productVideo || "";
+  if (productBannerImageUrl) productBannerImageUrl.value = product.specs?.bannerImageUrl || "";
+  if (productBannerImageScale) productBannerImageScale.value = String(product.specs?.bannerImageScale ?? 100);
+  if (productBannerImagePositionX) productBannerImagePositionX.value = String(product.specs?.bannerImagePositionX ?? 50);
+  if (productBannerImagePositionY) productBannerImagePositionY.value = String(product.specs?.bannerImagePositionY ?? 50);
+  renderProductBannerImagePreview();
+  if (keyboardSoundUrl) keyboardSoundUrl.value = product.specs?.keyboardSound || "";
+  renderKeyboardSoundPreview();
+  fillProPlayers(product.specs?.proPlayers || []);
+  if (productDriverUrl) productDriverUrl.value = product.specs?.driverDownloadUrl || "";
+  if (productSoftwareUrl) productSoftwareUrl.value = product.specs?.softwareDownloadUrl || "";
+  renderAdminScoreStars(product.score ?? 0);
   document.getElementById("productYoutube").value = product.reviewLinks?.youtube || "";
   document.getElementById("productTiktok").value = product.reviewLinks?.tiktok || "";
   document.getElementById("productSummary").value = product.summary || "";
@@ -3142,7 +3211,11 @@ function resetProductForm() {
   if (productVideoUrl) productVideoUrl.value = "";
   if (productBannerImageUrl) productBannerImageUrl.value = "";
   if (productBannerImageFile) productBannerImageFile.value = "";
+  if (productBannerImageScale) productBannerImageScale.value = "100";
+  if (productBannerImagePositionX) productBannerImagePositionX.value = "50";
+  if (productBannerImagePositionY) productBannerImagePositionY.value = "50";
   renderProductBannerImagePreview();
+  renderAdminScoreStars(0);
   if (keyboardSoundUrl) keyboardSoundUrl.value = "";
   fillProPlayers([]);
   if (productDriverUrl) productDriverUrl.value = "";
@@ -3192,7 +3265,10 @@ productForm.addEventListener("submit", async event => {
   payload.specs.colorImages = getColorImages();
   payload.specs.productVideo = productVideoUrl?.value.trim() || "";
   payload.specs.bannerImageUrl = productBannerImageUrl?.value.trim() || "";
-  payload.specs.keyboardSound = productCategory.value === "Teclados" ? (keyboardSoundUrl?.value.trim() || "") : "";
+  payload.specs.bannerImageScale = bannerTransformState().scale;
+  payload.specs.bannerImagePositionX = bannerTransformState().x;
+  payload.specs.bannerImagePositionY = bannerTransformState().y;
+  payload.specs.keyboardSound = isKeyboardCategory(productCategory.value) ? (keyboardSoundUrl?.value.trim() || "") : "";
   payload.specs.proPlayers = parseProPlayers();
   payload.specs.driverDownloadUrl = productDriverUrl?.value.trim() || "";
   payload.specs.softwareDownloadUrl = productSoftwareUrl?.value.trim() || "";
@@ -3685,6 +3761,7 @@ renderProductGalleryList();
 renderKeyboardSoundVisibility();
 renderKeyboardSoundPreview();
 renderProductBannerImagePreview();
+renderAdminScoreStars();
 renderMainImagePreview();
 renderProductLivePreview();
 restoreAdminSession();

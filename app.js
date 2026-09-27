@@ -130,22 +130,22 @@ let currentSharedSetupToken = "";
 let publicAppVersion = "5.18";
 let publicRelease = { version: "5.18", title: "", date: "", notes: [] };
 const CURRENT_BUILD_RELEASE = {
-  version: "5.28",
-  title: "Favoritos, Setups y banner personalizado",
+  version: "5.29",
+  title: "Audio estable, calificación por estrellas y banner ajustable",
   date: "2026-09-27",
   changes: {
     added: [
-      "Setups personales creados a partir de favoritos y compartibles por enlace.",
-      "Acceso directo a favoritos desde una caja en el encabezado.",
-      "Imagen personalizada para cada producto destacado del banner."
+      "Posición y tamaño configurables para la imagen personalizada del banner.",
+      "Calificación editorial visual mediante estrellas."
     ],
     removed: [
-      "Texto largo «Ver producto» de las tarjetas y el banner."
+      "Buscador automático de ficha técnica en Internet.",
+      "Texto MadeLesh Score y su presentación numérica."
     ],
     fixed: [
-      "Título del producto destacado sin recortes.",
-      "Animación visual al guardar un favorito.",
-      "Aro de comparación con trazo redondeado como referencia visual."
+      "Editor y reproductor de audio de teclados disponibles de forma consistente.",
+      "Contraste de especificaciones en modo claro y cajas de comparación.",
+      "Desplazamiento más fluido dentro de la ficha del producto."
     ]
   }
 };
@@ -1624,6 +1624,12 @@ function renderFeaturedBanner() {
     }
 
     featuredBannerImage.src = image;
+    const bannerScale = Math.max(60, Math.min(180, Number(product?.specs?.bannerImageScale || 100)));
+    const bannerX = Math.max(0, Math.min(100, Number(product?.specs?.bannerImagePositionX ?? 50)));
+    const bannerY = Math.max(0, Math.min(100, Number(product?.specs?.bannerImagePositionY ?? 50)));
+    featuredBannerImage.style.setProperty("--banner-scale", String(bannerScale / 100));
+    featuredBannerImage.style.setProperty("--banner-shift-x", `${(bannerX - 50) * 0.8}%`);
+    featuredBannerImage.style.setProperty("--banner-shift-y", `${(bannerY - 50) * 0.8}%`);
     featuredBannerImage.hidden = false;
 
     featuredBanner.dataset.review = String(product.id);
@@ -1917,10 +1923,7 @@ async function openReview(id) {
             ${review.model ? ` · Modelo ${escapeHtml(review.model)}` : ""}
           </p>
 
-          ${Number(review.score || 0) > 0 ? `<div class="product-editor-score">
-            <strong>${Number(review.score || 0).toFixed(1)}</strong>
-            <span>/10 MadeLesh Score</span>
-          </div>` : ""}
+          ${Number(review.score || 0) > 0 ? productRatingStarsHtml(review.score) : ""}
 
           <p class="product-detail-summary">${escapeHtml(displaySummary(review))}</p>
         </div>
@@ -2016,7 +2019,7 @@ function productImageHtml(review) {
   if (!images.length) images.push(categoryPlaceholderDataUrl(review.category));
 
   const video = safeVideoSrc(review?.specs?.productVideo);
-  const sound = review.category === "Teclados" ? safeAudioSrc(review?.specs?.keyboardSound) : "";
+  const sound = safeAudioSrc(review?.specs?.keyboardSound);
 
   return `
     <div class="product-media-viewer">
@@ -2122,6 +2125,19 @@ function bindProductMedia(review) {
   };
   soundAudio?.addEventListener("ended", stopSoundVisual);
   soundAudio?.addEventListener("pause", stopSoundVisual);
+}
+
+function productRatingStarsHtml(score) {
+  const normalized = Math.max(0, Math.min(10, Number(score || 0)));
+  const percent = `${(normalized / 10) * 100}%`;
+  return `
+    <div class="product-curated-rating" aria-label="Calificación ${Math.round((normalized / 2) * 10) / 10} de 5 estrellas">
+      <span>CALIFICACIÓN</span>
+      <div class="product-rating-stars" aria-hidden="true">
+        <b>★★★★★</b>
+        <i style="width:${percent}">★★★★★</i>
+      </div>
+    </div>`;
 }
 
 function displaySummary(review) {

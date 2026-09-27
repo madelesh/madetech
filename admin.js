@@ -1,4 +1,4 @@
-console.info("MadeLesh Admin build 5.28");
+console.info("MadeLesh Admin build 5.29");
 import { API_BASE } from "./config.js";
 
 const adminLogin = document.getElementById("adminLogin");
@@ -61,6 +61,16 @@ const productBannerImageUrl = document.getElementById("productBannerImageUrl");
 const productBannerImageFile = document.getElementById("productBannerImageFile");
 const clearProductBannerImage = document.getElementById("clearProductBannerImage");
 const productBannerImagePreview = document.getElementById("productBannerImagePreview");
+const productBannerImageScale = document.getElementById("productBannerImageScale");
+const productBannerImageScaleValue = document.getElementById("productBannerImageScaleValue");
+const productBannerImagePositionX = document.getElementById("productBannerImagePositionX");
+const productBannerImagePositionXValue = document.getElementById("productBannerImagePositionXValue");
+const productBannerImagePositionY = document.getElementById("productBannerImagePositionY");
+const productBannerImagePositionYValue = document.getElementById("productBannerImagePositionYValue");
+const resetProductBannerTransform = document.getElementById("resetProductBannerTransform");
+const productScoreInput = document.getElementById("productScore");
+const productScoreStars = document.getElementById("productScoreStars");
+const productScoreHint = document.getElementById("productScoreHint");
 const keyboardSoundBlock = document.getElementById("keyboardSoundBlock");
 const keyboardSoundUrl = document.getElementById("keyboardSoundUrl");
 const keyboardSoundFile = document.getElementById("keyboardSoundFile");
@@ -183,25 +193,48 @@ let brandingFaviconDarkDataUrl = "";
 let contactIconDataUrls = { discord:"", steam:"", x:"", youtube:"", tiktok:"", email:"" };
 let colorImagesByHex = {};
 const ADMIN_BUILD_RELEASE = {
-  version: "5.28",
-  title: "Favoritos, Setups y banner personalizado",
+  version: "5.29",
+  title: "Audio estable, estrellas y banner ajustable",
   date: "2026-09-27",
   changes: {
     added: [
-      "Setups personales creados desde favoritos y compartibles por enlace.",
-      "Acceso directo a favoritos desde una caja en el encabezado.",
-      "Imagen personalizada para cada producto destacado del banner."
+      "Posición y tamaño configurables para la imagen del banner.",
+      "Calificación editorial mediante estrellas."
     ],
     removed: [
-      "Texto largo «Ver producto» en tarjetas y banner."
+      "Buscador de ficha técnica en Internet.",
+      "MadeLesh Score numérico."
     ],
     fixed: [
-      "Título del producto destacado sin recortes.",
-      "Animación visual al guardar favoritos.",
-      "Aro de comparación hueco con trazos redondeados."
+      "Editor de audio visible de forma consistente para teclados.",
+      "Contraste del modo claro en especificaciones y comparación.",
+      "Fluidez del desplazamiento dentro de la ficha del producto."
     ]
   }
 };
+
+function renderAdminScoreStars(score = productScoreInput?.value) {
+  const numeric = Math.max(0, Math.min(10, Number(score || 0)));
+  if (productScoreInput) productScoreInput.value = String(numeric);
+  productScoreStars?.querySelectorAll("[data-product-star]").forEach(button => {
+    const star = Number(button.dataset.productStar || 0);
+    const threshold = star * 2;
+    button.classList.toggle("active", numeric >= threshold);
+    button.classList.toggle("half", numeric < threshold && numeric >= threshold - 1);
+    button.setAttribute("aria-checked", String(numeric >= threshold - 1));
+  });
+  if (productScoreHint) {
+    const stars = numeric / 2;
+    productScoreHint.textContent = numeric > 0 ? `${stars.toFixed(stars % 1 ? 1 : 0)} de 5 estrellas` : "Sin calificación";
+  }
+}
+
+productScoreStars?.querySelectorAll("[data-product-star]").forEach(button => {
+  button.addEventListener("click", () => {
+    renderAdminScoreStars(Number(button.dataset.productStar || 0) * 2);
+    renderProductLivePreview();
+  });
+});
 
 const PRESET_COLORS = [
   { name: "Negro", hex: "#111111" },
@@ -325,6 +358,7 @@ function renderCategoryFields(category, values = {}) {
   categoryFieldsTitle.textContent = category === "IEM" ? "IEM / In-Ears" : category;
   categoryFields.innerHTML = schema.map(item => fieldHtml(item, values[item.key])).join("");
   bindSpecChoiceGroups();
+  renderKeyboardSoundVisibility();
   renderProductLivePreview();
 }
 
@@ -652,13 +686,58 @@ clearProductImage?.addEventListener("click", () => {
   renderMainImagePreview();
 });
 
+function clampBannerControl(value, min, max, fallback) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.max(min, Math.min(max, number)) : fallback;
+}
+
+function bannerTransformState() {
+  return {
+    scale: clampBannerControl(productBannerImageScale?.value, 60, 180, 100),
+    x: clampBannerControl(productBannerImagePositionX?.value, 0, 100, 50),
+    y: clampBannerControl(productBannerImagePositionY?.value, 0, 100, 50)
+  };
+}
+
 function renderProductBannerImagePreview() {
   if (!productBannerImagePreview) return;
   const src = safeImageSource(productBannerImageUrl?.value || "");
-  productBannerImagePreview.innerHTML = src
-    ? `<img src="${escapeAttr(src)}" alt="Vista previa del banner">`
-    : `<span>Vista previa 900 × 420</span>`;
+  const { scale, x, y } = bannerTransformState();
+  if (productBannerImageScaleValue) productBannerImageScaleValue.textContent = `${Math.round(scale)}%`;
+  if (productBannerImagePositionXValue) productBannerImagePositionXValue.textContent = `${Math.round(x)}%`;
+  if (productBannerImagePositionYValue) productBannerImagePositionYValue.textContent = `${Math.round(y)}%`;
+  productBannerImagePreview.innerHTML = src ? `<img src="${escapeAttr(src)}" alt="Vista previa del banner" draggable="false" style="--banner-admin-scale:${scale/100};--banner-admin-x:${(x-50)*0.8}%;--banner-admin-y:${(y-50)*0.8}%">` : `<span>Vista previa 900 × 420</span>`;
 }
+
+[productBannerImageScale, productBannerImagePositionX, productBannerImagePositionY].filter(Boolean).forEach(input => input.addEventListener("input", renderProductBannerImagePreview));
+resetProductBannerTransform?.addEventListener("click", () => {
+  if (productBannerImageScale) productBannerImageScale.value = "100";
+  if (productBannerImagePositionX) productBannerImagePositionX.value = "50";
+  if (productBannerImagePositionY) productBannerImagePositionY.value = "50";
+  renderProductBannerImagePreview();
+});
+
+let bannerDragState = null;
+productBannerImagePreview?.addEventListener("pointerdown", event => {
+  if (!safeImageSource(productBannerImageUrl?.value || "")) return;
+  const rect = productBannerImagePreview.getBoundingClientRect();
+  const state = bannerTransformState();
+  bannerDragState = { pointerId:event.pointerId,startClientX:event.clientX,startClientY:event.clientY,startX:state.x,startY:state.y,width:rect.width||1,height:rect.height||1 };
+  productBannerImagePreview.setPointerCapture?.(event.pointerId);
+  productBannerImagePreview.classList.add("is-dragging");
+  event.preventDefault();
+});
+productBannerImagePreview?.addEventListener("pointermove", event => {
+  if (!bannerDragState || bannerDragState.pointerId !== event.pointerId) return;
+  const nextX = clampBannerControl(bannerDragState.startX + ((event.clientX-bannerDragState.startClientX)/bannerDragState.width)*100,0,100,50);
+  const nextY = clampBannerControl(bannerDragState.startY + ((event.clientY-bannerDragState.startClientY)/bannerDragState.height)*100,0,100,50);
+  if (productBannerImagePositionX) productBannerImagePositionX.value = String(Math.round(nextX));
+  if (productBannerImagePositionY) productBannerImagePositionY.value = String(Math.round(nextY));
+  renderProductBannerImagePreview();
+});
+const finishBannerDrag = () => { bannerDragState=null; productBannerImagePreview?.classList.remove("is-dragging"); };
+productBannerImagePreview?.addEventListener("pointerup", finishBannerDrag);
+productBannerImagePreview?.addEventListener("pointercancel", finishBannerDrag);
 
 productBannerImageUrl?.addEventListener("input", renderProductBannerImagePreview);
 
@@ -712,8 +791,15 @@ addProductGalleryUrl?.addEventListener("click", () => {
   productGalleryUrl.value = "";
 });
 
+function isKeyboardCategory(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return normalized === "teclados" || normalized === "teclado" || normalized.startsWith("teclad") || normalized === "keyboard" || normalized === "keyboards";
+}
+
 function renderKeyboardSoundVisibility() {
-  if (keyboardSoundBlock) keyboardSoundBlock.hidden = productCategory.value !== "Teclados";
+  if (!keyboardSoundBlock) return;
+  const hasExistingAudio = Boolean(safeAudioSource(keyboardSoundUrl?.value || ""));
+  keyboardSoundBlock.hidden = !(isKeyboardCategory(productCategory?.value) || hasExistingAudio);
 }
 
 function safeAudioSource(value) {
@@ -1592,8 +1678,6 @@ function configurePanelPermissions() {
     button.hidden = !permissions.some(can);
   });
 
-  const importer = document.querySelector(".admin-import-grid");
-  if (importer) importer.hidden = !can("products.import");
   const saveProduct = document.getElementById("saveProduct");
   if (saveProduct) saveProduct.hidden = !(can("products.create") || can("products.edit"));
   const keyGeneratorCard = keyGeneratorForm?.closest(".admin-card");
@@ -1650,7 +1734,7 @@ function showAdminDashboard(me = {}) {
 
 async function loadAdminDashboardData() {
   const tasks = [];
-  if (canAny("products.view_drafts","products.create","products.edit","products.delete","products.import")) tasks.push(["productos", loadProducts]);
+  if (canAny("products.view_drafts","products.create","products.edit","products.delete")) tasks.push(["productos", loadProducts]);
   if (canAny("keys.view","keys.manage")) tasks.push(["access keys", loadKeys]);
   if (can("settings.branding")) tasks.push(["apariencia", loadBrandingSettings]);
   if (can("profiles.manage_avatars")) tasks.push(["fotos de perfil", loadProfileAvatarsAdmin]);
@@ -2143,7 +2227,7 @@ function renderLibraryProducts() {
               <p>
                 ${escapeHtml(product.category || "")}
                 ${product.model ? ` · ${escapeHtml(product.model)}` : ""}
-                · ${Number(product.score || 0).toFixed(1)}/10
+                · <span class="admin-library-rating" aria-label="Calificación">${"★".repeat(Math.max(0,Math.min(5,Math.round(Number(product.score||0)/2))))}${"☆".repeat(5-Math.max(0,Math.min(5,Math.round(Number(product.score||0)/2))))}</span>
                 · <span class="${product.status === "draft" ? "draft-badge" : "published-badge"}">
                   ${product.status === "draft" ? "BORRADOR" : "PUBLICADO"}
                 </span>
@@ -2199,6 +2283,18 @@ function editProduct(id) {
   renderColorPicker(product.colors || []);
   setConnections(product.connections || []);
   setProductImages(Array.isArray(product.images) && product.images.length ? product.images : (product.imageUrl ? [product.imageUrl] : []));
+  if (productVideoUrl) productVideoUrl.value = product.specs?.productVideo || "";
+  if (productBannerImageUrl) productBannerImageUrl.value = product.specs?.bannerImageUrl || "";
+  if (productBannerImageScale) productBannerImageScale.value = String(product.specs?.bannerImageScale ?? 100);
+  if (productBannerImagePositionX) productBannerImagePositionX.value = String(product.specs?.bannerImagePositionX ?? 50);
+  if (productBannerImagePositionY) productBannerImagePositionY.value = String(product.specs?.bannerImagePositionY ?? 50);
+  renderProductBannerImagePreview();
+  if (keyboardSoundUrl) keyboardSoundUrl.value = product.specs?.keyboardSound || "";
+  renderKeyboardSoundPreview();
+  fillProPlayers(product.specs?.proPlayers || []);
+  if (productDriverUrl) productDriverUrl.value = product.specs?.driverDownloadUrl || "";
+  if (productSoftwareUrl) productSoftwareUrl.value = product.specs?.softwareDownloadUrl || "";
+  renderAdminScoreStars(product.score ?? 0);
   document.getElementById("productYoutube").value = product.reviewLinks?.youtube || "";
   document.getElementById("productTiktok").value = product.reviewLinks?.tiktok || "";
   document.getElementById("productSummary").value = product.summary || "";
@@ -2229,7 +2325,11 @@ function resetProductForm() {
   if (productVideoUrl) productVideoUrl.value = "";
   if (productBannerImageUrl) productBannerImageUrl.value = "";
   if (productBannerImageFile) productBannerImageFile.value = "";
+  if (productBannerImageScale) productBannerImageScale.value = "100";
+  if (productBannerImagePositionX) productBannerImagePositionX.value = "50";
+  if (productBannerImagePositionY) productBannerImagePositionY.value = "50";
   renderProductBannerImagePreview();
+  renderAdminScoreStars(0);
   if (keyboardSoundUrl) keyboardSoundUrl.value = "";
   fillProPlayers([]);
   if (productDriverUrl) productDriverUrl.value = "";
@@ -2279,7 +2379,10 @@ productForm.addEventListener("submit", async event => {
   payload.specs.colorImages = getColorImages();
   payload.specs.productVideo = productVideoUrl?.value.trim() || "";
   payload.specs.bannerImageUrl = productBannerImageUrl?.value.trim() || "";
-  payload.specs.keyboardSound = productCategory.value === "Teclados" ? (keyboardSoundUrl?.value.trim() || "") : "";
+  payload.specs.bannerImageScale = bannerTransformState().scale;
+  payload.specs.bannerImagePositionX = bannerTransformState().x;
+  payload.specs.bannerImagePositionY = bannerTransformState().y;
+  payload.specs.keyboardSound = isKeyboardCategory(productCategory.value) ? (keyboardSoundUrl?.value.trim() || "") : "";
   payload.specs.proPlayers = parseProPlayers();
   payload.specs.driverDownloadUrl = productDriverUrl?.value.trim() || "";
   payload.specs.softwareDownloadUrl = productSoftwareUrl?.value.trim() || "";
@@ -2772,6 +2875,7 @@ renderProductGalleryList();
 renderKeyboardSoundVisibility();
 renderKeyboardSoundPreview();
 renderProductBannerImagePreview();
+renderAdminScoreStars();
 renderMainImagePreview();
 renderProductLivePreview();
 restoreAdminSession();

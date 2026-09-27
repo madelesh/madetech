@@ -4466,3 +4466,73 @@ html[data-theme="light"] .setup-editor-modal{background:rgba(25,25,25,.5)}
   .setup-product-selector{grid-template-columns:1fr}
   .header-favorites-box{width:40px;height:40px}
 }
+
+
+/* ==========================================================
+   MADELESH V5.29 — AUDIO / ESTRELLAS / BANNER / COMPARADOR
+   ========================================================== */
+.monthly-banner-media{overflow:hidden!important;contain:paint}
+.monthly-banner-media img{transform:translate(var(--banner-shift-x,0%),var(--banner-shift-y,0%)) scale(var(--banner-scale,1));transform-origin:center;transition:transform .22s ease,opacity .22s ease;will-change:transform}
+
+.product-curated-rating{margin:18px 0 20px;display:grid;gap:7px;width:max-content}
+.product-curated-rating>span{font-size:.62rem;font-weight:850;letter-spacing:.12em;color:rgba(255,255,255,.55)}
+.product-rating-stars{position:relative;width:max-content;font-size:1.5rem;line-height:1;letter-spacing:.12em}
+.product-rating-stars b{display:block;color:rgba(255,255,255,.16);font-weight:500}
+.product-rating-stars i{position:absolute;inset:0 auto 0 0;display:block;overflow:hidden;white-space:nowrap;color:var(--accent);font-style:normal;font-weight:500}
+
+.keyboard-sound-button{display:inline-flex!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:rgba(12,12,13,.94)!important}
+.keyboard-sound-button.playing{background:var(--accent)!important;color:#080808!important}
+
+/* Reduce repaints in long product sheets. */
+.product-detail-body{contain:layout style}
+.product-info-section{content-visibility:auto;contain:layout paint style;contain-intrinsic-size:260px}
+.product-spec-grid{contain:layout paint;transform:translateZ(0)}
+.product-spec-card{contain:layout paint style;box-shadow:none!important;background:var(--surface-2)!important;transition:border-color .14s ease!important}
+.product-spec-card:hover{transform:none!important;box-shadow:none!important}
+.product-modal-card{box-shadow:0 18px 55px rgba(0,0,0,.22)!important}
+.modal-backdrop{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.product-detail-image{filter:none!important}
+
+/* Specifications — light theme */
+html[data-theme="light"] .product-detail-body{background:#f7f7f4;color:#151515}
+html[data-theme="light"] .product-info-section{color:#151515;border-color:rgba(0,0,0,.10)}
+html[data-theme="light"] .product-section-head h3{color:#151515}
+html[data-theme="light"] .product-section-head p{color:#666b70}
+html[data-theme="light"] .product-spec-card{background:#fff!important;border-color:rgba(0,0,0,.12)!important;color:#151515!important}
+html[data-theme="light"] .product-spec-card span{color:#686d72!important}
+html[data-theme="light"] .product-spec-card strong{color:#111!important}
+html[data-theme="light"] .product-spec-card.spec-unavailable{background:#f1f1ee!important}
+html[data-theme="light"] .product-chip{background:#fff!important;color:#151515!important;border-color:rgba(0,0,0,.12)!important}
+html[data-theme="light"] .product-color-selector .product-color{background:#fff!important;color:#151515!important;border-color:rgba(0,0,0,.13)!important}
+html[data-theme="light"] .product-curated-rating>span{color:#62666b}
+html[data-theme="light"] .product-rating-stars b{color:rgba(0,0,0,.14)}
+
+/* Compare product selection and cards */
+.compare-selector-grid{align-items:stretch!important}
+.compare-picker-trigger{min-height:92px!important;grid-template-columns:68px minmax(0,1fr) 24px!important;padding:11px 13px!important;border-radius:18px!important;background:var(--panel)!important;box-shadow:none!important}
+.compare-picker-thumb,.compare-picker-empty-icon{width:68px!important;height:68px!important;border-radius:15px!important;background:var(--surface-2)!important}
+.compare-picker-thumb img{padding:6px!important}
+.compare-picker-menu{border-radius:18px!important;background:var(--panel)!important;box-shadow:0 18px 52px rgba(0,0,0,.25)!important}
+.compare-picker-item{min-height:74px!important;border:1px solid transparent!important}
+.compare-picker-item:hover{background:var(--surface-2)!important;border-color:var(--line)!important}
+.compare-duel-arena{gap:16px!important}
+.compare-duel-product{min-height:360px!important;border-radius:22px!important;padding:14px!important;background:var(--panel)!important;box-shadow:none!important}
+.compare-duel-image{min-height:230px!important;border:1px solid var(--line);background:var(--surface-2)!important}
+.compare-duel-image img{height:230px!important;padding:16px!important}
+.compare-duel-center{border-radius:22px!important;background:var(--panel)!important;box-shadow:none!important}
+html[data-theme="light"] .compare-picker-trigger,html[data-theme="light"] .compare-picker-menu,html[data-theme="light"] .compare-duel-product,html[data-theme="light"] .compare-duel-center{background:#fff!important;color:#151515!important;border-color:rgba(0,0,0,.12)!important}
+html[data-theme="light"] .compare-picker-thumb,html[data-theme="light"] .compare-picker-empty-icon,html[data-theme="light"] .compare-duel-image{background:#f2f2ef!important;border-color:rgba(0,0,0,.10)!important}
+html[data-theme="light"] .compare-picker-search{background:#f5f5f2!important;border-color:rgba(0,0,0,.10)!important}
+html[data-theme="light"] .compare-picker-search input{color:#151515!important}
+html[data-theme="light"] .compare-picker-item:hover{background:#f3f3ef!important}
+
+/* Comparison ring: one yellow arc over a dark hollow track, like the reference. */
+.duel-orb-ring{width:168px!important;height:168px!important;margin:14px 0 8px!important}
+.duel-ring-track{stroke:color-mix(in srgb,var(--text) 22%,transparent)!important;stroke-width:8!important;stroke-linecap:round}
+.duel-ring-a{stroke:var(--accent)!important;stroke-width:8!important;stroke-linecap:round}
+.duel-ring-b{display:none!important}
+.duel-ring-dot{display:none!important}
+.duel-ring-score{margin-top:-2px!important}
+
+.header-favorites-box .favorite-mark{fill:transparent;stroke:currentColor;stroke-width:1.5}
+.header-favorites-box:hover .favorite-mark{fill:var(--accent);stroke:var(--accent)}

@@ -2110,3 +2110,17 @@ body.admin-authenticated #adminApp {
 @media(max-width:900px){
   .banner-image-admin-grid{grid-template-columns:1fr}
 }
+
+
+/* ==========================================================
+   MADELESH V5.29 — ESTRELLAS / BANNER AJUSTABLE / AUDIO
+   ========================================================== */
+.product-score-admin-field{align-content:start}
+.product-score-star-picker{display:flex;align-items:center;gap:5px;min-height:46px;padding:6px 0}
+.product-score-star-picker button{appearance:none;width:35px;height:35px;padding:0;border:0;background:transparent;color:#4a4a50;font-size:1.65rem;line-height:1;cursor:pointer;transition:transform .12s ease,color .12s ease}
+.product-score-star-picker button:hover{transform:scale(1.1);color:#d7e800}.product-score-star-picker button.active{color:#eeff00}.product-score-star-picker button.half{background:linear-gradient(90deg,#eeff00 50%,#4a4a50 50%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.product-score-hint{display:block;color:#73737b;font-size:.62rem}.admin-library-rating{color:#eeff00;letter-spacing:.07em;font-size:.72rem}
+.banner-image-preview-admin{cursor:grab;touch-action:none;user-select:none;position:relative}.banner-image-preview-admin.is-dragging{cursor:grabbing;border-color:#eeff00}.banner-image-preview-admin img{transform:translate(var(--banner-admin-x,0%),var(--banner-admin-y,0%)) scale(var(--banner-admin-scale,1));transform-origin:center;pointer-events:none;transition:transform .08s linear}.banner-image-preview-admin.is-dragging img{transition:none}
+.banner-transform-editor{margin-top:14px;padding-top:13px;border-top:1px solid rgba(255,255,255,.08);display:grid;gap:10px}.banner-transform-head{display:flex;justify-content:space-between;gap:12px;align-items:baseline}.banner-transform-head strong{font-size:.64rem;letter-spacing:.1em}.banner-transform-head small{color:#74747c;font-size:.62rem}.banner-transform-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;gap:10px;align-items:end}.banner-transform-controls label{display:grid;grid-template-columns:1fr auto;gap:6px;color:#85858d;font-size:.56rem;letter-spacing:.07em}.banner-transform-controls input[type="range"]{grid-column:1/-1;width:100%;accent-color:#eeff00}.banner-transform-controls output{color:#eeff00;font-size:.62rem;font-weight:800}
+.keyboard-sound-admin[hidden]{display:none!important}.keyboard-sound-admin:not([hidden]){display:block!important}
+@media(max-width:900px){.banner-transform-controls{grid-template-columns:1fr}.banner-transform-head{display:grid}}
