@@ -130,22 +130,23 @@ let currentSharedSetupToken = "";
 let publicAppVersion = "5.18";
 let publicRelease = { version: "5.18", title: "", date: "", notes: [] };
 const CURRENT_BUILD_RELEASE = {
-  version: "5.29",
-  title: "Audio estable, calificación por estrellas y banner ajustable",
+  version: "5.30",
+  title: "MousePads, Setups y tema claro",
   date: "2026-09-27",
   changes: {
     added: [
-      "Posición y tamaño configurables para la imagen personalizada del banner.",
-      "Calificación editorial visual mediante estrellas."
+      "Nueva categoría MousePads con especificaciones propias.",
+      "Página independiente de Setups con acceso mediante icono.",
+      "Vista previa completa del banner mientras ajustas su imagen."
     ],
     removed: [
-      "Buscador automático de ficha técnica en Internet.",
-      "Texto MadeLesh Score y su presentación numérica."
+      "Categoría DAC del catálogo visible.",
+      "Franja inferior VER y precio en las tarjetas del catálogo."
     ],
     fixed: [
-      "Editor y reproductor de audio de teclados disponibles de forma consistente.",
-      "Contraste de especificaciones en modo claro y cajas de comparación.",
-      "Desplazamiento más fluido dentro de la ficha del producto."
+      "Selector de productos en Comparación sin superposiciones.",
+      "Cajas de especificaciones más compactas.",
+      "Tema claro reconstruido en blanco, negro y gris."
     ]
   }
 };
@@ -1197,7 +1198,7 @@ async function loadReviews() {
 
   try {
     const data = await api("/products");
-    reviews = Array.isArray(data.products) ? data.products : [];
+    reviews = (Array.isArray(data.products) ? data.products : []).filter(product => product.category !== "DAC");
     populateProductFilters();
     populateComparisonSelectors();
     renderReviews();
@@ -1303,7 +1304,11 @@ document.addEventListener("click", event => {
 function cardTemplate(review, index = 0) {
   const image = safeImageSrc(review.imageUrl) || safeImageSrc(Array.isArray(review.images) ? review.images[0] : "") || categoryPlaceholderDataUrl(review.category);
   const connections = Array.isArray(review.connections) ? review.connections.filter(Boolean).slice(0, 2) : [];
-  const price = review.price || "Precio no disponible";
+  const isMousePad = review.category === "MousePads";
+  const cardItems = isMousePad
+    ? [review.specs?.surfaceMaterial, review.specs?.surfaceType].filter(Boolean).slice(0, 2)
+    : connections;
+  const cardLabel = isMousePad ? "Superficie" : "Conexión";
   const priority = index < 4;
 
   return `
@@ -1323,25 +1328,21 @@ function cardTemplate(review, index = 0) {
         </div>
 
         <div class="card-data-block">
-          <span class="card-data-label">Conexión</span>
+          <span class="card-data-label">${escapeHtml(cardLabel)}</span>
           <div class="card-connection-list">
-            ${connections.length
-              ? connections.map(item => `<span class="card-connection-chip">${connectionIcon(item)}${escapeHtml(item)}</span>`).join("")
+            ${cardItems.length
+              ? cardItems.map(item => `<span class="card-connection-chip">${isMousePad ? comparisonSpecIcon("surface") : connectionIcon(item)}${escapeHtml(item)}</span>`).join("")
               : `<span class="card-data-empty">No disponible</span>`}
           </div>
         </div>
 
-        <div class="review-read product-card-footer">
-          <span class="product-card-cta"><span>VER</span><i class="product-card-eye" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"></path><circle cx="12" cy="12" r="2.5"></circle></svg></i></span>
-          <strong>${escapeHtml(price)}</strong>
-        </div>
       </div>
     </article>
   `;
 }
 
 function populateProductFilters() {
-  const categories = ["Mouse", "Teclados", "IEM", "Headsets", "DAC"];
+  const categories = ["Mouse", "Teclados", "IEM", "Headsets", "MousePads"];
   const brands = [...new Set(reviews.map(item => String(item.brand || "").trim()).filter(Boolean))]
     .sort((a,b) => a.localeCompare(b, "es"));
   const colors = [...new Set(reviews.flatMap(item =>
@@ -1758,7 +1759,7 @@ const COMPARISON_TEXT_SPECS = {
   Teclados: [["switchType","Switch","switch"],["layout","Formato","layout"],["pollingRate","Polling Rate","pollingRate"],["rapidTrigger","Rapid Trigger","rapid"]],
   IEM: [["driverConfig","Drivers","driver"],["impedance","Impedancia","impedance"],["soundSignature","Firma sonora","sound"],["__connections","Conexión","connection"]],
   Headsets: [["driver","Driver","driver"],["weight","Peso","weight"],["batteryHours","Autonomía","battery"],["__connections","Conexión","connection"]],
-  DAC: [["dacChip","Chip DAC","chip"],["outputs","Salidas","output"],["maxPcm","PCM máximo","pcm"],["bluetooth","Bluetooth","bluetooth"]]
+  MousePads: [["surfaceMaterial","Superficie","material"],["surfaceType","Deslizamiento","surface"],["dimensions","Tamaño","dimensions"],["thicknessMm","Grosor","thickness"]]
 };
 
 function comparisonSpecIcon(icon) {
@@ -1775,6 +1776,9 @@ function comparisonSpecIcon(icon) {
     sound:`<svg viewBox="0 0 24 24"><path d="M5 9v6h4l5 4V5L9 9z"/><path d="M17 9c2 2 2 4 0 6"/></svg>`,
     battery:`<svg viewBox="0 0 24 24"><rect x="3" y="7" width="17" height="10" rx="2"/><path d="M20 10h2v4h-2M6 10h8"/></svg>`,
     chip:`<svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M9 3v4M15 3v4M9 17v4M15 17v4M3 9h4M17 9h4M3 15h4M17 15h4"/></svg>`,
+    surface:`<svg viewBox="0 0 24 24"><path d="M4 7h16v10H4z"></path><path d="M7 10h10M7 14h7"></path></svg>`,
+    thickness:`<svg viewBox="0 0 24 24"><path d="M5 8h14M5 16h14"></path><path d="M8 5 5 8l3 3M16 13l3 3-3 3"></path></svg>`,
+    dimensions:`<svg viewBox="0 0 24 24"><path d="M4 7h16M4 17h16M7 4v6M17 14v6"></path></svg>`,
     output:`<svg viewBox="0 0 24 24"><path d="M4 12h12"/><path d="m12 8 4 4-4 4"/><path d="M18 6h2v12h-2"/></svg>`,
     pcm:`<svg viewBox="0 0 24 24"><path d="M3 12h3l2-6 4 12 3-8 2 2h4"/></svg>`,
     bluetooth:`<svg viewBox="0 0 24 24"><path d="m7 7 10 10V7L7 17l10-10"/></svg>`,
@@ -1823,18 +1827,18 @@ function comparisonMetrics(category){
       {key:"weight",label:"Peso",icon:"weight",unit:" g",direction:"low",weight:1,value:p=>parseFirstNumber(p?.specs?.weight)},
       {key:"detachableMic",label:"Micrófono desmontable",icon:"driver",unit:"",direction:"high",weight:1,value:p=>boolMetricValue(p?.specs?.detachableMic),format:v=>v?"Sí":"No"}
     ],
-    DAC:[
-      {key:"power",label:"Potencia de salida",icon:"output",unit:" mW",direction:"high",weight:1,value:powerOutput},
-      {key:"pcm",label:"PCM máximo",icon:"pcm",unit:" kHz",direction:"high",weight:1,value:pcmRate},
-      {key:"dsd",label:"DSD máximo",icon:"chip",unit:"",direction:"high",weight:1,value:dsdRate,format:v=>`DSD${Math.round(v)}`},
-      {key:"balanced",label:"Salida balanceada",icon:"connection",unit:"",direction:"high",weight:1,value:p=>boolMetricValue(p?.specs?.balanced),format:v=>v?"Sí":"No"}
+    MousePads:[
+      {key:"width",label:"Ancho",icon:"dimensions",unit:" mm",direction:"none",weight:0,value:p=>parseFirstNumber(p?.specs?.widthMm)},
+      {key:"height",label:"Largo",icon:"dimensions",unit:" mm",direction:"none",weight:0,value:p=>parseFirstNumber(p?.specs?.heightMm)},
+      {key:"thickness",label:"Grosor",icon:"thickness",unit:" mm",direction:"none",weight:0,value:p=>parseFirstNumber(p?.specs?.thicknessMm)},
+      {key:"stitched",label:"Bordes cosidos",icon:"surface",unit:"",direction:"none",weight:0,value:p=>boolMetricValue(p?.specs?.stitchedEdges),format:v=>v?"Sí":"No"}
     ]
   };
   return map[category]||[];
 }
 
-function metricAdvantage(value,other,direction){if(!Number.isFinite(value)||!Number.isFinite(other))return 0;if(value===other)return 100;if(direction==="low"){const min=Math.min(value,other);return Math.max(10,Math.min(100,(min/Math.max(value,.0001))*100));}const max=Math.max(value,other);return max<=0?0:Math.max(10,Math.min(100,(value/max)*100));}
-function metricWinner(a,b,direction){if(!Number.isFinite(a)||!Number.isFinite(b)||a===b)return "tie";return direction==="low"?(a<b?"a":"b"):(a>b?"a":"b");}
+function metricAdvantage(value,other,direction){if(!Number.isFinite(value)||!Number.isFinite(other))return 0;if(direction==="none")return 100;if(value===other)return 100;if(direction==="low"){const min=Math.min(value,other);return Math.max(10,Math.min(100,(min/Math.max(value,.0001))*100));}const max=Math.max(value,other);return max<=0?0:Math.max(10,Math.min(100,(value/max)*100));}
+function metricWinner(a,b,direction){if(direction==="none")return "tie";if(!Number.isFinite(a)||!Number.isFinite(b)||a===b)return "tie";return direction==="low"?(a<b?"a":"b"):(a>b?"a":"b");}
 function formatMetricValue(metric,value){if(!Number.isFinite(value))return "No disponible";if(typeof metric.format==="function")return metric.format(value);const digits=Number.isInteger(value)?0:1;return `${value.toFixed(digits)}${metric.unit||""}`;}
 function comparisonTextValue(product,key){if(key==="__connections")return arrayLabel(product?.connections)||"No disponible";const value=product?.specs?.[key];if(typeof value==="boolean")return value?"Sí":"No";if(Array.isArray(value))return arrayLabel(value)||"No disponible";return value===undefined||value===null||value===""?"No disponible":String(value);}
 
@@ -1874,8 +1878,8 @@ function refreshCompareProductB(){if(!compareProductA||!compareProductB)return;c
 function comparisonProductCard(product,isWinner,side){return `<article class="compare-duel-product ${side} ${isWinner?"overall-winner":""}">${isWinner?`<span class="compare-winner-badge">DESTACADO</span>`:""}<div class="compare-duel-image"><img src="${escapeHtml(comparisonImage(product))}" alt="${escapeHtml(product.name||"Producto")}" loading="lazy" decoding="async"></div><small>${escapeHtml(product.brand||"")}</small><h3>${escapeHtml(product.name||"")}</h3><button type="button" data-open-compare-product="${product.id}">Ver ficha ↗</button></article>`;}
 
 function renderComparison(){if(!compareResult)return;const a=reviews.find(item=>String(item.id)===String(compareProductA?.value||""));const b=reviews.find(item=>String(item.id)===String(compareProductB?.value||""));updateComparePickerButton("a",a||null);updateComparePickerButton("b",b||null);if(!a||!b){compareResult.innerHTML=`<div class="compare-empty"><strong>Elige dos productos para empezar.</strong><span>Las estadísticas aparecerán aquí de forma automática.</span></div>`;return;}if(a.category!==b.category){compareResult.innerHTML=`<div class="compare-empty compare-error"><strong>Comparación no permitida.</strong><span>Solo puedes comparar productos de la misma categoría.</span></div>`;return;}
-  const metrics=comparisonMetrics(a.category);let pointsA=0,pointsB=0,comparable=0;const lanes=[];for(const metric of metrics){const av=metric.value(a),bv=metric.value(b),winner=metricWinner(av,bv,metric.direction);if(Number.isFinite(av)&&Number.isFinite(bv)&&metric.weight>0){comparable++;if(winner==="a")pointsA+=metric.weight;else if(winner==="b")pointsB+=metric.weight;else{pointsA+=metric.weight/2;pointsB+=metric.weight/2;}}lanes.push(`<article class="compare-metric-lane"><div class="lane-side lane-a ${winner==="a"?"lane-winner":""}"><strong>${escapeHtml(formatMetricValue(metric,av))}</strong><div><i style="width:${Number.isFinite(av)?metricAdvantage(av,bv,metric.direction):0}%"></i></div></div><div class="lane-label"><span>${comparisonSpecIcon(metric.icon||"chip")}</span><strong>${escapeHtml(metric.label)}</strong><small>${winner==="tie"?"Empate":"Ventaja"}</small></div><div class="lane-side lane-b ${winner==="b"?"lane-winner":""}"><strong>${escapeHtml(formatMetricValue(metric,bv))}</strong><div><i style="width:${Number.isFinite(bv)?metricAdvantage(bv,av,metric.direction):0}%"></i></div></div></article>`);}
-  let winner=null,winnerLabel="Empate técnico",winnerNote="Los datos disponibles están muy igualados.";if(comparable>0&&pointsA!==pointsB){winner=pointsA>pointsB?a:b;winnerLabel=`${winner.name||"Producto"}`;winnerNote=`Destaca en ${Math.max(pointsA,pointsB)} puntos frente a ${Math.min(pointsA,pointsB)} según métricas comparables.`;}else if(!comparable){winnerLabel="Sin datos suficientes";winnerNote="Completa más especificaciones para obtener un resultado.";}const total=Math.max(1,pointsA+pointsB);const shareA=Math.round((pointsA/total)*100),shareB=100-shareA;
+  const metrics=comparisonMetrics(a.category);let pointsA=0,pointsB=0,comparable=0;const lanes=[];for(const metric of metrics){const av=metric.value(a),bv=metric.value(b),winner=metricWinner(av,bv,metric.direction);if(Number.isFinite(av)&&Number.isFinite(bv)&&metric.weight>0){comparable++;if(winner==="a")pointsA+=metric.weight;else if(winner==="b")pointsB+=metric.weight;else{pointsA+=metric.weight/2;pointsB+=metric.weight/2;}}lanes.push(`<article class="compare-metric-lane"><div class="lane-side lane-a ${winner==="a"?"lane-winner":""}"><strong>${escapeHtml(formatMetricValue(metric,av))}</strong><div><i style="width:${Number.isFinite(av)?metricAdvantage(av,bv,metric.direction):0}%"></i></div></div><div class="lane-label"><span>${comparisonSpecIcon(metric.icon||"chip")}</span><strong>${escapeHtml(metric.label)}</strong><small>${metric.weight===0||metric.direction==="none"?"Dato":(winner==="tie"?"Empate":"Ventaja")}</small></div><div class="lane-side lane-b ${winner==="b"?"lane-winner":""}"><strong>${escapeHtml(formatMetricValue(metric,bv))}</strong><div><i style="width:${Number.isFinite(bv)?metricAdvantage(bv,av,metric.direction):0}%"></i></div></div></article>`);}
+  let winner=null,winnerLabel="Empate técnico",winnerNote="Los datos disponibles están muy igualados.";if(comparable>0&&pointsA!==pointsB){winner=pointsA>pointsB?a:b;winnerLabel=`${winner.name||"Producto"}`;winnerNote=`Destaca en ${Math.max(pointsA,pointsB)} puntos frente a ${Math.min(pointsA,pointsB)} según métricas comparables.`;}else if(!comparable){winnerLabel=a.category==="MousePads"?"Comparación informativa":"Sin datos suficientes";winnerNote=a.category==="MousePads"?"En mousepads, tamaño, grosor y superficie dependen de tu preferencia y espacio disponible.":"Completa más especificaciones para obtener un resultado.";}const total=Math.max(1,pointsA+pointsB);const shareA=Math.round((pointsA/total)*100),shareB=100-shareA;
   const quick=(COMPARISON_TEXT_SPECS[a.category]||[]).map(([key,label,icon])=>`<article class="compare-quick-row"><div><span>${comparisonSpecIcon(icon)}</span><strong>${escapeHtml(label)}</strong></div><p>${escapeHtml(comparisonTextValue(a,key))}</p><i>vs</i><p>${escapeHtml(comparisonTextValue(b,key))}</p></article>`).join("");
   const arcA=Math.max(0,Math.min(100,shareA));const arcB=Math.max(0,Math.min(100,shareB));const gap=2.2;const dashA=Math.max(0,arcA-gap);const dashB=Math.max(0,arcB-gap);
   compareResult.innerHTML=`<div class="compare-duel-arena">${comparisonProductCard(a,winner?.id===a.id,"side-a")}<div class="compare-duel-center"><span class="duel-kicker">RESULTADO</span><div class="duel-orb-ring" aria-label="Balance ${shareA} a ${shareB}"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="duel-ring-track" cx="60" cy="60" r="48" pathLength="100"></circle><circle class="duel-ring-a" cx="60" cy="60" r="48" pathLength="100" stroke-dasharray="${dashA} ${100-dashA}" stroke-dashoffset="0"></circle><circle class="duel-ring-b" cx="60" cy="60" r="48" pathLength="100" stroke-dasharray="${dashB} ${100-dashB}" stroke-dashoffset="${-(arcA+gap)}"></circle></svg><span class="duel-ring-dot"></span></div><div class="duel-ring-score"><strong>${comparable?`${shareA}`:"—"}</strong><span>/</span><strong>${comparable?`${shareB}`:"—"}</strong></div><h3>${escapeHtml(winnerLabel)}</h3><p>${escapeHtml(winnerNote)}</p></div>${comparisonProductCard(b,winner?.id===b.id,"side-b")}</div><div class="compare-metric-lanes">${lanes.join("")}</div><div class="compare-quick-specs"><div class="compare-quick-head"><span>COMPARACIÓN RÁPIDA</span><strong>${escapeHtml(a.name||"A")} <i>vs</i> ${escapeHtml(b.name||"B")}</strong></div>${quick}</div>`;
@@ -2157,6 +2161,10 @@ function displaySummary(review) {
   if (review.category === "Mouse") {
     return `${name} es un mouse${s.sensor ? ` equipado con sensor ${s.sensor}` : ""}${s.weight ? ` y un peso aproximado de ${s.weight} g` : ""}.${connections}${polling ? ` Admite tasas de sondeo de ${polling}.` : ""} Consulta abajo sus especificaciones técnicas completas.`;
   }
+  if (review.category === "MousePads") {
+    const size = s.dimensions || ((s.widthMm && s.heightMm) ? `${s.widthMm} × ${s.heightMm} mm` : "");
+    return `${name} es un mousepad${s.surfaceMaterial ? ` con superficie ${s.surfaceMaterial}` : ""}${s.surfaceType ? ` orientada a ${s.surfaceType}` : ""}${size ? ` y tamaño ${size}` : ""}. Consulta abajo sus materiales, grosor y características de la base.`;
+  }
   return `${name} pertenece a la categoría ${review.category || "tecnología"}.${connections} Consulta abajo sus especificaciones, conexiones y opciones de compra.`;
 }
 
@@ -2190,6 +2198,10 @@ function specIcon(label) {
   if (value.includes("encoder")) return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"></circle><path d="M12 5v4M12 15v4M5 12h4M15 12h4"></path></svg>`;
   if (value.includes("botones")) return `<svg viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="5"></rect><path d="M12 3v7M8 11h8"></path></svg>`;
   if (value.includes("material")) return `<svg viewBox="0 0 24 24"><path d="m12 3 8 5-8 5-8-5z"></path><path d="m4 12 8 5 8-5M4 16l8 5 8-5"></path></svg>`;
+  if (value.includes("superficie")) return `<svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="2"></rect><path d="M7 10h10M7 14h7"></path></svg>`;
+  if (value.includes("grosor")) return `<svg viewBox="0 0 24 24"><path d="M5 8h14M5 16h14"></path><path d="M8 5 5 8l3 3M16 13l3 3-3 3"></path></svg>`;
+  if (value.includes("base")) return `<svg viewBox="0 0 24 24"><path d="M4 8h16v8H4z"></path><path d="M7 18h10"></path></svg>`;
+  if (value.includes("cosid")) return `<svg viewBox="0 0 24 24"><path d="M5 12h14"></path><path d="M7 8v8M11 8v8M15 8v8"></path></svg>`;
   if (value.includes("peso") || value.includes("weight")) return `<svg viewBox="0 0 24 24"><path d="M6 20h12l-1.5-11h-9z"></path><path d="M9 9a3 3 0 0 1 6 0"></path></svg>`;
   if (value.includes("switch")) return `<svg viewBox="0 0 24 24"><rect x="6" y="5" width="12" height="14" rx="3"></rect><path d="M9 9h6M9 13h6"></path></svg>`;
   if (value.includes("polling")) return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 7v5l3 2"></path></svg>`;
@@ -2309,18 +2321,16 @@ function buildSpecs(product) {
     add("Almohadillas", s.earpads);
   }
 
-  if (product.category === "DAC") {
-    add("Chip DAC", s.dacChip);
-    add("Amplificador", s.ampChip);
-    add("Entradas", arrayLabel(s.inputs));
-    add("Salidas", arrayLabel(s.outputs));
-    add("PCM máximo", s.maxPcm);
-    add("DSD máximo", s.maxDsd);
-    add("Potencia", s.powerOutput);
-    add("Balanceado", yesNo(s.balanced));
-    add("Bluetooth", s.bluetooth);
-    add("Codecs Bluetooth", arrayLabel(s.bluetoothCodecs));
-    add("Ganancia", s.gain);
+  if (product.category === "MousePads") {
+    add("Material de superficie", s.surfaceMaterial);
+    add("Tipo de superficie", s.surfaceType);
+    add("Dimensiones", s.dimensions || ((s.widthMm && s.heightMm) ? `${s.widthMm} × ${s.heightMm} mm` : ""));
+    add("Grosor", s.thicknessMm ? `${s.thicknessMm} mm` : "");
+    add("Material de base", s.baseMaterial);
+    add("Base antideslizante", yesNo(s.antiSlipBase));
+    add("Bordes cosidos", yesNo(s.stitchedEdges));
+    add("Resistencia al agua", yesNo(s.waterResistant));
+    add("Lavable", yesNo(s.washable));
   }
 
   return list;
@@ -2632,7 +2642,7 @@ function categoryPlaceholderDataUrl(category) {
     Teclados: { label: "TECLADO", symbol: "⌨" },
     IEM: { label: "IEM", symbol: "◔" },
     Headsets: { label: "HEADSET", symbol: "◉" },
-    DAC: { label: "DAC", symbol: "◫" }
+    MousePads: { label: "MOUSEPAD", symbol: "▭" }
   };
   const item = defs[category] || { label: "PRODUCTO", symbol: "◇" };
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="900" viewBox="0 0 900 900">
@@ -2736,12 +2746,13 @@ loadPublicSettings();
 
 function currentPageView() {
   const requested = new URLSearchParams(window.location.search).get("view") || "home";
-  return ["home", "categorias", "comparacion", "favoritos", "cuenta", "setup"].includes(requested) ? requested : "home";
+  return ["home", "categorias", "comparacion", "favoritos", "setups", "cuenta", "setup"].includes(requested) ? requested : "home";
 }
 
 function applyPageView() {
   const view = currentPageView();
-  if (view === "favoritos") { renderProfileFavorites(); renderUserSetups(); }
+  if (view === "favoritos") renderProfileFavorites();
+  if (view === "setups") renderUserSetups();
   if (view === "cuenta") renderProfileAvatarChoices();
   if (view === "setup" && currentToken && reviews.length) loadSharedSetupFromUrl();
   document.querySelectorAll("[data-view]").forEach(section => {

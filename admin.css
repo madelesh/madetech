@@ -2113,7 +2113,7 @@ body.admin-authenticated #adminApp {
 
 
 /* ==========================================================
-   MADELESH V5.29 — ESTRELLAS / BANNER AJUSTABLE / AUDIO
+   MADELESH V5.30 — ESTRELLAS / BANNER AJUSTABLE / AUDIO
    ========================================================== */
 .product-score-admin-field{align-content:start}
 .product-score-star-picker{display:flex;align-items:center;gap:5px;min-height:46px;padding:6px 0}
@@ -2124,3 +2124,82 @@ body.admin-authenticated #adminApp {
 .banner-transform-editor{margin-top:14px;padding-top:13px;border-top:1px solid rgba(255,255,255,.08);display:grid;gap:10px}.banner-transform-head{display:flex;justify-content:space-between;gap:12px;align-items:baseline}.banner-transform-head strong{font-size:.64rem;letter-spacing:.1em}.banner-transform-head small{color:#74747c;font-size:.62rem}.banner-transform-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;gap:10px;align-items:end}.banner-transform-controls label{display:grid;grid-template-columns:1fr auto;gap:6px;color:#85858d;font-size:.56rem;letter-spacing:.07em}.banner-transform-controls input[type="range"]{grid-column:1/-1;width:100%;accent-color:#eeff00}.banner-transform-controls output{color:#eeff00;font-size:.62rem;font-weight:800}
 .keyboard-sound-admin[hidden]{display:none!important}.keyboard-sound-admin:not([hidden]){display:block!important}
 @media(max-width:900px){.banner-transform-controls{grid-template-columns:1fr}.banner-transform-head{display:grid}}
+
+
+/* ==========================================================
+   MADELESH V5.30 — BANNER PREVIEW COMPLETO / MOUSEPADS
+   ========================================================== */
+.banner-full-preview-admin{
+  min-height:250px!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1.15fr) minmax(250px,.85fr)!important;
+  gap:0!important;
+  overflow:hidden!important;
+  padding:0!important;
+  background:linear-gradient(110deg,#141416 0 58%,#2a2d08 100%)!important;
+  border:1px solid rgba(238,255,0,.22)!important;
+  cursor:default!important;
+}
+.banner-full-preview-copy{
+  min-width:0;
+  padding:22px;
+  display:grid;
+  align-content:center;
+  justify-items:start;
+  gap:7px;
+  color:#fff
+}
+.banner-full-preview-copy>span{
+  color:#eeff00;font-size:.58rem;font-weight:900;letter-spacing:.11em
+}
+.banner-full-preview-copy>small{
+  color:#a3a3aa;font-size:.58rem
+}
+.banner-full-preview-copy>strong{
+  max-width:100%;
+  font-size:clamp(1.4rem,2.2vw,2.4rem);
+  line-height:.96;
+  letter-spacing:-.04em;
+  overflow-wrap:anywhere
+}
+.banner-full-preview-copy>p{
+  max-width:520px;
+  margin:2px 0 6px;
+  color:#b5b5ba;
+  font-size:.67rem;
+  line-height:1.45;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden
+}
+.banner-full-preview-copy>button{
+  min-height:32px;padding:0 13px;border:0;border-radius:999px;
+  background:#eeff00;color:#070707;font-size:.62rem;font-weight:900
+}
+.banner-full-preview-media{
+  position:relative;
+  min-height:250px;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  cursor:grab;
+  touch-action:none;
+  user-select:none
+}
+.banner-full-preview-admin.is-dragging .banner-full-preview-media{cursor:grabbing}
+.banner-full-preview-media img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  transform:translate(var(--banner-admin-x,0%),var(--banner-admin-y,0%)) scale(var(--banner-admin-scale,1));
+  transform-origin:center;
+  pointer-events:none;
+  transition:transform .08s linear
+}
+.banner-full-preview-admin.is-dragging .banner-full-preview-media img{transition:none}
+.banner-preview-empty{color:#777780;font-size:.65rem}
+@media(max-width:900px){
+  .banner-full-preview-admin{grid-template-columns:1fr!important}
+  .banner-full-preview-media{min-height:210px}
+}

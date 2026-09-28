@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 <html lang="es" data-theme="light">
 <head>
-  <meta name="madelesh-build" content="5.29" />
+  <meta name="madelesh-build" content="5.30" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="MadeLesh — Reviews de mouse, teclados, IEM, headsets y DACs." />
+  <meta name="description" content="MadeLesh — Reviews de mouse, teclados, IEM, headsets y mousepads." />
   <meta name="theme-color" content="#f4f4f0" />
   <title>MadeLesh — Reviews de tecnología</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link id="siteFavicon" rel="icon" type="image/png" href="" />
-  <link rel="stylesheet" href="styles.css?v=5.29" />
+  <link rel="stylesheet" href="styles.css?v=5.30" />
 </head>
 
 <body class="auth-pending">
@@ -96,6 +96,14 @@
           <span class="header-favorites-count" id="headerFavoritesCount">0</span>
         </a>
 
+        <a class="header-setups-box" id="headerSetupsBox" href="index.html?view=setups" aria-label="Abrir Setups" title="Setups">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3.5" y="4.5" width="17" height="11.5" rx="2"></rect>
+            <path d="M8 20h8M12 16v4"></path>
+            <path d="m8 10 2.2 2.2L16 7.8"></path>
+          </svg>
+        </a>
+
         <button class="theme-toggle" id="themeToggle" type="button" aria-label="Cambiar tema">
           <svg class="sun-icon" viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="12" cy="12" r="4"></circle>
@@ -147,6 +155,11 @@
               <span>Favoritos</span><b id="profileFavoritesCount">0</b>
             </a>
 
+            <a class="profile-menu-item profile-feature-item" href="index.html?view=setups">
+              <span class="profile-menu-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"></rect><path d="M8 20h8M12 16v4"></path></svg></span>
+              <span>Setups</span><b>›</b>
+            </a>
+
             <a class="profile-menu-item profile-feature-item" id="profileAvatarButton" href="index.html?view=cuenta">
               <span class="profile-menu-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.1A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.1A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 .6 1 1.7 1.7 0 0 0 1.1.4H21v4h-.1a1.7 1.7 0 0 0-1.5.6z"></path></svg></span>
               <span>Ajustes de cuenta</span><b>›</b>
@@ -171,6 +184,7 @@
         <a href="index.html?view=home">⌂ Home</a>
         <a href="index.html?view=categorias">▦ Categoría</a>
         <a href="index.html?view=comparacion">⇄ Comparación</a>
+        <a href="index.html?view=setups">▣ Setups</a>
       </nav>
     </header>
 
@@ -203,9 +217,9 @@
               <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M9 26v-6a15 15 0 0 1 30 0v6"></path><rect x="6" y="25" width="9" height="14" rx="4"></rect><rect x="33" y="25" width="9" height="14" rx="4"></rect></svg>
               <span>Headsets</span>
             </button>
-            <button type="button" data-filter="DAC">
-              <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="7" y="9" width="34" height="30" rx="5"></rect><circle cx="29" cy="24" r="7"></circle><circle cx="15" cy="18" r="2"></circle><circle cx="15" cy="29" r="2"></circle></svg>
-              <span>DACs</span>
+            <button type="button" data-filter="MousePads">
+              <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="10" width="38" height="28" rx="4"></rect><path d="M9 33h30M12 15h24"></path><path d="M30 19c4 1 6 4 6 7 0 4-3 7-7 7-3 0-6-2-7-5"></path></svg>
+              <span>MousePads</span>
             </button>
           </div>
         </div>
@@ -247,7 +261,7 @@
             <p class="eyebrow">PERIFÉRICOS + AUDIO</p>
             <h1>TECH<br><span>REVIEWS</span></h1>
             <p class="hero-description">
-              Mouse, teclados, IEM, headsets y DACs analizados sin relleno:
+              Mouse, teclados, IEM, headsets y mousepads analizados sin relleno:
               experiencia real, puntos fuertes, debilidades y una nota clara.
             </p>
           </div>
@@ -411,7 +425,7 @@
           <button class="favorites-clear" id="favoritesClearFilters" type="button">Limpiar</button>
         </div>
 
-        <div class="favorites-layout">
+        <div class="favorites-layout favorites-layout-full">
           <div class="favorites-products-column">
             <div class="reviews-grid favorites-page-grid" id="favoritesPageGrid"></div>
             <div class="personal-empty-state" id="favoritesPageEmpty" hidden>
@@ -421,18 +435,31 @@
               <a href="index.html?view=home">Explorar productos</a>
             </div>
           </div>
+        </div>
+      </section>
 
-          <aside class="setups-panel">
-            <div class="setups-panel-head">
-              <div>
-                <span>SETUPS</span>
-                <strong>Mis configuraciones</strong>
-              </div>
-              <button id="createSetupButton" type="button">+ Crear Setup</button>
-            </div>
-            <p class="setups-help">Agrupa productos favoritos y comparte el enlace con otro usuario de MadeLesh.</p>
-            <div class="setups-list" id="setupsList"></div>
-          </aside>
+      <section class="section personal-page setups-page" id="setups" data-view="setups">
+        <div class="personal-page-head">
+          <div>
+            <span class="section-index">(S)</span>
+            <span class="personal-page-kicker">SETUPS</span>
+            <h2>Mis configuraciones</h2>
+            <p>Agrupa tus productos favoritos en configuraciones y comparte cada Setup con otro usuario de MadeLesh.</p>
+          </div>
+          <div class="personal-page-actions">
+            <button class="setup-page-create-button" id="createSetupButton" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+              <span>Crear Setup</span>
+            </button>
+            <a href="index.html?view=favoritos">Ver favoritos →</a>
+          </div>
+        </div>
+
+        <div class="setups-page-shell">
+          <div class="setups-page-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"></rect><path d="M8 20h8M12 16v4"></path></svg>
+          </div>
+          <div class="setups-list setups-list-page" id="setupsList"></div>
         </div>
 
         <div class="setup-editor-modal" id="setupEditorModal" hidden>
@@ -460,7 +487,7 @@
           </div>
           <div class="personal-page-actions">
             <button class="setup-copy-button" id="copySharedSetupButton" type="button" hidden>Guardar copia</button>
-            <a href="index.html?view=favoritos">Mis favoritos →</a>
+            <a href="index.html?view=setups">Mis Setups →</a>
           </div>
         </div>
         <div class="reviews-grid shared-setup-grid" id="sharedSetupGrid"></div>
@@ -507,7 +534,7 @@
             <span class="compare-kicker">HERRAMIENTA DE COMPARACIÓN</span>
             <h2>Compara productos<br>de la misma categoría</h2>
           </div>
-          <p>Selecciona un producto y MadeLesh limitará automáticamente la segunda opción a la misma categoría. Mouse con mouse, teclados con teclados, IEM con IEM, headsets con headsets y DAC con DAC.</p>
+          <p>Selecciona un producto y MadeLesh limitará automáticamente la segunda opción a la misma categoría. Mouse con mouse, teclados con teclados, IEM con IEM, headsets con headsets y MousePads con MousePads.</p>
         </div>
 
         <div class="compare-selector-grid compare-selector-visual-grid">
@@ -560,7 +587,7 @@
           <img class="site-brand-logo" alt="MadeLesh" hidden />
           <span class="brand-fallback"><span class="brand-dot"></span><span>MADELESH</span></span>
         </a>
-        <p>Mouse · Teclados · IEM · Headsets · DACs</p>
+        <p>Mouse · Teclados · IEM · Headsets · MousePads</p>
         <p>© <span id="year"></span> MadeLesh</p>
       </div>
 
@@ -583,7 +610,7 @@
       </div>
 
       <div class="footer-version-row">
-        <span id="siteVersionLabel">MadeLesh v5.29</span>
+        <span id="siteVersionLabel">MadeLesh v5.30</span>
         <button id="footerReleaseToggle" type="button" aria-expanded="false">
           Ver cambios
         </button>
@@ -599,7 +626,7 @@
     </article>
   </div>
 
-  <script type="module" src="app.js?v=5.29"></script>
+  <script type="module" src="app.js?v=5.30"></script>
   </div>
 </body>
 </html>

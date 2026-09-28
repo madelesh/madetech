@@ -1,4 +1,4 @@
-console.info("MadeLesh Admin build 5.29");
+console.info("MadeLesh Admin build 5.30");
 import { API_BASE } from "./config.js";
 
 const adminLogin = document.getElementById("adminLogin");
@@ -45,6 +45,7 @@ const productCategory = document.getElementById("productCategory");
 const categoryFields = document.getElementById("categoryFields");
 const categoryFieldsTitle = document.getElementById("categoryFieldsTitle");
 const productConnectionsPicker = document.getElementById("productConnectionsPicker");
+const productConnectionsBlock = document.getElementById("productConnectionsBlock");
 const productConnectionsInput = document.getElementById("productConnections");
 const productImagesPreview = document.getElementById("productImagesPreview");
 const productImagesJson = document.getElementById("productImagesJson");
@@ -61,6 +62,10 @@ const productBannerImageUrl = document.getElementById("productBannerImageUrl");
 const productBannerImageFile = document.getElementById("productBannerImageFile");
 const clearProductBannerImage = document.getElementById("clearProductBannerImage");
 const productBannerImagePreview = document.getElementById("productBannerImagePreview");
+const productBannerImagePreviewMedia = document.getElementById("productBannerImagePreviewMedia");
+const productBannerPreviewBrand = document.getElementById("productBannerPreviewBrand");
+const productBannerPreviewName = document.getElementById("productBannerPreviewName");
+const productBannerPreviewSummary = document.getElementById("productBannerPreviewSummary");
 const productBannerImageScale = document.getElementById("productBannerImageScale");
 const productBannerImageScaleValue = document.getElementById("productBannerImageScaleValue");
 const productBannerImagePositionX = document.getElementById("productBannerImagePositionX");
@@ -193,22 +198,21 @@ let brandingFaviconDarkDataUrl = "";
 let contactIconDataUrls = { discord:"", steam:"", x:"", youtube:"", tiktok:"", email:"" };
 let colorImagesByHex = {};
 const ADMIN_BUILD_RELEASE = {
-  version: "5.29",
-  title: "Audio estable, estrellas y banner ajustable",
+  version: "5.30",
+  title: "MousePads, Setups y tema claro",
   date: "2026-09-27",
   changes: {
     added: [
-      "Posición y tamaño configurables para la imagen del banner.",
-      "Calificación editorial mediante estrellas."
+      "Categoría MousePads con especificaciones propias.",
+      "Vista previa completa del banner durante el ajuste."
     ],
     removed: [
-      "Buscador de ficha técnica en Internet.",
-      "MadeLesh Score numérico."
+      "Categoría DAC del catálogo visible."
     ],
     fixed: [
-      "Editor de audio visible de forma consistente para teclados.",
-      "Contraste del modo claro en especificaciones y comparación.",
-      "Fluidez del desplazamiento dentro de la ficha del producto."
+      "Editor de comparación sin superposiciones.",
+      "Tema claro en blanco, negro y gris.",
+      "Especificaciones más compactas."
     ]
   }
 };
@@ -334,18 +338,21 @@ const categorySchemas = {
     field("frequencyResponse", "Respuesta en frecuencia", "text", "Ej. 20 Hz – 20 kHz"),
     field("earpads", "Material de almohadillas", "text", "Ej. Memory Foam + Tela")
   ],
-  DAC: [
-    field("dacChip", "Chip DAC", "text", "Ej. ESS ES9039Q2M"),
-    field("ampChip", "Amplificador", "text", "Ej. TPA6120A2"),
-    field("inputs", "Entradas", "lines", "USB-C\nOptical\nCoaxial"),
-    field("outputs", "Salidas", "lines", "3.5 mm\n4.4 mm"),
-    field("maxPcm", "PCM máximo", "text", "Ej. 32-bit / 768 kHz"),
-    field("maxDsd", "DSD máximo", "text", "Ej. DSD512"),
-    field("powerOutput", "Potencia de salida", "text", "Ej. 1.5 W @ 32 Ω"),
-    field("balanced", "Salida balanceada", "boolean"),
-    field("bluetooth", "Bluetooth", "text", "Ej. 5.4 / No"),
-    field("bluetoothCodecs", "Codecs Bluetooth", "lines", "LDAC\naptX Adaptive\nAAC"),
-    field("gain", "Ganancia", "text", "Ej. Low / High")
+  MousePads: [
+    field("surfaceMaterial", "Material de superficie", "text", "Ej. Tela tejida / Vidrio / Híbrido"),
+    field("surfaceType", "Tipo de deslizamiento", "select", "", [
+      ["Control", "Control"],
+      ["Balanceado", "Balanceado"],
+      ["Speed", "Speed"]
+    ]),
+    field("widthMm", "Ancho (mm)", "number", "490"),
+    field("heightMm", "Largo (mm)", "number", "420"),
+    field("thicknessMm", "Grosor (mm)", "number", "4"),
+    field("baseMaterial", "Material de base", "text", "Ej. Caucho natural / Poron"),
+    field("antiSlipBase", "Base antideslizante", "boolean"),
+    field("stitchedEdges", "Bordes cosidos", "boolean"),
+    field("waterResistant", "Resistente al agua", "boolean"),
+    field("washable", "Lavable", "boolean")
   ]
 };
 
@@ -357,6 +364,7 @@ function renderCategoryFields(category, values = {}) {
   const schema = categorySchemas[category] || [];
   categoryFieldsTitle.textContent = category === "IEM" ? "IEM / In-Ears" : category;
   categoryFields.innerHTML = schema.map(item => fieldHtml(item, values[item.key])).join("");
+  if (productConnectionsBlock) productConnectionsBlock.hidden = category === "MousePads";
   bindSpecChoiceGroups();
   renderKeyboardSoundVisibility();
   renderProductLivePreview();
@@ -513,7 +521,7 @@ const LIVE_PREVIEW_SPEC_KEYS = {
   Teclados: [["switchType","Switch"],["layout","Formato"],["pollingRate","Polling"]],
   IEM: [["driverConfig","Drivers"],["impedance","Impedancia"],["soundSignature","Firma"]],
   Headsets: [["driver","Driver"],["weight","Peso"],["batteryHours","Autonomía"]],
-  DAC: [["dacChip","Chip DAC"],["maxPcm","PCM"],["outputs","Salidas"]]
+  MousePads: [["surfaceMaterial","Superficie"],["surfaceType","Deslizamiento"],["thicknessMm","Grosor"]]
 };
 
 function livePreviewSpecValue(value, key) {
@@ -706,10 +714,25 @@ function renderProductBannerImagePreview() {
   if (productBannerImageScaleValue) productBannerImageScaleValue.textContent = `${Math.round(scale)}%`;
   if (productBannerImagePositionXValue) productBannerImagePositionXValue.textContent = `${Math.round(x)}%`;
   if (productBannerImagePositionYValue) productBannerImagePositionYValue.textContent = `${Math.round(y)}%`;
-  productBannerImagePreview.innerHTML = src ? `<img src="${escapeAttr(src)}" alt="Vista previa del banner" draggable="false" style="--banner-admin-scale:${scale/100};--banner-admin-x:${(x-50)*0.8}%;--banner-admin-y:${(y-50)*0.8}%">` : `<span>Vista previa 900 × 420</span>`;
+
+  if (productBannerPreviewBrand) productBannerPreviewBrand.textContent = String(document.getElementById("productBrand")?.value || "MARCA").trim() || "MARCA";
+  if (productBannerPreviewName) productBannerPreviewName.textContent = String(document.getElementById("productName")?.value || "Nombre del producto").trim() || "Nombre del producto";
+  if (productBannerPreviewSummary) {
+    const summary = String(document.getElementById("productSummary")?.value || "La descripción del producto se mostrará aquí.").trim();
+    productBannerPreviewSummary.textContent = summary || "La descripción del producto se mostrará aquí.";
+  }
+
+  if (productBannerImagePreviewMedia) {
+    productBannerImagePreviewMedia.innerHTML = src
+      ? `<img src="${escapeAttr(src)}" alt="Vista previa del banner" draggable="false" style="--banner-admin-scale:${scale/100};--banner-admin-x:${(x-50)*0.8}%;--banner-admin-y:${(y-50)*0.8}%">`
+      : `<span class="banner-preview-empty">Vista previa 900 × 420</span>`;
+  }
 }
 
 [productBannerImageScale, productBannerImagePositionX, productBannerImagePositionY].filter(Boolean).forEach(input => input.addEventListener("input", renderProductBannerImagePreview));
+["productBrand","productName","productSummary"].forEach(id => {
+  document.getElementById(id)?.addEventListener("input", renderProductBannerImagePreview);
+});
 resetProductBannerTransform?.addEventListener("click", () => {
   if (productBannerImageScale) productBannerImageScale.value = "100";
   if (productBannerImagePositionX) productBannerImagePositionX.value = "50";
@@ -720,7 +743,8 @@ resetProductBannerTransform?.addEventListener("click", () => {
 let bannerDragState = null;
 productBannerImagePreview?.addEventListener("pointerdown", event => {
   if (!safeImageSource(productBannerImageUrl?.value || "")) return;
-  const rect = productBannerImagePreview.getBoundingClientRect();
+  if (productBannerImagePreviewMedia && !productBannerImagePreviewMedia.contains(event.target)) return;
+  const rect = (productBannerImagePreviewMedia || productBannerImagePreview).getBoundingClientRect();
   const state = bannerTransformState();
   bannerDragState = { pointerId:event.pointerId,startClientX:event.clientX,startClientY:event.clientY,startX:state.x,startY:state.y,width:rect.width||1,height:rect.height||1 };
   productBannerImagePreview.setPointerCapture?.(event.pointerId);
@@ -1396,7 +1420,7 @@ function applyImportedWebProduct(product) {
   productFormTitle.textContent = "Nuevo producto · encontrado en Internet";
   document.getElementById("productStatus").value = "draft";
 
-  const allowedCategories = ["Mouse", "Teclados", "IEM", "Headsets", "DAC"];
+  const allowedCategories = ["Mouse", "Teclados", "IEM", "Headsets", "MousePads"];
   if (allowedCategories.includes(product.category)) {
     productCategory.value = product.category;
     webSearchCategory.value = product.category;
@@ -2843,7 +2867,7 @@ function categoryPlaceholderDataUrl(category) {
     Teclados: ["TECLADO", "⌨"],
     IEM: ["IEM", "◔"],
     Headsets: ["HEADSET", "◉"],
-    DAC: ["DAC", "◫"]
+    MousePads: ["MOUSEPAD", "▭"]
   };
   const [label, icon] = labels[category] || ["PRODUCTO", "◇"];
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800">
