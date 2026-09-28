@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es" data-theme="dark">
 <head>
-  <meta name="madelesh-admin-build" content="5.31" />
+  <meta name="madelesh-admin-build" content="5.32" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0b0b0c" />
@@ -10,8 +10,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link id="siteFavicon" rel="icon" type="image/png" href="" />
-  <link rel="stylesheet" href="styles.css?v=5.31" />
-  <link rel="stylesheet" href="admin.css?v=5.31" />
+  <link rel="stylesheet" href="styles.css?v=5.32" />
+  <link rel="stylesheet" href="admin.css?v=5.32" />
 </head>
 <body class="admin-body">
 
@@ -49,7 +49,7 @@
 
       <p class="admin-error" id="adminLoginError" hidden></p>
       <a class="back-site" href="index.html">← Volver a MadeLesh</a>
-      <small class="admin-build-marker">build 5.31</small>
+      <small class="admin-build-marker">build 5.32</small>
     </div>
   </section>
 
@@ -111,7 +111,7 @@
       <div class="admin-sidebar-footer">
         <span id="adminIdentity"></span>
         <button id="adminLogout">Cerrar sesión</button>
-        <small class="admin-build-marker">build 5.31</small>
+        <small class="admin-build-marker">build 5.32</small>
       </div>
     </aside>
 
@@ -359,23 +359,11 @@
                       </label>
                       <button class="ghost-btn" id="clearProductBannerImage" type="button">Quitar</button>
                     </div>
-                    <small class="image-size-hint"><strong>Medida recomendada:</strong> 960 × 420 px para la zona visual. La vista previa inferior respeta la proporción completa 1920 × 420 px.</small>
-                  </div>
-                  <div class="banner-image-preview-admin banner-full-preview-admin" id="productBannerImagePreview" title="Arrastra la imagen del lado derecho para cambiar su posición">
-                    <div class="banner-full-preview-copy">
-                      <span>DESTACADO DEL MES</span>
-                      <small id="productBannerPreviewBrand">MARCA</small>
-                      <strong id="productBannerPreviewName">Nombre del producto</strong>
-                      <p id="productBannerPreviewSummary">La descripción del producto se mostrará aquí.</p>
-                      <button type="button" tabindex="-1">Ver</button>
-                    </div>
-                    <div class="banner-full-preview-media" id="productBannerImagePreviewMedia">
-                      <span class="banner-preview-empty">Vista previa del banner 1920 × 420</span>
-                    </div>
+                    <small class="image-size-hint"><strong>Medida recomendada:</strong> 960 × 420 px para la zona visual del banner.</small>
                   </div>
                 </div>
                 <div class="banner-transform-editor">
-                  <div class="banner-transform-head"><strong>AJUSTAR IMAGEN</strong><small>Arrastra la imagen en la vista previa o usa los controles.</small></div>
+                  <div class="banner-transform-head"><strong>AJUSTAR IMAGEN</strong><small>Usa los controles para definir tamaño y posición en el banner.</small></div>
                   <div class="banner-transform-controls">
                     <label>TAMAÑO <input id="productBannerImageScale" type="range" min="60" max="180" step="1" value="100"><output id="productBannerImageScaleValue">100%</output></label>
                     <label>POSICIÓN HORIZONTAL <input id="productBannerImagePositionX" type="range" min="0" max="100" step="1" value="50"><output id="productBannerImagePositionXValue">50%</output></label>
@@ -457,9 +445,15 @@
                 </div>
                 <label class="variant-search-admin">
                   BUSCAR PRODUCTO
-                  <input id="productVariantSearch" type="search" placeholder="Buscar por nombre, marca o modelo..." autocomplete="off" />
+                  <input id="productVariantSearch" type="search" placeholder="Escribe para buscar por nombre, marca o modelo..." autocomplete="off" />
                 </label>
-                <div class="product-variant-picker" id="productVariantList"><span class="variant-empty-admin">Guarda productos en la biblioteca para poder enlazarlos.</span></div>
+                <div class="product-variant-picker variant-search-results" id="productVariantList" hidden></div>
+                <div class="variant-selected-wrap">
+                  <span class="variant-selected-label">VARIANTES ENLAZADAS</span>
+                  <div class="product-variant-selected" id="productVariantSelectedList">
+                    <span class="variant-empty-admin">Todavía no hay variantes enlazadas.</span>
+                  </div>
+                </div>
               </div>
 
               <div class="product-form-section-title"><span>04</span><div><strong>Especificaciones</strong><small>Conexiones y datos técnicos por categoría</small></div></div>
@@ -887,7 +881,7 @@
   </div>
 
   <script type="module">
-console.info("MadeLesh Admin build 5.31");
+console.info("MadeLesh Admin build 5.32");
 import { API_BASE } from "./config.js";
 
 const adminLogin = document.getElementById("adminLogin");
@@ -991,6 +985,7 @@ const productLivePreviewPrice = document.getElementById("productLivePreviewPrice
 const productLivePreviewSpecs = document.getElementById("productLivePreviewSpecs");
 const productVariantSearch = document.getElementById("productVariantSearch");
 const productVariantList = document.getElementById("productVariantList");
+const productVariantSelectedList = document.getElementById("productVariantSelectedList");
 const productYoutubeCreditName = document.getElementById("productYoutubeCreditName");
 const productYoutubeCreditUrl = document.getElementById("productYoutubeCreditUrl");
 const productTiktokCreditName = document.getElementById("productTiktokCreditName");
@@ -1077,7 +1072,7 @@ const auditSearch = document.getElementById("auditSearch");
 const auditTypeFilter = document.getElementById("auditTypeFilter");
 const reloadAudit = document.getElementById("reloadAudit");
 
-let adminToken = localStorage.getItem("madetech_admin_token") || "";
+let adminToken = localStorage.getItem("madetech_admin_token") || localStorage.getItem("madetech_user_token") || "";
 let adminSession = null;
 let products = [];
 let adminRoles = [];
@@ -1097,8 +1092,8 @@ let brandingFaviconDarkDataUrl = "";
 let contactIconDataUrls = { discord:"", steam:"", x:"", youtube:"", tiktok:"", email:"" };
 let colorImagesByHex = {};
 const ADMIN_BUILD_RELEASE = {
-  version: "5.31",
-  title: "MousePads, Setups y tema claro",
+  version: "5.32",
+  title: "Correcciones de interfaz, roles y Access Keys",
   date: "2026-09-27",
   changes: {
     added: [
@@ -1356,18 +1351,69 @@ productCategory.addEventListener("change", () => {
 /* ---------------- PRODUCT VARIANTS + REVIEW META ---------------- */
 function currentEditingProductId(){ return Number(document.getElementById("productId")?.value || 0); }
 function productThumbForAdmin(product){ return safeImageSource(product?.imageUrl) || safeImageSource(Array.isArray(product?.images)?product.images[0]:"") || categoryPlaceholderDataUrl(product?.category); }
+function renderSelectedVariants(){
+  if(!productVariantSelectedList) return;
+  const selected = [...selectedVariantProductIds]
+    .map(id => products.find(p => Number(p.id) === Number(id)))
+    .filter(Boolean);
+
+  productVariantSelectedList.innerHTML = selected.length
+    ? selected.map(p => `
+      <div class="variant-selected-item">
+        <img src="${escapeAttr(productThumbForAdmin(p))}" alt="">
+        <span><strong>${escapeHtml(p.name || "Producto")}</strong><small>${escapeHtml(`${p.brand || ""}${p.model ? ` · ${p.model}` : ""}`)}</small></span>
+        <button type="button" data-remove-variant="${p.id}" aria-label="Quitar variante">×</button>
+      </div>`).join("")
+    : `<span class="variant-empty-admin">Todavía no hay variantes enlazadas.</span>`;
+
+  productVariantSelectedList.querySelectorAll("[data-remove-variant]").forEach(button => {
+    button.addEventListener("click", () => {
+      selectedVariantProductIds.delete(Number(button.dataset.removeVariant));
+      renderVariantSelector();
+    });
+  });
+}
+
 function renderVariantSelector(){
   if(!productVariantList) return;
-  const currentId=currentEditingProductId();
-  const category=productCategory?.value || "";
-  const query=String(productVariantSearch?.value||"").trim().toLowerCase();
-  const candidates=products.filter(p=>Number(p.id)!==currentId && (!category || p.category===category)).filter(p=>!query || `${p.brand||""} ${p.name||""} ${p.model||""}`.toLowerCase().includes(query));
-  productVariantList.innerHTML=candidates.length?candidates.map(p=>{
-    const selected=selectedVariantProductIds.has(Number(p.id));
-    return `<button type="button" class="variant-product-option ${selected?"active":""}" data-variant-product="${p.id}" aria-pressed="${selected}"><img src="${escapeAttr(productThumbForAdmin(p))}" alt=""><span><strong>${escapeHtml(p.name||"Producto")}</strong><small>${escapeHtml(`${p.brand||""}${p.model?` · ${p.model}`:""}`)}</small></span><i>${selected?"✓":"+"}</i></button>`;
-  }).join(""):`<span class="variant-empty-admin">No hay productos de esta categoría que coincidan.</span>`;
-  productVariantList.querySelectorAll("[data-variant-product]").forEach(btn=>btn.addEventListener("click",()=>{const id=Number(btn.dataset.variantProduct);if(selectedVariantProductIds.has(id))selectedVariantProductIds.delete(id);else if(selectedVariantProductIds.size<12)selectedVariantProductIds.add(id);else return alert("Máximo 12 variantes enlazadas.");renderVariantSelector();}));
+  renderSelectedVariants();
+
+  const currentId = currentEditingProductId();
+  const category = productCategory?.value || "";
+  const query = String(productVariantSearch?.value || "").trim().toLowerCase();
+
+  if(!query){
+    productVariantList.hidden = true;
+    productVariantList.innerHTML = "";
+    return;
+  }
+
+  const candidates = products
+    .filter(p => Number(p.id) !== currentId && (!category || p.category === category))
+    .filter(p => !selectedVariantProductIds.has(Number(p.id)))
+    .filter(p => `${p.brand || ""} ${p.name || ""} ${p.model || ""}`.toLowerCase().includes(query))
+    .slice(0, 12);
+
+  productVariantList.hidden = false;
+  productVariantList.innerHTML = candidates.length
+    ? candidates.map(p => `
+      <button type="button" class="variant-product-option" data-variant-product="${p.id}">
+        <img src="${escapeAttr(productThumbForAdmin(p))}" alt="">
+        <span><strong>${escapeHtml(p.name || "Producto")}</strong><small>${escapeHtml(`${p.brand || ""}${p.model ? ` · ${p.model}` : ""}`)}</small></span>
+        <i>+</i>
+      </button>`).join("")
+    : `<span class="variant-empty-admin">No encontré productos de esta categoría.</span>`;
+
+  productVariantList.querySelectorAll("[data-variant-product]").forEach(button => {
+    button.addEventListener("click", () => {
+      if(selectedVariantProductIds.size >= 12) return alert("Máximo 12 variantes enlazadas.");
+      selectedVariantProductIds.add(Number(button.dataset.variantProduct));
+      if(productVariantSearch) productVariantSearch.value = "";
+      renderVariantSelector();
+    });
+  });
 }
+
 function setProductVariants(ids=[]){ selectedVariantProductIds=new Set((Array.isArray(ids)?ids:[]).map(Number).filter(Number.isFinite)); renderVariantSelector(); }
 productVariantSearch?.addEventListener("input",renderVariantSelector);
 
@@ -1663,7 +1709,6 @@ function bannerTransformState() {
 }
 
 function renderProductBannerImagePreview() {
-  if (!productBannerImagePreview) return;
   const src = safeImageSource(productBannerImageUrl?.value || "");
   const { scale, x, y } = bannerTransformState();
   if (productBannerImageScaleValue) productBannerImageScaleValue.textContent = `${Math.round(scale)}%`;
@@ -3603,7 +3648,7 @@ async function loadKeys() {
   }
 
   document.querySelectorAll("[data-reveal-key]").forEach(button => {
-    button.addEventListener("click", () => revealAccessKey(Number(button.dataset.revealKey)));
+    button.addEventListener("click", () => revealAccessKey(Number(button.dataset.revealKey), button));
   });
   document.querySelectorAll("[data-copy-key]").forEach(button => {
     button.addEventListener("click", () => copyRevealedKey(Number(button.dataset.copyKey), button));
@@ -3631,8 +3676,13 @@ async function loadKeys() {
 
 
 async function revealAccessKey(id, button) {
+  button = button || document.querySelector(`[data-reveal-key="${id}"]`);
   const output = document.getElementById(`keyRevealValue_${id}`);
   const copyButton = document.querySelector(`[data-copy-key="${id}"]`);
+  if (!button || !output) {
+    alert("No se pudo localizar el control de esta Access Key. Recarga el panel e inténtalo de nuevo.");
+    return;
+  }
 
   if (button.dataset.visible === "true") {
     output.textContent = "MT-•••••-•••••-•••••-•••••";

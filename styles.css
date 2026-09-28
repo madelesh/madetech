@@ -4867,3 +4867,109 @@ html[data-theme="light"] .product-spec-card span{color:#555!important}
 html[data-theme="light"] .product-variant-card{background:#fff!important;color:#111!important;border-color:#d1d1d1!important}
 html[data-theme="light"] .product-variant-card img{background:#f2f2f2!important}
 
+
+
+/* ==========================================================
+   MADELESH V5.32 — LIGHT UI / VARIANTES / BADGES / PANEL
+   ========================================================== */
+
+/* Tema claro: botones y textos con contraste real. */
+html[data-theme="light"] .review-read,
+html[data-theme="light"] .product-card-footer .review-read{
+  background:#111!important;
+  color:#fff!important;
+  border-color:#111!important;
+}
+html[data-theme="light"] .review-read *,
+html[data-theme="light"] .product-card-footer .review-read *{
+  color:#fff!important;
+  stroke:#fff!important;
+}
+
+html[data-theme="light"] .purchase-card.official-purchase{
+  background:#151515!important;
+  border-color:#151515!important;
+  color:#fff!important;
+}
+html[data-theme="light"] .purchase-card.official-purchase *,
+html[data-theme="light"] .purchase-card.official-purchase .link-copy strong,
+html[data-theme="light"] .purchase-card.official-purchase .link-copy span{
+  color:#fff!important;
+}
+html[data-theme="light"] .purchase-card.official-purchase .link-icon{
+  background:#292929!important;
+  color:#fff!important;
+}
+html[data-theme="light"] .purchase-card:not(.official-purchase),
+html[data-theme="light"] .review-link-card{
+  background:#fff!important;
+  color:#111!important;
+  border-color:#cfcfcf!important;
+}
+html[data-theme="light"] .purchase-card:not(.official-purchase) *,
+html[data-theme="light"] .review-link-card *{
+  color:#111!important;
+}
+html[data-theme="light"] .purchase-card:not(.official-purchase) .link-copy span,
+html[data-theme="light"] .review-link-card .link-copy span{
+  color:#666!important;
+}
+
+/* Contadores de cabecera siempre legibles. */
+html[data-theme="light"] .header-favorites-count,
+html[data-theme="light"] .product-notification-badge{
+  background:#111!important;
+  color:#fff!important;
+  border-color:#fff!important;
+}
+.header-favorites-count,
+.product-notification-badge{
+  z-index:5!important;
+  font-variant-numeric:tabular-nums;
+}
+
+/* Variantes: sin banda/fondo gris detrás. */
+.product-variants-section{
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.product-variants-list{
+  background:transparent!important;
+}
+html[data-theme="light"] .product-variants-section{
+  background:transparent!important;
+}
+html[data-theme="light"] .product-variant-card{
+  background:#fff!important;
+  color:#111!important;
+  border:1px solid #bdbdbd!important;
+  box-shadow:none!important;
+}
+html[data-theme="light"] .product-variant-card:hover{
+  background:#f7f7f7!important;
+  border-color:#777!important;
+}
+html[data-theme="light"] .product-variant-card b{
+  color:#111!important;
+}
+
+/* Cabecera y acciones en modo claro. */
+html[data-theme="light"] .header-favorites-box,
+html[data-theme="light"] .header-setups-box,
+html[data-theme="light"] .product-notification-button,
+html[data-theme="light"] .theme-toggle{
+  color:#111!important;
+  background:#fff!important;
+  border-color:#cfcfcf!important;
+}
+html[data-theme="light"] .header-favorites-box svg,
+html[data-theme="light"] .header-setups-box svg,
+html[data-theme="light"] .product-notification-button svg{
+  stroke:#111!important;
+}
+
+/* Fallback por si queda una versión anterior de la franja inferior en caché. */
+html[data-theme="light"] .product-card-footer,
+html[data-theme="light"] .review-card .review-read{
+  color:#111;
+}

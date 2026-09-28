@@ -2216,3 +2216,67 @@ body.admin-authenticated #adminApp {
 /* Banner preview at the actual full-banner ratio: 1920×420 = 32:7. */
 .banner-image-editor-grid{grid-template-columns:1fr!important}.banner-full-preview-admin{width:100%!important;aspect-ratio:32/7!important;min-height:0!important;height:auto!important;display:grid!important;grid-template-columns:1fr 1fr!important;overflow:hidden!important}.banner-full-preview-copy{padding:clamp(14px,2vw,32px)!important}.banner-full-preview-media{min-height:0!important;height:100%!important}.banner-full-preview-media img{width:100%!important;height:100%!important;object-fit:contain!important}
 @media(max-width:850px){.review-admin-grid{grid-template-columns:1fr}.review-credit-grid{grid-template-columns:1fr}.product-variant-picker{grid-template-columns:1fr}.banner-full-preview-admin{aspect-ratio:auto!important;min-height:330px!important;grid-template-columns:1fr!important}.banner-full-preview-media{min-height:180px!important}}
+
+
+/* ==========================================================
+   MADELESH V5.32 — VARIANTES COMPACTAS / SIN PREVIEW BANNER
+   ========================================================== */
+.banner-full-preview-admin,
+.banner-image-preview-admin{
+  display:none!important;
+}
+.banner-image-editor-grid{
+  display:block!important;
+}
+.variant-search-results[hidden]{display:none!important}
+.variant-search-results{
+  margin-top:8px!important;
+  max-height:260px!important;
+  grid-template-columns:repeat(auto-fill,minmax(230px,1fr))!important;
+}
+.variant-selected-wrap{
+  margin-top:14px;
+  padding-top:12px;
+  border-top:1px solid rgba(255,255,255,.08);
+}
+.variant-selected-label{
+  display:block;
+  margin-bottom:8px;
+  color:#777780;
+  font-size:.58rem;
+  letter-spacing:.09em;
+}
+.product-variant-selected{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.variant-selected-item{
+  min-width:210px;
+  max-width:310px;
+  min-height:58px;
+  padding:6px 7px;
+  display:grid;
+  grid-template-columns:44px minmax(0,1fr) 28px;
+  gap:8px;
+  align-items:center;
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:12px;
+  background:#151517;
+}
+.variant-selected-item img{
+  width:44px;height:44px;object-fit:contain;padding:4px;
+  border-radius:9px;background:#0f0f10;
+}
+.variant-selected-item>span{min-width:0;display:grid;gap:2px}
+.variant-selected-item strong{
+  font-size:.68rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.variant-selected-item small{
+  color:#74747c;font-size:.56rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.variant-selected-item button{
+  width:28px;height:28px;border:0;border-radius:8px;
+  background:#232326;color:#fff;font-size:1rem;cursor:pointer;
+}
+.variant-selected-item button:hover{background:#3a2020;color:#ff8585}

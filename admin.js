@@ -1,4 +1,4 @@
-console.info("MadeLesh Admin build 5.31");
+console.info("MadeLesh Admin build 5.32");
 import { API_BASE } from "./config.js";
 
 const adminLogin = document.getElementById("adminLogin");
@@ -102,6 +102,7 @@ const productLivePreviewPrice = document.getElementById("productLivePreviewPrice
 const productLivePreviewSpecs = document.getElementById("productLivePreviewSpecs");
 const productVariantSearch = document.getElementById("productVariantSearch");
 const productVariantList = document.getElementById("productVariantList");
+const productVariantSelectedList = document.getElementById("productVariantSelectedList");
 const productYoutubeCreditName = document.getElementById("productYoutubeCreditName");
 const productYoutubeCreditUrl = document.getElementById("productYoutubeCreditUrl");
 const productTiktokCreditName = document.getElementById("productTiktokCreditName");
@@ -188,7 +189,7 @@ const auditSearch = document.getElementById("auditSearch");
 const auditTypeFilter = document.getElementById("auditTypeFilter");
 const reloadAudit = document.getElementById("reloadAudit");
 
-let adminToken = localStorage.getItem("madetech_admin_token") || "";
+let adminToken = localStorage.getItem("madetech_admin_token") || localStorage.getItem("madetech_user_token") || "";
 let adminSession = null;
 let products = [];
 let adminRoles = [];
@@ -208,8 +209,8 @@ let brandingFaviconDarkDataUrl = "";
 let contactIconDataUrls = { discord:"", steam:"", x:"", youtube:"", tiktok:"", email:"" };
 let colorImagesByHex = {};
 const ADMIN_BUILD_RELEASE = {
-  version: "5.31",
-  title: "MousePads, Setups y tema claro",
+  version: "5.32",
+  title: "Correcciones de interfaz, roles y Access Keys",
   date: "2026-09-27",
   changes: {
     added: [
@@ -467,18 +468,69 @@ productCategory.addEventListener("change", () => {
 /* ---------------- PRODUCT VARIANTS + REVIEW META ---------------- */
 function currentEditingProductId(){ return Number(document.getElementById("productId")?.value || 0); }
 function productThumbForAdmin(product){ return safeImageSource(product?.imageUrl) || safeImageSource(Array.isArray(product?.images)?product.images[0]:"") || categoryPlaceholderDataUrl(product?.category); }
+function renderSelectedVariants(){
+  if(!productVariantSelectedList) return;
+  const selected = [...selectedVariantProductIds]
+    .map(id => products.find(p => Number(p.id) === Number(id)))
+    .filter(Boolean);
+
+  productVariantSelectedList.innerHTML = selected.length
+    ? selected.map(p => `
+      <div class="variant-selected-item">
+        <img src="${escapeAttr(productThumbForAdmin(p))}" alt="">
+        <span><strong>${escapeHtml(p.name || "Producto")}</strong><small>${escapeHtml(`${p.brand || ""}${p.model ? ` · ${p.model}` : ""}`)}</small></span>
+        <button type="button" data-remove-variant="${p.id}" aria-label="Quitar variante">×</button>
+      </div>`).join("")
+    : `<span class="variant-empty-admin">Todavía no hay variantes enlazadas.</span>`;
+
+  productVariantSelectedList.querySelectorAll("[data-remove-variant]").forEach(button => {
+    button.addEventListener("click", () => {
+      selectedVariantProductIds.delete(Number(button.dataset.removeVariant));
+      renderVariantSelector();
+    });
+  });
+}
+
 function renderVariantSelector(){
   if(!productVariantList) return;
-  const currentId=currentEditingProductId();
-  const category=productCategory?.value || "";
-  const query=String(productVariantSearch?.value||"").trim().toLowerCase();
-  const candidates=products.filter(p=>Number(p.id)!==currentId && (!category || p.category===category)).filter(p=>!query || `${p.brand||""} ${p.name||""} ${p.model||""}`.toLowerCase().includes(query));
-  productVariantList.innerHTML=candidates.length?candidates.map(p=>{
-    const selected=selectedVariantProductIds.has(Number(p.id));
-    return `<button type="button" class="variant-product-option ${selected?"active":""}" data-variant-product="${p.id}" aria-pressed="${selected}"><img src="${escapeAttr(productThumbForAdmin(p))}" alt=""><span><strong>${escapeHtml(p.name||"Producto")}</strong><small>${escapeHtml(`${p.brand||""}${p.model?` · ${p.model}`:""}`)}</small></span><i>${selected?"✓":"+"}</i></button>`;
-  }).join(""):`<span class="variant-empty-admin">No hay productos de esta categoría que coincidan.</span>`;
-  productVariantList.querySelectorAll("[data-variant-product]").forEach(btn=>btn.addEventListener("click",()=>{const id=Number(btn.dataset.variantProduct);if(selectedVariantProductIds.has(id))selectedVariantProductIds.delete(id);else if(selectedVariantProductIds.size<12)selectedVariantProductIds.add(id);else return alert("Máximo 12 variantes enlazadas.");renderVariantSelector();}));
+  renderSelectedVariants();
+
+  const currentId = currentEditingProductId();
+  const category = productCategory?.value || "";
+  const query = String(productVariantSearch?.value || "").trim().toLowerCase();
+
+  if(!query){
+    productVariantList.hidden = true;
+    productVariantList.innerHTML = "";
+    return;
+  }
+
+  const candidates = products
+    .filter(p => Number(p.id) !== currentId && (!category || p.category === category))
+    .filter(p => !selectedVariantProductIds.has(Number(p.id)))
+    .filter(p => `${p.brand || ""} ${p.name || ""} ${p.model || ""}`.toLowerCase().includes(query))
+    .slice(0, 12);
+
+  productVariantList.hidden = false;
+  productVariantList.innerHTML = candidates.length
+    ? candidates.map(p => `
+      <button type="button" class="variant-product-option" data-variant-product="${p.id}">
+        <img src="${escapeAttr(productThumbForAdmin(p))}" alt="">
+        <span><strong>${escapeHtml(p.name || "Producto")}</strong><small>${escapeHtml(`${p.brand || ""}${p.model ? ` · ${p.model}` : ""}`)}</small></span>
+        <i>+</i>
+      </button>`).join("")
+    : `<span class="variant-empty-admin">No encontré productos de esta categoría.</span>`;
+
+  productVariantList.querySelectorAll("[data-variant-product]").forEach(button => {
+    button.addEventListener("click", () => {
+      if(selectedVariantProductIds.size >= 12) return alert("Máximo 12 variantes enlazadas.");
+      selectedVariantProductIds.add(Number(button.dataset.variantProduct));
+      if(productVariantSearch) productVariantSearch.value = "";
+      renderVariantSelector();
+    });
+  });
 }
+
 function setProductVariants(ids=[]){ selectedVariantProductIds=new Set((Array.isArray(ids)?ids:[]).map(Number).filter(Number.isFinite)); renderVariantSelector(); }
 productVariantSearch?.addEventListener("input",renderVariantSelector);
 
@@ -774,7 +826,6 @@ function bannerTransformState() {
 }
 
 function renderProductBannerImagePreview() {
-  if (!productBannerImagePreview) return;
   const src = safeImageSource(productBannerImageUrl?.value || "");
   const { scale, x, y } = bannerTransformState();
   if (productBannerImageScaleValue) productBannerImageScaleValue.textContent = `${Math.round(scale)}%`;
@@ -2714,7 +2765,7 @@ async function loadKeys() {
   }
 
   document.querySelectorAll("[data-reveal-key]").forEach(button => {
-    button.addEventListener("click", () => revealAccessKey(Number(button.dataset.revealKey)));
+    button.addEventListener("click", () => revealAccessKey(Number(button.dataset.revealKey), button));
   });
   document.querySelectorAll("[data-copy-key]").forEach(button => {
     button.addEventListener("click", () => copyRevealedKey(Number(button.dataset.copyKey), button));
@@ -2742,8 +2793,13 @@ async function loadKeys() {
 
 
 async function revealAccessKey(id, button) {
+  button = button || document.querySelector(`[data-reveal-key="${id}"]`);
   const output = document.getElementById(`keyRevealValue_${id}`);
   const copyButton = document.querySelector(`[data-copy-key="${id}"]`);
+  if (!button || !output) {
+    alert("No se pudo localizar el control de esta Access Key. Recarga el panel e inténtalo de nuevo.");
+    return;
+  }
 
   if (button.dataset.visible === "true") {
     output.textContent = "MT-•••••-•••••-•••••-•••••";

@@ -111,6 +111,8 @@ let reviews = [];
 let currentRole = null;
 let currentToken = null;
 let currentProfileName = "";
+let currentPermissions = [];
+let currentStaffRole = null;
 let currentKeyExpiresAt = null;
 let keyCountdownTimer = null;
 let featuredProducts = [];
@@ -130,8 +132,8 @@ let currentSharedSetupToken = "";
 let publicAppVersion = "5.18";
 let publicRelease = { version: "5.18", title: "", date: "", notes: [] };
 const CURRENT_BUILD_RELEASE = {
-  version: "5.31",
-  title: "MousePads, Setups y tema claro",
+  version: "5.32",
+  title: "Correcciones de interfaz, roles y Access Keys",
   date: "2026-09-27",
   changes: {
     added: [
@@ -503,20 +505,27 @@ function showApp() {
   window.scrollTo({ top: 0, left: 0, behavior: "auto" });
 }
 
+function hasStaffPanelAccess() {
+  return currentRole === "admin" || currentPermissions.length > 0;
+}
+
 function updateProfileMenu() {
   const isAdmin = currentRole === "admin";
+  const staffAccess = hasStaffPanelAccess();
   const displayName = currentProfileName || (isAdmin ? "Administrador" : "Usuario MadeLesh");
+  const roleLabel = isAdmin
+    ? "Cuenta de administrador"
+    : (currentStaffRole?.name ? String(currentStaffRole.name) : "Acceso por key");
 
   profileName.textContent = displayName;
   profileButtonLabel.textContent = displayName;
-  profileRole.textContent = isAdmin ? "Cuenta de administrador" : "Acceso por key";
+  profileRole.textContent = roleLabel;
   if (accountSettingsName) accountSettingsName.textContent = displayName;
-  if (accountSettingsRole) accountSettingsRole.textContent = isAdmin ? "Cuenta de administrador" : "Acceso por key";
+  if (accountSettingsRole) accountSettingsRole.textContent = roleLabel;
 
-  // Solo una sesión ADMIN puede ver y usar este acceso.
-  adminShortcut.hidden = !isAdmin;
-  adminShortcut.setAttribute("aria-hidden", String(!isAdmin));
-  adminShortcut.tabIndex = isAdmin ? 0 : -1;
+  adminShortcut.hidden = !staffAccess;
+  adminShortcut.setAttribute("aria-hidden", String(!staffAccess));
+  adminShortcut.tabIndex = staffAccess ? 0 : -1;
 
   startKeyCountdown();
 }
@@ -525,6 +534,8 @@ function applySessionProfile(data = {}) {
   currentRole = data.role || currentRole;
   currentProfileName = String(data.profileName || "").trim();
   currentKeyExpiresAt = data.keyExpiresAt || null;
+  currentPermissions = Array.isArray(data.permissions) ? data.permissions.filter(Boolean) : [];
+  currentStaffRole = data.staffRole && typeof data.staffRole === "object" ? data.staffRole : null;
 }
 
 function startKeyCountdown() {
@@ -621,11 +632,13 @@ profileButton.addEventListener("click", async event => {
 profilePopover.addEventListener("click", event => event.stopPropagation());
 
 adminShortcut.addEventListener("click", event => {
-  if (currentRole !== "admin") {
+  if (!hasStaffPanelAccess()) {
     event.preventDefault();
     adminShortcut.hidden = true;
     closeProfileMenu();
+    return;
   }
+  if (currentToken) localStorage.setItem("madetech_admin_token", currentToken);
 });
 
 document.addEventListener("click", event => {
@@ -1083,7 +1096,6 @@ async function restoreSession() {
     currentToken = candidate;
     applySessionProfile(me);
 
-    adminShortcut.hidden = me.role !== "admin";
     showApp();
     await loadProfilePersonalization();
     await loadReviews();
