@@ -4824,3 +4824,46 @@ html[data-theme="light"] .compare-picker-trigger:hover:not(:disabled){
 }
 
 html[data-theme="light"] .product-modal-card{background:#fff!important;color:#111!important;border-color:rgba(0,0,0,.14)!important}
+
+
+/* ==========================================================
+   MADELESH V5.31 — VARIANTES / CARDS MINIMAL / REVIEWS / UI
+   ========================================================== */
+/* Tarjetas: únicamente nombre + favorito debajo de la imagen. */
+.review-content.compact-product-card{padding:14px 15px 15px!important;min-height:58px!important;display:block!important}
+.product-card-head{min-height:34px!important;align-items:center!important}
+.product-card-head h3{font-size:1rem!important;margin:0!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-data-block,.product-card-footer,.review-read{display:none!important}
+.review-card{grid-template-rows:auto auto!important}
+
+/* Variantes relacionadas. */
+.product-variants-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:8px}
+.product-variant-card{min-height:66px;padding:8px;display:grid;grid-template-columns:50px minmax(0,1fr) auto;gap:9px;align-items:center;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--text);text-align:left;cursor:pointer}
+.product-variant-card:hover{border-color:var(--accent);transform:translateY(-1px)}
+.product-variant-card img{width:50px;height:50px;object-fit:contain;border-radius:10px;background:var(--surface-2);padding:4px}
+.product-variant-card>span{min-width:0;display:grid;gap:2px}.product-variant-card strong{font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.product-variant-card small{font-size:.6rem;color:var(--muted)}.product-variant-card b{color:var(--accent)}
+
+/* Reviews con crédito e icono personalizado. */
+.review-link-wrap{display:grid;gap:7px}.review-credit{font-size:.62rem;color:var(--muted);padding-left:4px}.review-credit a,.review-credit strong{color:var(--text);font-weight:800;text-decoration:none}.review-credit a:hover{text-decoration:underline}.review-custom-icon{width:22px;height:22px;object-fit:contain;border-radius:5px}
+
+/* Comparador estable: los selectores y menús nunca invaden el resultado. */
+.compare-selector-grid{display:grid!important;grid-template-columns:minmax(0,1fr) 56px minmax(0,1fr)!important;gap:12px!important;align-items:start!important;position:relative!important;z-index:10!important}
+.compare-visual-select-card{display:grid!important;gap:8px!important;min-width:0!important;overflow:visible!important;position:relative!important}
+.compare-picker-menu{position:relative!important;top:auto!important;left:auto!important;right:auto!important;width:100%!important;margin-top:0!important;max-height:420px!important;overflow:auto!important;z-index:20!important;border:1px solid var(--line)!important;background:var(--panel)!important}
+.compare-versus{margin-top:30px!important}
+.compare-result{position:relative!important;z-index:1!important;clear:both!important;margin-top:6px!important}
+.compare-duel-arena{min-width:0!important}.compare-duel-product,.compare-duel-center{min-width:0!important}
+@media(max-width:900px){.compare-selector-grid{grid-template-columns:1fr!important}.compare-versus{margin:0 auto!important}}
+
+/* Tema claro: fichas/especificaciones nítidas en blanco/negro/gris. */
+html[data-theme="light"] .product-modal-card,
+html[data-theme="light"] .product-detail-body,
+html[data-theme="light"] .product-info-section{background:#fff!important;color:#111!important}
+html[data-theme="light"] .product-spec-grid{background:#fff!important}
+html[data-theme="light"] .product-spec-card{background:#f5f5f5!important;border:1px solid #d2d2d2!important;color:#111!important}
+html[data-theme="light"] .product-spec-card.spec-unavailable{background:#fafafa!important;border-style:dashed!important;color:#777!important}
+html[data-theme="light"] .product-spec-card strong{color:#111!important}
+html[data-theme="light"] .product-spec-card span{color:#555!important}
+html[data-theme="light"] .product-variant-card{background:#fff!important;color:#111!important;border-color:#d1d1d1!important}
+html[data-theme="light"] .product-variant-card img{background:#f2f2f2!important}
+

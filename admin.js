@@ -1,4 +1,4 @@
-console.info("MadeLesh Admin build 5.30");
+console.info("MadeLesh Admin build 5.31");
 import { API_BASE } from "./config.js";
 
 const adminLogin = document.getElementById("adminLogin");
@@ -100,8 +100,18 @@ const productLivePreviewName = document.getElementById("productLivePreviewName")
 const productLivePreviewConnections = document.getElementById("productLivePreviewConnections");
 const productLivePreviewPrice = document.getElementById("productLivePreviewPrice");
 const productLivePreviewSpecs = document.getElementById("productLivePreviewSpecs");
-const proPlayerNames = [1,2,3].map(i => document.getElementById(`proPlayerName${i}`));
-const proPlayerSocials = [1,2,3].map(i => document.getElementById(`proPlayerSocial${i}`));
+const productVariantSearch = document.getElementById("productVariantSearch");
+const productVariantList = document.getElementById("productVariantList");
+const productYoutubeCreditName = document.getElementById("productYoutubeCreditName");
+const productYoutubeCreditUrl = document.getElementById("productYoutubeCreditUrl");
+const productTiktokCreditName = document.getElementById("productTiktokCreditName");
+const productTiktokCreditUrl = document.getElementById("productTiktokCreditUrl");
+const productYoutubeIconFile = document.getElementById("productYoutubeIconFile");
+const productTiktokIconFile = document.getElementById("productTiktokIconFile");
+const productYoutubeIconPreview = document.getElementById("productYoutubeIconPreview");
+const productTiktokIconPreview = document.getElementById("productTiktokIconPreview");
+const clearProductYoutubeIcon = document.getElementById("clearProductYoutubeIcon");
+const clearProductTiktokIcon = document.getElementById("clearProductTiktokIcon");
 const productDriverUrl = document.getElementById("productDriverUrl");
 const productSoftwareUrl = document.getElementById("productSoftwareUrl");
 const storeAmazonIconFile = document.getElementById("storeAmazonIconFile");
@@ -198,7 +208,7 @@ let brandingFaviconDarkDataUrl = "";
 let contactIconDataUrls = { discord:"", steam:"", x:"", youtube:"", tiktok:"", email:"" };
 let colorImagesByHex = {};
 const ADMIN_BUILD_RELEASE = {
-  version: "5.30",
+  version: "5.31",
   title: "MousePads, Setups y tema claro",
   date: "2026-09-27",
   changes: {
@@ -254,6 +264,9 @@ const PRESET_COLORS = [
 ];
 
 let selectedColors = [];
+let selectedVariantProductIds = new Set();
+let productYoutubeIconData = "";
+let productTiktokIconData = "";
 
 /* ---------------- API ---------------- */
 
@@ -366,6 +379,7 @@ function renderCategoryFields(category, values = {}) {
   categoryFields.innerHTML = schema.map(item => fieldHtml(item, values[item.key])).join("");
   if (productConnectionsBlock) productConnectionsBlock.hidden = category === "MousePads";
   bindSpecChoiceGroups();
+  categoryFields.querySelectorAll("input[data-spec-key]").forEach(input=>input.addEventListener("blur",()=>{const normalized=normalizeSpecSymbol(input.dataset.specKey,input.value);if(typeof normalized==="string")input.value=normalized;renderProductLivePreview();}));
   renderKeyboardSoundVisibility();
   renderProductLivePreview();
 }
@@ -446,8 +460,60 @@ productCategory.addEventListener("change", () => {
   renderCategoryFields(productCategory.value, {});
   renderKeyboardSoundVisibility();
   if (webSearchCategory) webSearchCategory.value = productCategory.value;
+  renderVariantSelector();
 });
 
+
+/* ---------------- PRODUCT VARIANTS + REVIEW META ---------------- */
+function currentEditingProductId(){ return Number(document.getElementById("productId")?.value || 0); }
+function productThumbForAdmin(product){ return safeImageSource(product?.imageUrl) || safeImageSource(Array.isArray(product?.images)?product.images[0]:"") || categoryPlaceholderDataUrl(product?.category); }
+function renderVariantSelector(){
+  if(!productVariantList) return;
+  const currentId=currentEditingProductId();
+  const category=productCategory?.value || "";
+  const query=String(productVariantSearch?.value||"").trim().toLowerCase();
+  const candidates=products.filter(p=>Number(p.id)!==currentId && (!category || p.category===category)).filter(p=>!query || `${p.brand||""} ${p.name||""} ${p.model||""}`.toLowerCase().includes(query));
+  productVariantList.innerHTML=candidates.length?candidates.map(p=>{
+    const selected=selectedVariantProductIds.has(Number(p.id));
+    return `<button type="button" class="variant-product-option ${selected?"active":""}" data-variant-product="${p.id}" aria-pressed="${selected}"><img src="${escapeAttr(productThumbForAdmin(p))}" alt=""><span><strong>${escapeHtml(p.name||"Producto")}</strong><small>${escapeHtml(`${p.brand||""}${p.model?` · ${p.model}`:""}`)}</small></span><i>${selected?"✓":"+"}</i></button>`;
+  }).join(""):`<span class="variant-empty-admin">No hay productos de esta categoría que coincidan.</span>`;
+  productVariantList.querySelectorAll("[data-variant-product]").forEach(btn=>btn.addEventListener("click",()=>{const id=Number(btn.dataset.variantProduct);if(selectedVariantProductIds.has(id))selectedVariantProductIds.delete(id);else if(selectedVariantProductIds.size<12)selectedVariantProductIds.add(id);else return alert("Máximo 12 variantes enlazadas.");renderVariantSelector();}));
+}
+function setProductVariants(ids=[]){ selectedVariantProductIds=new Set((Array.isArray(ids)?ids:[]).map(Number).filter(Number.isFinite)); renderVariantSelector(); }
+productVariantSearch?.addEventListener("input",renderVariantSelector);
+
+function renderReviewIconPreviews(){
+  if(productYoutubeIconPreview) productYoutubeIconPreview.innerHTML=productYoutubeIconData?`<img src="${escapeAttr(productYoutubeIconData)}" alt="">`:`<span>YT</span>`;
+  if(productTiktokIconPreview) productTiktokIconPreview.innerHTML=productTiktokIconData?`<img src="${escapeAttr(productTiktokIconData)}" alt="">`:`<span>TT</span>`;
+}
+async function handleReviewIconFile(input, platform){
+  const file=input?.files?.[0]; if(!file)return;
+  try{const data=await imageFileToWebpDataUrl(file,{maxSize:160,quality:.82,maxChars:120000}); if(platform==="youtube")productYoutubeIconData=data;else productTiktokIconData=data;renderReviewIconPreviews();}
+  catch(error){alert(error.message);} finally{input.value="";}
+}
+productYoutubeIconFile?.addEventListener("change",()=>handleReviewIconFile(productYoutubeIconFile,"youtube"));
+productTiktokIconFile?.addEventListener("change",()=>handleReviewIconFile(productTiktokIconFile,"tiktok"));
+clearProductYoutubeIcon?.addEventListener("click",()=>{productYoutubeIconData="";renderReviewIconPreviews();});
+clearProductTiktokIcon?.addEventListener("click",()=>{productTiktokIconData="";renderReviewIconPreviews();});
+
+function normalizePriceValue(value){
+  const raw=String(value||"").trim(); if(!raw)return "";
+  let clean=raw.replace(/\$/g,"").replace(/\s+/g,"");
+  const lastComma=clean.lastIndexOf(","), lastDot=clean.lastIndexOf(".");
+  if(lastComma>=0 && lastDot>=0){ const decimal=Math.max(lastComma,lastDot); clean=clean.slice(0,decimal).replace(/[.,]/g,"")+"."+clean.slice(decimal+1).replace(/[.,]/g,""); }
+  else if(lastComma>=0) clean=clean.replace(/\./g,"").replace(",",".");
+  else clean=clean.replace(/,/g,"");
+  clean=clean.replace(/[^0-9.-]/g,""); const n=Number(clean); return Number.isFinite(n)?`$${n.toFixed(2)}`:raw;
+}
+const priceInput=document.getElementById("productPrice");
+priceInput?.addEventListener("blur",()=>{priceInput.value=normalizePriceValue(priceInput.value);renderProductLivePreview();});
+function normalizeSpecSymbol(key,value){
+  if(typeof value!=="string")return value; const text=value.trim(); if(!text)return text;
+  if(key==="layout" && /^\d+(?:[.,]\d+)?$/.test(text)) return `${text.replace(",",".")}%`;
+  if(key==="impedance" && /^\d+(?:[.,]\d+)?$/.test(text)) return `${text.replace(",",".")} Ω`;
+  if(key==="plug" && /^\d+(?:[.,]\d+)?$/.test(text)) return `${text.replace(",",".")} mm`;
+  return text;
+}
 
 /* ---------------- CONNECTION PICKER ---------------- */
 
@@ -1020,22 +1086,6 @@ applyAudioTrim?.addEventListener("click", () => {
 
 clearAudioTrim?.addEventListener("click", clearAudioEditor);
 
-function parseProPlayers() {
-  return proPlayerNames.map((input, index) => ({
-    name: String(input?.value || "").trim(),
-    url: String(proPlayerSocials[index]?.value || "").trim()
-  })).filter(item => item.name).slice(0, 3);
-}
-
-function fillProPlayers(players = []) {
-  const clean = Array.isArray(players) ? players.slice(0, 3) : [];
-  proPlayerNames.forEach((input, index) => {
-    if (input) input.value = clean[index]?.name || "";
-  });
-  proPlayerSocials.forEach((input, index) => {
-    if (input) input.value = clean[index]?.url || "";
-  });
-}
 
 function renderColorPicker(colors = selectedColors) {
   selectedColors = normalizeColors(colors);
@@ -1443,18 +1493,18 @@ function applyImportedWebProduct(product) {
   if (productBannerImageUrl) productBannerImageUrl.value = product.specs?.bannerImageUrl || "";
   renderProductBannerImagePreview();
   if (keyboardSoundUrl) keyboardSoundUrl.value = product.specs?.keyboardSound || "";
-  fillProPlayers(product.specs?.proPlayers || []);
   if (productDriverUrl) productDriverUrl.value = product.specs?.driverDownloadUrl || "";
   if (productSoftwareUrl) productSoftwareUrl.value = product.specs?.softwareDownloadUrl || "";
   renderKeyboardSoundVisibility();
   renderKeyboardSoundPreview();
   document.getElementById("productYoutube").value = product.reviewLinks?.youtube || "";
   document.getElementById("productTiktok").value = product.reviewLinks?.tiktok || "";
+  if(productYoutubeCreditName) productYoutubeCreditName.value=product.reviewLinks?.youtubeCreditName||"";
+  if(productYoutubeCreditUrl) productYoutubeCreditUrl.value=product.reviewLinks?.youtubeCreditUrl||"";
+  if(productTiktokCreditName) productTiktokCreditName.value=product.reviewLinks?.tiktokCreditName||"";
+  if(productTiktokCreditUrl) productTiktokCreditUrl.value=product.reviewLinks?.tiktokCreditUrl||"";
+  productYoutubeIconData=product.reviewLinks?.youtubeIcon||""; productTiktokIconData=product.reviewLinks?.tiktokIcon||""; renderReviewIconPreviews();
   document.getElementById("productSummary").value = product.summary || "";
-  document.getElementById("productPros").value =
-    Array.isArray(product.pros) ? product.pros.join("\n") : "";
-  document.getElementById("productCons").value =
-    Array.isArray(product.cons) ? product.cons.join("\n") : "";
 
   renderTrustedStores(Array.isArray(product.trustedStores) ? product.trustedStores : []);
   setColorImages(product.specs?.colorImages || []);
@@ -2222,6 +2272,7 @@ async function loadProducts() {
 
   if (libraryNavCount) libraryNavCount.textContent = String(products.length);
   renderLibraryProducts();
+  renderVariantSelector();
 }
 
 function renderLibraryProducts() {
@@ -2315,17 +2366,20 @@ function editProduct(id) {
   renderProductBannerImagePreview();
   if (keyboardSoundUrl) keyboardSoundUrl.value = product.specs?.keyboardSound || "";
   renderKeyboardSoundPreview();
-  fillProPlayers(product.specs?.proPlayers || []);
   if (productDriverUrl) productDriverUrl.value = product.specs?.driverDownloadUrl || "";
   if (productSoftwareUrl) productSoftwareUrl.value = product.specs?.softwareDownloadUrl || "";
   renderAdminScoreStars(product.score ?? 0);
   document.getElementById("productYoutube").value = product.reviewLinks?.youtube || "";
   document.getElementById("productTiktok").value = product.reviewLinks?.tiktok || "";
+  if(productYoutubeCreditName) productYoutubeCreditName.value=product.reviewLinks?.youtubeCreditName||"";
+  if(productYoutubeCreditUrl) productYoutubeCreditUrl.value=product.reviewLinks?.youtubeCreditUrl||"";
+  if(productTiktokCreditName) productTiktokCreditName.value=product.reviewLinks?.tiktokCreditName||"";
+  if(productTiktokCreditUrl) productTiktokCreditUrl.value=product.reviewLinks?.tiktokCreditUrl||"";
+  productYoutubeIconData=product.reviewLinks?.youtubeIcon||""; productTiktokIconData=product.reviewLinks?.tiktokIcon||""; renderReviewIconPreviews();
   document.getElementById("productSummary").value = product.summary || "";
-  document.getElementById("productPros").value = (product.pros || []).join("\n");
-  document.getElementById("productCons").value = (product.cons || []).join("\n");
 
   renderCategoryFields(product.category || "Mouse", product.specs || {});
+  setProductVariants(product.specs?.variantProductIds || []);
   renderProductLivePreview();
   productFormTitle.textContent = "Editar producto";
   productForm.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -2355,9 +2409,12 @@ function resetProductForm() {
   renderProductBannerImagePreview();
   renderAdminScoreStars(0);
   if (keyboardSoundUrl) keyboardSoundUrl.value = "";
-  fillProPlayers([]);
   if (productDriverUrl) productDriverUrl.value = "";
   if (productSoftwareUrl) productSoftwareUrl.value = "";
+  setProductVariants([]);
+  if(productYoutubeCreditName) productYoutubeCreditName.value=""; if(productYoutubeCreditUrl) productYoutubeCreditUrl.value="";
+  if(productTiktokCreditName) productTiktokCreditName.value=""; if(productTiktokCreditUrl) productTiktokCreditUrl.value="";
+  productYoutubeIconData=""; productTiktokIconData=""; renderReviewIconPreviews();
   renderCategoryFields("Mouse", {});
   renderKeyboardSoundVisibility();
   renderKeyboardSoundPreview();
@@ -2381,7 +2438,7 @@ productForm.addEventListener("submit", async event => {
     name: document.getElementById("productName").value.trim(),
     model: document.getElementById("productModel").value.trim(),
     score: Number(document.getElementById("productScore").value),
-    price: document.getElementById("productPrice").value.trim(),
+    price: normalizePriceValue(document.getElementById("productPrice").value),
     date: document.getElementById("productDate").value.trim(),
     imageUrl: document.getElementById("productImageUrl").value.trim(),
     officialUrl: document.getElementById("productOfficialUrl").value.trim(),
@@ -2392,12 +2449,18 @@ productForm.addEventListener("submit", async event => {
     images: getProductImages(),
     reviewLinks: {
       youtube: document.getElementById("productYoutube").value.trim(),
-      tiktok: document.getElementById("productTiktok").value.trim()
+      tiktok: document.getElementById("productTiktok").value.trim(),
+      youtubeCreditName: productYoutubeCreditName?.value.trim() || "",
+      youtubeCreditUrl: productYoutubeCreditUrl?.value.trim() || "",
+      tiktokCreditName: productTiktokCreditName?.value.trim() || "",
+      tiktokCreditUrl: productTiktokCreditUrl?.value.trim() || "",
+      youtubeIcon: productYoutubeIconData || "",
+      tiktokIcon: productTiktokIconData || ""
     },
     summary: document.getElementById("productSummary").value.trim(),
     specs: collectCategorySpecs(),
-    pros: lines(document.getElementById("productPros").value),
-    cons: lines(document.getElementById("productCons").value)
+    pros: [],
+    cons: []
   };
 
   payload.specs.colorImages = getColorImages();
@@ -2407,7 +2470,7 @@ productForm.addEventListener("submit", async event => {
   payload.specs.bannerImagePositionX = bannerTransformState().x;
   payload.specs.bannerImagePositionY = bannerTransformState().y;
   payload.specs.keyboardSound = isKeyboardCategory(productCategory.value) ? (keyboardSoundUrl?.value.trim() || "") : "";
-  payload.specs.proPlayers = parseProPlayers();
+  payload.specs.variantProductIds = [...selectedVariantProductIds];
   payload.specs.driverDownloadUrl = productDriverUrl?.value.trim() || "";
   payload.specs.softwareDownloadUrl = productSoftwareUrl?.value.trim() || "";
 
@@ -2472,7 +2535,7 @@ function collectCategorySpecs() {
       }
     }
 
-    result[key] = value;
+    result[key] = normalizeSpecSymbol(key, value);
   });
 
   return result;
@@ -2895,6 +2958,7 @@ function escapeAttr(value) {
 }
 
 renderConnectionPicker();
+renderReviewIconPreviews();
 renderProductGalleryList();
 renderKeyboardSoundVisibility();
 renderKeyboardSoundPreview();

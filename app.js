@@ -130,7 +130,7 @@ let currentSharedSetupToken = "";
 let publicAppVersion = "5.18";
 let publicRelease = { version: "5.18", title: "", date: "", notes: [] };
 const CURRENT_BUILD_RELEASE = {
-  version: "5.30",
+  version: "5.31",
   title: "MousePads, Setups y tema claro",
   date: "2026-09-27",
   changes: {
@@ -1327,15 +1327,6 @@ function cardTemplate(review, index = 0) {
           <button class="product-favorite-button ${favoriteProductIds.has(Number(review.id)) ? "active" : ""}" type="button" data-favorite-toggle="${review.id}" aria-pressed="${favoriteProductIds.has(Number(review.id))}" aria-label="${favoriteProductIds.has(Number(review.id)) ? "Quitar de favoritos" : "Agregar a favoritos"}">${favoriteIcon(favoriteProductIds.has(Number(review.id)))}</button>
         </div>
 
-        <div class="card-data-block">
-          <span class="card-data-label">${escapeHtml(cardLabel)}</span>
-          <div class="card-connection-list">
-            ${cardItems.length
-              ? cardItems.map(item => `<span class="card-connection-chip">${isMousePad ? comparisonSpecIcon("surface") : connectionIcon(item)}${escapeHtml(item)}</span>`).join("")
-              : `<span class="card-data-empty">No disponible</span>`}
-          </div>
-        </div>
-
       </div>
     </article>
   `;
@@ -1935,8 +1926,8 @@ async function openReview(id) {
 
       <div class="product-detail-body">
         ${renderColors(review.colors, review.specs?.colorImages)}
+        ${renderProductVariants(review)}
         ${renderConnections(review.connections)}
-        ${renderProPlayers(review)}
 
         <section class="product-info-section">
           <div class="product-section-head">
@@ -1991,13 +1982,13 @@ async function openReview(id) {
           </div>
         </section>
 
-        ${renderProsCons(review)}
       </div>
     `;
 
     if (currentRole === "user") bindRatingButtons(id, Number(rating.mine || 0));
     bindProductMedia(review);
     bindProductColorImages(review);
+    modalContent.querySelectorAll("[data-open-variant]").forEach(button=>button.addEventListener("click",()=>openReview(Number(button.dataset.openVariant))));
     modalContent.querySelector("[data-detail-favorite]")?.addEventListener("click", event => {
       event.stopPropagation();
       toggleFavorite(Number(event.currentTarget.dataset.detailFavorite), event.currentTarget);
@@ -2399,32 +2390,21 @@ function renderConnections(connections) {
   `;
 }
 
-function renderProPlayers(product) {
-  const players = Array.isArray(product?.specs?.proPlayers) ? product.specs.proPlayers.slice(0, 3) : [];
-  if (!players.length) return "";
-
+function renderProductVariants(product) {
+  const directIds = Array.isArray(product?.specs?.variantProductIds) ? product.specs.variantProductIds.map(Number).filter(Number.isFinite) : [];
+  const reverseIds = reviews.filter(item => Array.isArray(item?.specs?.variantProductIds) && item.specs.variantProductIds.map(Number).includes(Number(product?.id))).map(item => Number(item.id));
+  const ids = [...new Set([...directIds, ...reverseIds])].filter(id => id !== Number(product?.id));
+  if (!ids.length) return "";
+  const variants = ids.map(id => reviews.find(item => Number(item.id) === id)).filter(Boolean);
+  if (!variants.length) return "";
   return `
-    <section class="product-info-section pro-players-section">
-      <div class="product-section-head">
-        <h3>Jugadores profesionales</h3>
-        <p>Periférico usado por</p>
-      </div>
-      <div class="pro-player-grid">
-        ${players.map(player => {
-          const name = escapeHtml(player?.name || "Jugador");
-          const url = safeUrl(player?.url || "");
-          const content = `
-            <span class="pro-player-avatar">${escapeHtml((player?.name || "?").trim().charAt(0).toUpperCase())}</span>
-            <span><strong>${name}</strong><small>${url ? "Ver red social" : "Jugador profesional"}</small></span>
-            ${url ? `<b>↗</b>` : ""}`;
-          return url
-            ? `<a class="pro-player-card" href="${url}" target="_blank" rel="noopener noreferrer">${content}</a>`
-            : `<div class="pro-player-card">${content}</div>`;
-        }).join("")}
+    <section class="product-info-section product-variants-section">
+      <div class="product-section-head"><h3>Variantes</h3><p>${variants.length} ${variants.length===1?"versión relacionada":"versiones relacionadas"}</p></div>
+      <div class="product-variants-list">
+        ${variants.map(item=>`<button type="button" class="product-variant-card" data-open-variant="${item.id}"><img src="${escapeHtml(comparisonImage(item))}" alt=""><span><strong>${escapeHtml(item.name||"Producto")}</strong><small>${escapeHtml(item.model||item.brand||"")}</small></span><b>↗</b></button>`).join("")}
       </div>
     </section>`;
 }
-
 
 function renderProductDownloads(product) {
   const driverUrl = safeUrl(product?.specs?.driverDownloadUrl || "");
@@ -2507,33 +2487,18 @@ function renderReviewLinks(product) {
   const youtube = safeUrl(product.reviewLinks?.youtube);
   const tiktok = safeUrl(product.reviewLinks?.tiktok);
   if (!youtube && !tiktok) return "";
-
+  const iconHtml=(custom,fallback)=>{const src=safeImageSrc(custom||"");return src?`<img class="review-custom-icon" src="${escapeHtml(src)}" alt="" loading="lazy" decoding="async">`:fallback;};
+  const creditHtml=(name,url)=>{const cleanName=String(name||"").trim();if(!cleanName)return "";const safe=safeUrl(url||"");return `<div class="review-credit">Crédito: ${safe?`<a href="${safe}" target="_blank" rel="noopener noreferrer">${escapeHtml(cleanName)}</a>`:`<strong>${escapeHtml(cleanName)}</strong>`}</div>`;};
   return `
     <section class="product-info-section">
       <div class="product-section-head"><h3>Ver la review</h3><p>Contenido externo</p></div>
       <div class="product-links-grid">
-        ${youtube ? `<a class="review-link-card youtube" href="${youtube}" target="_blank" rel="noopener noreferrer"><div><span class="link-icon">${youtubeIcon()}</span><span class="link-copy"><span>YOUTUBE</span><strong>Ver review completa</strong></span></div><span>↗</span></a>` : ""}
-        ${tiktok ? `<a class="review-link-card tiktok" href="${tiktok}" target="_blank" rel="noopener noreferrer"><div><span class="link-icon">${tiktokIcon()}</span><span class="link-copy"><span>TIKTOK</span><strong>Ver review corta</strong></span></div><span>↗</span></a>` : ""}
+        ${youtube ? `<div class="review-link-wrap">${creditHtml(product.reviewLinks?.youtubeCreditName,product.reviewLinks?.youtubeCreditUrl)}<a class="review-link-card youtube" href="${youtube}" target="_blank" rel="noopener noreferrer"><div><span class="link-icon">${iconHtml(product.reviewLinks?.youtubeIcon,youtubeIcon())}</span><span class="link-copy"><span>YOUTUBE</span><strong>Ver review completa</strong></span></div><span>↗</span></a></div>` : ""}
+        ${tiktok ? `<div class="review-link-wrap">${creditHtml(product.reviewLinks?.tiktokCreditName,product.reviewLinks?.tiktokCreditUrl)}<a class="review-link-card tiktok" href="${tiktok}" target="_blank" rel="noopener noreferrer"><div><span class="link-icon">${iconHtml(product.reviewLinks?.tiktokIcon,tiktokIcon())}</span><span class="link-copy"><span>TIKTOK</span><strong>Ver review corta</strong></span></div><span>↗</span></a></div>` : ""}
       </div>
-    </section>
-  `;
+    </section>`;
 }
 
-function renderProsCons(product) {
-  const pros = Array.isArray(product.pros) ? product.pros : [];
-  const cons = Array.isArray(product.cons) ? product.cons : [];
-  if (!pros.length && !cons.length) return "";
-
-  return `
-    <section class="product-info-section">
-      <div class="product-section-head"><h3>Pros y contras</h3><p>Resumen MadeLesh</p></div>
-      <div class="procon-rich-grid">
-        <article class="procon-rich-card"><h4>Pros</h4><ul>${pros.map(item => `<li>${escapeHtml(item)}</li>`).join("") || "<li>Sin datos</li>"}</ul></article>
-        <article class="procon-rich-card"><h4>Contras</h4><ul>${cons.map(item => `<li>${escapeHtml(item)}</li>`).join("") || "<li>Sin datos</li>"}</ul></article>
-      </div>
-    </section>
-  `;
-}
 
 /* ---------------- RATINGS ---------------- */
 
