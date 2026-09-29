@@ -5103,3 +5103,42 @@ html[data-theme="light"] #setupSaveButton:hover:not(:disabled){
 @media(max-width:700px){
   .community-rating{grid-template-columns:1fr!important}
 }
+
+/* ==========================================================
+   MADELESH V5.33.1 — HOTFIX MEDIA EN TEMA CLARO
+   ========================================================== */
+/* Quita el bloque negro exterior detrás de la imagen y galería. */
+html[data-theme="light"] .product-detail-media{
+  background:#fff!important;
+  color:#111!important;
+}
+html[data-theme="light"] .product-detail-media::before{
+  display:none!important;
+}
+html[data-theme="light"] .product-media-viewer{
+  background:transparent!important;
+}
+html[data-theme="light"] .product-media-main-frame{
+  background:transparent!important;
+  border-color:transparent!important;
+  box-shadow:none!important;
+  padding:10px 10px 0!important;
+}
+html[data-theme="light"] .product-media-thumbs-wrap{
+  background:transparent!important;
+}
+html[data-theme="light"] .product-media-thumbs{
+  background:transparent!important;
+}
+html[data-theme="light"] .product-media-thumb{
+  background:#f3f3f3!important;
+  border-color:#d5d5d5!important;
+  color:#111!important;
+}
+html[data-theme="light"] .product-media-thumb.active{
+  border-color:#111!important;
+  box-shadow:0 0 0 1px #111!important;
+}
+html[data-theme="light"] .product-media-thumbs-label{
+  color:#666!important;
+}
