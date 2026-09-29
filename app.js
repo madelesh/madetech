@@ -132,7 +132,7 @@ let currentSharedSetupToken = "";
 let publicAppVersion = "5.18";
 let publicRelease = { version: "5.18", title: "", date: "", notes: [] };
 const CURRENT_BUILD_RELEASE = {
-  version: "5.32",
+  version: "5.33",
   title: "Correcciones de interfaz, roles y Access Keys",
   date: "2026-09-27",
   changes: {
