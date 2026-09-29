@@ -5207,3 +5207,14 @@ html[data-theme="light"] .keyboard-sound-button.playing svg{
 .compare-brand-icon{width:18px;height:18px;border-radius:4px}
 .monthly-banner-brand{display:flex!important;align-items:center;gap:7px}
 .featured-brand-icon{width:20px;height:20px;border-radius:4px}
+
+
+/* ==========================================================
+   MADELESH V5.34.1 — ICONO DE MARCA EN TIENDA OFICIAL
+   ========================================================== */
+.official-purchase .official-brand-store-icon{
+  width:24px!important;
+  height:24px!important;
+  object-fit:contain!important;
+  display:block;
+}

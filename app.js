@@ -134,7 +134,7 @@ let currentSharedSetupToken = "";
 let publicAppVersion = "5.18";
 let publicRelease = { version: "5.18", title: "", date: "", notes: [] };
 const CURRENT_BUILD_RELEASE = {
-  version: "5.34",
+  version: "5.34.1",
   title: "Iconos automáticos y marcas",
   date: "2026-09-27",
   changes: {
@@ -2498,13 +2498,18 @@ function renderPurchaseLinks(product) {
   const stores = Array.isArray(product.trustedStores) ? product.trustedStores : [];
   if (!official && !stores.length) return "";
 
+  const preferredOfficialBrandIcon = String(product?.specs?.officialStoreIconBrand || "").trim();
+  const officialBrandIconSrc =
+    (preferredOfficialBrandIcon ? brandIconSource(preferredOfficialBrandIcon) : "") ||
+    brandIconSource(product.brand);
+
   return `
     <section class="product-info-section">
       <div class="product-section-head"><h3>Dónde comprar</h3><p>Enlaces externos</p></div>
       <div class="product-links-grid">
         ${official ? `
           <a class="purchase-card official-purchase" href="${official}" target="_blank" rel="noopener noreferrer">
-            <div><span class="link-icon">${storeIcon()}</span><span class="link-copy"><span>PÁGINA OFICIAL</span><strong>Comprar en ${escapeHtml(product.brand || "la marca")}</strong></span></div><span>↗</span>
+            <div><span class="link-icon">${officialBrandIconSrc ? `<img class="store-custom-icon official-brand-store-icon" src="${escapeHtml(officialBrandIconSrc)}" alt="${escapeHtml(product.brand || "Marca")}" loading="lazy" decoding="async">` : storeIcon()}</span><span class="link-copy"><span>PÁGINA OFICIAL</span><strong>Comprar en ${escapeHtml(product.brand || "la marca")}</strong></span></div><span>↗</span>
           </a>` : ""}
         ${stores.map(store => {
           const url = safeUrl(store.url);

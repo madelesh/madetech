@@ -1,4 +1,4 @@
-console.info("MadeLesh Admin build 5.34");
+console.info("MadeLesh Admin build 5.34.1");
 import { API_BASE } from "./config.js";
 
 const adminLogin = document.getElementById("adminLogin");
@@ -32,6 +32,8 @@ const addBrandIcon = document.getElementById("addBrandIcon");
 const brandIconLibrary = document.getElementById("brandIconLibrary");
 const saveIconSettings = document.getElementById("saveIconSettings");
 const productBrandIconPreview = document.getElementById("productBrandIconPreview");
+const productOfficialBrandIcon = document.getElementById("productOfficialBrandIcon");
+const productOfficialBrandIconPreview = document.getElementById("productOfficialBrandIconPreview");
 const saveBrandingSettings = document.getElementById("saveBrandingSettings");
 
 const contactsSettingsForm = document.getElementById("contactsSettingsForm");
@@ -220,7 +222,7 @@ let pendingBrandIconDataUrl = "";
 let contactIconDataUrls = { discord:"", steam:"", x:"", youtube:"", tiktok:"", email:"" };
 let colorImagesByHex = {};
 const ADMIN_BUILD_RELEASE = {
-  version: "5.34",
+  version: "5.34.1",
   title: "Iconos automáticos y marcas",
   date: "2026-09-27",
   changes: {
@@ -357,6 +359,52 @@ function renderProductBrandIconPreview(){
   productBrandIconPreview.title=entry?.name?`Icono automático: ${entry.name}`:"Icono predeterminado";
 }
 
+function renderOfficialStoreIconPreview(){
+  if(!productOfficialBrandIconPreview)return;
+
+  const selectedKey=String(productOfficialBrandIcon?.value||"").trim();
+  const productBrand=document.getElementById("productBrand")?.value.trim()||"";
+  const entry=selectedKey
+    ? adminBrandIcons?.[selectedKey]
+    : adminBrandIconEntry(productBrand);
+
+  const src=safeImageSource(entry?.icon||"");
+  productOfficialBrandIconPreview.innerHTML=src
+    ? `<img src="${escapeAttr(src)}" alt="">`
+    : `<span>🏪</span>`;
+
+  productOfficialBrandIconPreview.title=selectedKey
+    ? `Icono seleccionado: ${entry?.name||selectedKey}`
+    : (entry?.name ? `Automático: ${entry.name}` : "Icono genérico");
+}
+
+function renderOfficialStoreIconOptions(selectedValue=null){
+  if(!productOfficialBrandIcon)return;
+
+  const current=selectedValue===null
+    ? String(productOfficialBrandIcon.value||"")
+    : String(selectedValue||"");
+
+  const entries=Object.entries(adminBrandIcons||{})
+    .filter(([,item])=>safeImageSource(item?.icon||""))
+    .sort((a,b)=>String(a[1]?.name||a[0]).localeCompare(String(b[1]?.name||b[0]),"es"));
+
+  productOfficialBrandIcon.innerHTML=[
+    `<option value="">Automático · usar icono de la marca del producto</option>`,
+    ...entries.map(([key,item])=>`<option value="${escapeAttr(key)}">${escapeHtml(item?.name||key)}</option>`)
+  ].join("");
+
+  if(current && entries.some(([key])=>key===current)){
+    productOfficialBrandIcon.value=current;
+  }else{
+    productOfficialBrandIcon.value="";
+  }
+
+  renderOfficialStoreIconPreview();
+}
+
+productOfficialBrandIcon?.addEventListener("change",renderOfficialStoreIconPreview);
+
 function renderSpecIconLibrary(){
   if(!specIconLibrary)return;
   specIconLibrary.innerHTML=SPEC_ICON_LIBRARY.map(([key,label])=>{
@@ -389,13 +437,13 @@ function renderBrandIconLibrary(){
     <span><strong>${escapeHtml(item.name||key)}</strong><small>Se aplica automáticamente al escribir la marca</small></span>
     <button type="button" data-delete-brand-icon="${escapeAttr(key)}">Eliminar</button>
   </article>`).join(""):`<div class="empty-admin-state">Todavía no has agregado iconos de marcas.</div>`;
-  brandIconLibrary.querySelectorAll("[data-delete-brand-icon]").forEach(button=>button.addEventListener("click",()=>{delete adminBrandIcons[button.dataset.deleteBrandIcon];renderBrandIconLibrary();renderProductBrandIconPreview();}));
+  brandIconLibrary.querySelectorAll("[data-delete-brand-icon]").forEach(button=>button.addEventListener("click",()=>{delete adminBrandIcons[button.dataset.deleteBrandIcon];renderBrandIconLibrary();renderProductBrandIconPreview();renderOfficialStoreIconOptions();}));
 }
 
 function fillIconSettings(icons={}){
   adminSpecIcons=icons.specs&&typeof icons.specs==="object"?{...icons.specs}:{};
   adminBrandIcons=icons.brands&&typeof icons.brands==="object"?{...icons.brands}:{};
-  renderSpecIconLibrary();renderBrandIconLibrary();renderProductBrandIconPreview();
+  renderSpecIconLibrary();renderBrandIconLibrary();renderProductBrandIconPreview();renderOfficialStoreIconOptions();
 }
 
 brandIconFile?.addEventListener("change",async()=>{
@@ -405,7 +453,7 @@ brandIconFile?.addEventListener("change",async()=>{
 });
 addBrandIcon?.addEventListener("click",()=>{
   const name=brandIconName?.value.trim()||"";if(!name)return alert("Escribe el nombre de la marca.");if(!pendingBrandIconDataUrl)return alert("Selecciona un icono para la marca.");
-  adminBrandIcons[normalizeBrandLibraryKey(name)]={name,icon:pendingBrandIconDataUrl};brandIconName.value="";pendingBrandIconDataUrl="";renderBrandIconPendingPreview();renderBrandIconLibrary();renderProductBrandIconPreview();
+  adminBrandIcons[normalizeBrandLibraryKey(name)]={name,icon:pendingBrandIconDataUrl};brandIconName.value="";pendingBrandIconDataUrl="";renderBrandIconPendingPreview();renderBrandIconLibrary();renderProductBrandIconPreview();renderOfficialStoreIconOptions();
 });
 saveIconSettings?.addEventListener("click",async()=>{
   const old=saveIconSettings.textContent;saveIconSettings.disabled=true;saveIconSettings.textContent="GUARDANDO...";
@@ -675,7 +723,7 @@ function normalizePriceValue(value){
 }
 const priceInput=document.getElementById("productPrice");
 priceInput?.addEventListener("blur",()=>{priceInput.value=normalizePriceValue(priceInput.value);renderProductLivePreview();});
-document.getElementById("productBrand")?.addEventListener("input",()=>{renderProductBrandIconPreview();renderProductLivePreview();});
+document.getElementById("productBrand")?.addEventListener("input",()=>{renderProductBrandIconPreview();renderOfficialStoreIconPreview();renderProductLivePreview();});
 function normalizeSpecSymbol(key,value){
   if(typeof value!=="string")return value; const text=value.trim(); if(!text)return text;
   if(key==="layout" && /^\d+(?:[.,]\d+)?$/.test(text)) return `${text.replace(",",".")}%`;
@@ -1591,6 +1639,7 @@ function applyImportedWebProduct(product) {
   document.getElementById("productImageUrl").value = product.imageUrl || "";
   renderMainImagePreview();
   document.getElementById("productOfficialUrl").value = product.officialUrl || "";
+  renderOfficialStoreIconOptions(product.specs?.officialStoreIconBrand || "");
   document.getElementById("productFeatured").value = "false";
   setConnections(Array.isArray(product.connections) ? product.connections : []);
   setProductImages(Array.isArray(product.images) && product.images.length ? product.images : (product.imageUrl ? [product.imageUrl] : []));
@@ -2460,6 +2509,7 @@ function editProduct(id) {
   document.getElementById("productImageUrl").value = product.imageUrl || "";
   renderMainImagePreview();
   document.getElementById("productOfficialUrl").value = product.officialUrl || "";
+  renderOfficialStoreIconOptions(product.specs?.officialStoreIconBrand || "");
   document.getElementById("productFeatured").value = product.featured === true ? "true" : "false";
   renderTrustedStores(product.trustedStores || []);
   setColorImages(product.specs?.colorImages || []);
@@ -2500,6 +2550,7 @@ function resetProductForm() {
   productCategory.value = "Mouse";
   document.getElementById("productStatus").value = "published";
   document.getElementById("productFeatured").value = "false";
+  renderOfficialStoreIconOptions("");
   renderTrustedStores([]);
   setColorImages([]);
   renderColorPicker([]);
@@ -2572,6 +2623,7 @@ productForm.addEventListener("submit", async event => {
   payload.specs.variantProductIds = [...selectedVariantProductIds];
   payload.specs.driverDownloadUrl = productDriverUrl?.value.trim() || "";
   payload.specs.softwareDownloadUrl = productSoftwareUrl?.value.trim() || "";
+  payload.specs.officialStoreIconBrand = productOfficialBrandIcon?.value || "";
 
   const saveButton = document.getElementById("saveProduct");
   const oldText = saveButton.textContent;

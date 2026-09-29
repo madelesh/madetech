@@ -2312,3 +2312,47 @@ body.admin-authenticated #adminApp {
 .banner-transform-editor{display:none!important}
 
 @media(max-width:900px){.brand-icon-add-row{grid-template-columns:1fr 1fr}.brand-icon-pending-preview{width:100%}.spec-icon-admin-item{grid-template-columns:44px minmax(0,1fr) auto}.icon-reset-mini{grid-column:2/-1;justify-self:start}}
+
+
+/* ==========================================================
+   MADELESH V5.34.1 — ICONO DE TIENDA OFICIAL
+   ========================================================== */
+.official-store-icon-picker{
+  grid-column:1/-1;
+  display:grid;
+  grid-template-columns:54px minmax(0,1fr);
+  gap:12px;
+  align-items:center;
+  padding:12px;
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:14px;
+  background:#121214;
+}
+.official-store-icon-preview{
+  width:54px;
+  height:54px;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:13px;
+  background:#0d0d0f;
+  font-size:1.15rem;
+}
+.official-store-icon-preview img{
+  width:34px;
+  height:34px;
+  object-fit:contain;
+}
+.official-store-icon-picker label{
+  display:grid;
+  gap:7px;
+}
+.official-store-icon-picker label>small{
+  color:#73737c;
+  font-size:.62rem;
+  line-height:1.45;
+}
+.official-store-icon-picker select{
+  width:100%;
+}
