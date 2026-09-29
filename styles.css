@@ -5142,3 +5142,55 @@ html[data-theme="light"] .product-media-thumb.active{
 html[data-theme="light"] .product-media-thumbs-label{
   color:#666!important;
 }
+
+
+/* ==========================================================
+   MADELESH V5.33.2 — HOTFIX BOTÓN ESCUCHAR
+   ========================================================== */
+.keyboard-sound-button{
+  background:#171717!important;
+  color:#ffffff!important;
+  border-color:#2f2f2f!important;
+  opacity:1!important;
+}
+
+.keyboard-sound-button span{
+  color:#ffffff!important;
+  opacity:1!important;
+  -webkit-text-fill-color:#ffffff!important;
+}
+
+.keyboard-sound-button svg{
+  color:#ffffff!important;
+  stroke:#ffffff!important;
+  opacity:1!important;
+}
+
+/* Tema claro: mantener el botón oscuro con texto e icono blancos. */
+html[data-theme="light"] .keyboard-sound-button,
+html[data-theme="light"] .keyboard-sound-button.playing{
+  background:#171717!important;
+  color:#ffffff!important;
+  border-color:#2f2f2f!important;
+}
+
+html[data-theme="light"] .keyboard-sound-button span,
+html[data-theme="light"] .keyboard-sound-button.playing span{
+  color:#ffffff!important;
+  -webkit-text-fill-color:#ffffff!important;
+}
+
+html[data-theme="light"] .keyboard-sound-button svg,
+html[data-theme="light"] .keyboard-sound-button.playing svg{
+  color:#ffffff!important;
+  stroke:#ffffff!important;
+}
+
+/* Feedback visual al reproducir sin perder contraste. */
+.keyboard-sound-button:hover{
+  background:#262626!important;
+}
+.keyboard-sound-button.playing{
+  background:#2a2a2a!important;
+  color:#ffffff!important;
+}
