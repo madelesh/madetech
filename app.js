@@ -120,6 +120,8 @@ let featuredIndex = 0;
 let featuredTimer = null;
 let publicBranding = {};
 let publicContacts = {};
+let publicSpecIcons = {};
+let publicBrandIcons = {};
 let publicAnnouncements = [];
 let publicAnnouncementMode = "scroll";
 let favoriteProductIds = new Set();
@@ -132,8 +134,8 @@ let currentSharedSetupToken = "";
 let publicAppVersion = "5.18";
 let publicRelease = { version: "5.18", title: "", date: "", notes: [] };
 const CURRENT_BUILD_RELEASE = {
-  version: "5.33",
-  title: "Correcciones de interfaz, roles y Access Keys",
+  version: "5.34",
+  title: "Iconos automáticos y marcas",
   date: "2026-09-27",
   changes: {
     added: [
@@ -251,6 +253,8 @@ async function loadPublicSettings() {
     const data = await api("/settings", { method: "GET" }, null);
     publicBranding = data.branding || {};
     publicContacts = data.contacts || {};
+    publicSpecIcons = data.icons?.specs && typeof data.icons.specs === "object" ? data.icons.specs : {};
+    publicBrandIcons = data.icons?.brands && typeof data.icons.brands === "object" ? data.icons.brands : {};
     publicAnnouncements = Array.isArray(data.announcements) ? data.announcements : [];
     publicAnnouncementMode = data.announcementMode === "static" ? "static" : "scroll";
     publicAppVersion = String(data.appVersion || data.release?.version || "5.18");
@@ -342,6 +346,27 @@ footerReleaseToggle?.addEventListener("click", () => {
   footerReleaseToggle.setAttribute("aria-expanded", String(open));
   footerReleaseToggle.textContent = open ? "Ocultar cambios" : "Ver cambios";
 });
+
+function normalizePublicIconKey(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function brandIconSource(brand) {
+  const key = normalizePublicIconKey(brand);
+  const item = publicBrandIcons?.[key];
+  return safeImageSrc(item?.icon || item || "");
+}
+
+function brandIconHtml(brand, className = "product-brand-icon") {
+  const src = brandIconSource(brand);
+  return src ? `<img class="${className}" src="${escapeHtml(src)}" alt="${escapeHtml(brand || "Marca")}" loading="lazy" decoding="async">` : "";
+}
 
 function applyPublicBranding(branding = publicBranding) {
   publicBranding = branding || {};
@@ -1612,7 +1637,7 @@ function renderFeaturedBanner() {
   featuredBanner?.classList.add("is-changing");
 
   setTimeout(() => {
-    featuredBannerBrand.textContent = product.brand || "MadeLesh";
+    featuredBannerBrand.innerHTML = `${brandIconHtml(product.brand,"featured-brand-icon")}<span>${escapeHtml(product.brand || "MadeLesh")}</span>`;
     featuredBannerName.textContent = product.name || product.model || "Producto destacado";
     const summary = displaySummary(product) || "Producto destacado del mes en MadeLesh.";
     featuredBannerText.textContent = summary;
@@ -1628,12 +1653,9 @@ function renderFeaturedBanner() {
     }
 
     featuredBannerImage.src = image;
-    const bannerScale = Math.max(60, Math.min(180, Number(product?.specs?.bannerImageScale || 100)));
-    const bannerX = Math.max(0, Math.min(100, Number(product?.specs?.bannerImagePositionX ?? 50)));
-    const bannerY = Math.max(0, Math.min(100, Number(product?.specs?.bannerImagePositionY ?? 50)));
-    featuredBannerImage.style.setProperty("--banner-scale", String(bannerScale / 100));
-    featuredBannerImage.style.setProperty("--banner-shift-x", `${(bannerX - 50) * 0.8}%`);
-    featuredBannerImage.style.setProperty("--banner-shift-y", `${(bannerY - 50) * 0.8}%`);
+    featuredBannerImage.style.setProperty("--banner-scale", "1");
+    featuredBannerImage.style.setProperty("--banner-shift-x", "0%");
+    featuredBannerImage.style.setProperty("--banner-shift-y", "0%");
     featuredBannerImage.hidden = false;
 
     featuredBanner.dataset.review = String(product.id);
@@ -1878,7 +1900,7 @@ function refreshComparePickerMenus(){
 function populateComparisonSelectors(){if(!compareProductA||!compareProductB)return;const products=sortCompareProducts(reviews);compareProductA.innerHTML=`<option value="">Seleccionar producto</option>${products.map(item=>`<option value="${item.id}">${escapeHtml(`${item.category} · ${item.brand||""} ${item.name||""}`.trim())}</option>`).join("")}`;compareProductB.innerHTML=`<option value="">Primero elige el producto A</option>`;compareProductB.disabled=true;renderComparePickerMenu(comparePickerAMenu,products,compareProductA,"a","Elegir producto A",`${products.length} productos · favoritos primero`);updateComparePickerButton("a",null);updateComparePickerButton("b",null);if(comparePickerBButton)comparePickerBButton.disabled=true;}
 function refreshCompareProductB(){if(!compareProductA||!compareProductB)return;const selectedA=reviews.find(item=>String(item.id)===String(compareProductA.value||""));updateComparePickerButton("a",selectedA||null);if(!selectedA){compareProductB.innerHTML=`<option value="">Primero elige el producto A</option>`;compareProductB.disabled=true;if(comparePickerBButton)comparePickerBButton.disabled=true;if(comparePickerBMenu)comparePickerBMenu.innerHTML="";updateComparePickerButton("b",null);if(compareCategoryLock)compareCategoryLock.textContent="Solo se permiten comparaciones entre productos de la misma categoría.";renderComparison();return;}const same=sortCompareProducts(reviews.filter(item=>item.category===selectedA.category&&String(item.id)!==String(selectedA.id)));compareProductB.innerHTML=`<option value="">Seleccionar ${escapeHtml(selectedA.category)}</option>${same.map(item=>`<option value="${item.id}">${escapeHtml(`${item.brand||""} ${item.name||""}`.trim())}</option>`).join("")}`;compareProductB.disabled=same.length===0;if(comparePickerBButton)comparePickerBButton.disabled=same.length===0;renderComparePickerMenu(comparePickerBMenu,same,compareProductB,"b","Elegir rival",`Solo ${selectedA.category} · favoritos primero`);updateComparePickerButton("b",null);if(compareCategoryLock)compareCategoryLock.innerHTML=`<strong>${escapeHtml(selectedA.category)}</strong> bloqueado como categoría · ${same.length} alternativa${same.length===1?"":"s"}.`;renderComparison();}
 
-function comparisonProductCard(product,isWinner,side){return `<article class="compare-duel-product ${side} ${isWinner?"overall-winner":""}">${isWinner?`<span class="compare-winner-badge">DESTACADO</span>`:""}<div class="compare-duel-image"><img src="${escapeHtml(comparisonImage(product))}" alt="${escapeHtml(product.name||"Producto")}" loading="lazy" decoding="async"></div><small>${escapeHtml(product.brand||"")}</small><h3>${escapeHtml(product.name||"")}</h3><button type="button" data-open-compare-product="${product.id}">Ver ficha ↗</button></article>`;}
+function comparisonProductCard(product,isWinner,side){return `<article class="compare-duel-product ${side} ${isWinner?"overall-winner":""}">${isWinner?`<span class="compare-winner-badge">DESTACADO</span>`:""}<div class="compare-duel-image"><img src="${escapeHtml(comparisonImage(product))}" alt="${escapeHtml(product.name||"Producto")}" loading="lazy" decoding="async"></div><small class="compare-brand-line">${brandIconHtml(product.brand,"compare-brand-icon")}${escapeHtml(product.brand||"")}</small><h3>${escapeHtml(product.name||"")}</h3><button type="button" data-open-compare-product="${product.id}">Ver ficha ↗</button></article>`;}
 
 function renderComparison(){if(!compareResult)return;const a=reviews.find(item=>String(item.id)===String(compareProductA?.value||""));const b=reviews.find(item=>String(item.id)===String(compareProductB?.value||""));updateComparePickerButton("a",a||null);updateComparePickerButton("b",b||null);if(!a||!b){compareResult.innerHTML=`<div class="compare-empty"><strong>Elige dos productos para empezar.</strong><span>Las estadísticas aparecerán aquí de forma automática.</span></div>`;return;}if(a.category!==b.category){compareResult.innerHTML=`<div class="compare-empty compare-error"><strong>Comparación no permitida.</strong><span>Solo puedes comparar productos de la misma categoría.</span></div>`;return;}
   const metrics=comparisonMetrics(a.category);let pointsA=0,pointsB=0,comparable=0;const lanes=[];for(const metric of metrics){const av=metric.value(a),bv=metric.value(b),winner=metricWinner(av,bv,metric.direction);if(Number.isFinite(av)&&Number.isFinite(bv)&&metric.weight>0){comparable++;if(winner==="a")pointsA+=metric.weight;else if(winner==="b")pointsB+=metric.weight;else{pointsA+=metric.weight/2;pointsB+=metric.weight/2;}}lanes.push(`<article class="compare-metric-lane"><div class="lane-side lane-a ${winner==="a"?"lane-winner":""}"><strong>${escapeHtml(formatMetricValue(metric,av))}</strong><div><i style="width:${Number.isFinite(av)?metricAdvantage(av,bv,metric.direction):0}%"></i></div></div><div class="lane-label"><span>${comparisonSpecIcon(metric.icon||"chip")}</span><strong>${escapeHtml(metric.label)}</strong><small>${metric.weight===0||metric.direction==="none"?"Dato":(winner==="tie"?"Empate":"Ventaja")}</small></div><div class="lane-side lane-b ${winner==="b"?"lane-winner":""}"><strong>${escapeHtml(formatMetricValue(metric,bv))}</strong><div><i style="width:${Number.isFinite(bv)?metricAdvantage(bv,av,metric.direction):0}%"></i></div></div></article>`);}
@@ -1926,8 +1948,8 @@ async function openReview(id) {
           <div class="product-detail-title-row"><h2 id="modalTitle" class="product-detail-title">${escapeHtml(review.name || "")}</h2><button class="favorite-detail-button ${favoriteProductIds.has(Number(review.id))?"active":""}" type="button" data-detail-favorite="${review.id}" aria-label="${favoriteProductIds.has(Number(review.id))?"Quitar de favoritos":"Agregar a favoritos"}">${favoriteIcon(favoriteProductIds.has(Number(review.id)))}<span>${favoriteProductIds.has(Number(review.id))?"Guardado":"Favorito"}</span></button></div>
 
           <p class="product-detail-model">
-            ${review.brand ? escapeHtml(review.brand) : ""}
-            ${review.model ? ` · Modelo ${escapeHtml(review.model)}` : ""}
+            ${review.brand ? `${brandIconHtml(review.brand)}<span>${escapeHtml(review.brand)}</span>` : ""}
+            ${review.model ? `<span>· Modelo ${escapeHtml(review.model)}</span>` : ""}
           </p>
 
           ${Number(review.score || 0) > 0 ? productRatingStarsHtml(review.score) : ""}
@@ -2190,7 +2212,10 @@ function cleanSpecDisplayValue(value) {
   return text;
 }
 
-function specIcon(label) {
+function specIcon(label, key = "") {
+  const customKey = normalizePublicIconKey(key || label);
+  const custom = safeImageSrc(publicSpecIcons?.[customKey] || "");
+  if (custom) return `<img class="custom-spec-icon-image" src="${escapeHtml(custom)}" alt="" loading="lazy" decoding="async">`;
   const value = String(label || "").toLowerCase();
   if (value.includes("sensor")) return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path></svg>`;
   if (value.includes("dpi")) return `<svg viewBox="0 0 24 24"><path d="M4 18a8 8 0 1 1 16 0"></path><path d="m12 14 4-4"></path><circle cx="12" cy="14" r="1.5"></circle></svg>`;
@@ -2223,12 +2248,12 @@ function specIcon(label) {
   return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4M12 16h.01"></path></svg>`;
 }
 
-function coreSpec(label, value) {
+function coreSpec(label, value, key = "") {
   const cleaned = cleanSpecDisplayValue(value);
   const available = Array.isArray(cleaned) ? cleaned.length > 0 : cleaned !== undefined && cleaned !== null && String(cleaned).trim() !== "";
   return `
     <article class="product-spec-card ${available ? "" : "spec-unavailable"}">
-      <div class="product-spec-label"><span class="product-spec-icon">${specIcon(label)}</span><span>${escapeHtml(label)}</span></div>
+      <div class="product-spec-label"><span class="product-spec-icon">${specIcon(label, key)}</span><span>${escapeHtml(label)}</span></div>
       <strong>${available ? escapeHtml(formatValue(cleaned)) : "No disponible"}</strong>
     </article>
   `;
@@ -2238,7 +2263,7 @@ function coreSpec(label, value) {
 
 function renderSpecCard(item) {
   if (item.type === "grips") return renderGripSpec(item.value);
-  return coreSpec(item.label, item.value);
+  return coreSpec(item.label, item.value, item.key);
 }
 
 function renderGripSpec(grips) {
@@ -2274,66 +2299,66 @@ function gripIcon(type) {
 function buildSpecs(product) {
   const s = product.specs || {};
   const list = [];
-  const add = (label, value, type = "normal") => list.push({ label, value, type });
+  const add = (label, value, type = "normal", key = "") => list.push({ label, value, type, key: key || normalizePublicIconKey(label) });
 
   if (product.category === "Mouse") {
-    add("MCU", s.mcu);
-    add("Polling Rate", Array.isArray(s.pollingRate) ? s.pollingRate : (s.pollingRateMax || s.pollingRate));
-    add("Switch", s.switchType);
-    add("Battery", s.battery || (s.batteryHours ? `${s.batteryHours} h` : ""));
-    add("Weight", s.weight ? `${s.weight} g` : "");
-    add("Sensor", s.sensor);
-    add("Material", s.material);
+    add("MCU", s.mcu, "normal", "mcu");
+    add("Polling Rate", Array.isArray(s.pollingRate) ? s.pollingRate : (s.pollingRateMax || s.pollingRate), "normal", "pollingRate");
+    add("Switch", s.switchType, "normal", "switchType");
+    add("Battery", s.battery || (s.batteryHours ? `${s.batteryHours} h` : ""), "normal", "battery");
+    add("Weight", s.weight ? `${s.weight} g` : "", "normal", "weight");
+    add("Sensor", s.sensor, "normal", "sensor");
+    add("Material", s.material, "normal", "material");
   }
 
   if (product.category === "Teclados") {
-    add("Switches", s.switchType);
-    add("Tecnología", s.switchTechnology);
-    add("Formato", s.layout);
-    add("Hot-swap", yesNo(s.hotSwap));
-    add("Rapid Trigger", yesNo(s.rapidTrigger));
-    add("Polling rate", s.pollingRate);
-    add("Keycaps", s.keycaps);
-    add("Montaje", s.mount);
-    add("Batería", s.batteryHours ? `${s.batteryHours} h` : "");
+    add("Switches", s.switchType, "normal", "switchType");
+    add("Tecnología", s.switchTechnology, "normal", "switchTechnology");
+    add("Formato", s.layout, "normal", "layout");
+    add("Hot-swap", yesNo(s.hotSwap), "normal", "hotSwap");
+    add("Rapid Trigger", yesNo(s.rapidTrigger), "normal", "rapidTrigger");
+    add("Polling rate", s.pollingRate, "normal", "pollingRate");
+    add("Keycaps", s.keycaps, "normal", "keycaps");
+    add("Montaje", s.mount, "normal", "mount");
+    add("Batería", s.batteryHours ? `${s.batteryHours} h` : "", "normal", "batteryHours");
   }
 
   if (product.category === "IEM") {
-    add("Drivers", s.driverConfig);
-    add("Firma sonora", s.soundSignature);
-    add("Impedancia", s.impedance);
-    add("Sensibilidad", s.sensitivity);
-    add("Respuesta en frecuencia", s.frequencyResponse);
-    add("Conector del cable", s.cableConnector);
-    add("Plug", s.plug);
-    add("Cable desmontable", yesNo(s.detachableCable));
-    add("Micrófono", s.microphone);
-    add("Peso por lado", s.weightPerSide ? `${s.weightPerSide} g` : "");
+    add("Drivers", s.driverConfig, "normal", "driverConfig");
+    add("Firma sonora", s.soundSignature, "normal", "soundSignature");
+    add("Impedancia", s.impedance, "normal", "impedance");
+    add("Sensibilidad", s.sensitivity, "normal", "sensitivity");
+    add("Respuesta en frecuencia", s.frequencyResponse, "normal", "frequencyResponse");
+    add("Conector del cable", s.cableConnector, "normal", "cableConnector");
+    add("Plug", s.plug, "normal", "plug");
+    add("Cable desmontable", yesNo(s.detachableCable), "normal", "detachableCable");
+    add("Micrófono", s.microphone, "normal", "microphone");
+    add("Peso por lado", s.weightPerSide ? `${s.weightPerSide} g` : "", "normal", "weightPerSide");
   }
 
   if (product.category === "Headsets") {
-    add("Driver", s.driver);
-    add("Micrófono", s.microphone);
-    add("Micrófono desmontable", yesNo(s.detachableMic));
-    add("Peso", s.weight ? `${s.weight} g` : "");
-    add("Autonomía", s.batteryHours ? `${s.batteryHours} h` : "");
-    add("Codec", s.codec);
-    add("Sonido espacial", s.spatialAudio);
-    add("Impedancia", s.impedance);
-    add("Respuesta en frecuencia", s.frequencyResponse);
-    add("Almohadillas", s.earpads);
+    add("Driver", s.driver, "normal", "driver");
+    add("Micrófono", s.microphone, "normal", "microphone");
+    add("Micrófono desmontable", yesNo(s.detachableMic), "normal", "detachableMic");
+    add("Peso", s.weight ? `${s.weight} g` : "", "normal", "weight");
+    add("Autonomía", s.batteryHours ? `${s.batteryHours} h` : "", "normal", "batteryHours");
+    add("Codec", s.codec, "normal", "codec");
+    add("Sonido espacial", s.spatialAudio, "normal", "spatialAudio");
+    add("Impedancia", s.impedance, "normal", "impedance");
+    add("Respuesta en frecuencia", s.frequencyResponse, "normal", "frequencyResponse");
+    add("Almohadillas", s.earpads, "normal", "earpads");
   }
 
   if (product.category === "MousePads") {
-    add("Material de superficie", s.surfaceMaterial);
-    add("Tipo de superficie", s.surfaceType);
-    add("Dimensiones", s.dimensions || ((s.widthMm && s.heightMm) ? `${s.widthMm} × ${s.heightMm} mm` : ""));
-    add("Grosor", s.thicknessMm ? `${s.thicknessMm} mm` : "");
-    add("Material de base", s.baseMaterial);
-    add("Base antideslizante", yesNo(s.antiSlipBase));
-    add("Bordes cosidos", yesNo(s.stitchedEdges));
-    add("Resistencia al agua", yesNo(s.waterResistant));
-    add("Lavable", yesNo(s.washable));
+    add("Material de superficie", s.surfaceMaterial, "normal", "surfaceMaterial");
+    add("Tipo de superficie", s.surfaceType, "normal", "surfaceType");
+    add("Dimensiones", s.dimensions || ((s.widthMm && s.heightMm) ? `${s.widthMm} × ${s.heightMm} mm` : ""), "normal", "dimensions");
+    add("Grosor", s.thicknessMm ? `${s.thicknessMm} mm` : "", "normal", "thicknessMm");
+    add("Material de base", s.baseMaterial, "normal", "baseMaterial");
+    add("Base antideslizante", yesNo(s.antiSlipBase), "normal", "antiSlipBase");
+    add("Bordes cosidos", yesNo(s.stitchedEdges), "normal", "stitchedEdges");
+    add("Resistencia al agua", yesNo(s.waterResistant), "normal", "waterResistant");
+    add("Lavable", yesNo(s.washable), "normal", "washable");
   }
 
   return list;

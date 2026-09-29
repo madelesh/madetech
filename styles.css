@@ -5194,3 +5194,16 @@ html[data-theme="light"] .keyboard-sound-button.playing svg{
   background:#2a2a2a!important;
   color:#ffffff!important;
 }
+
+
+/* ==========================================================
+   MADELESH V5.34 — ICONOS AUTOMÁTICOS / MARCAS
+   ========================================================== */
+.custom-spec-icon-image{width:100%;height:100%;object-fit:contain;display:block}
+.product-brand-icon,.compare-brand-icon,.featured-brand-icon{display:inline-block;object-fit:contain;flex:0 0 auto}
+.product-brand-icon{width:20px;height:20px;border-radius:5px}
+.product-detail-model{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.compare-brand-line{display:flex!important;align-items:center;gap:6px}
+.compare-brand-icon{width:18px;height:18px;border-radius:4px}
+.monthly-banner-brand{display:flex!important;align-items:center;gap:7px}
+.featured-brand-icon{width:20px;height:20px;border-radius:4px}

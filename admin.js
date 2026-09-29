@@ -1,4 +1,4 @@
-console.info("MadeLesh Admin build 5.32");
+console.info("MadeLesh Admin build 5.34");
 import { API_BASE } from "./config.js";
 
 const adminLogin = document.getElementById("adminLogin");
@@ -24,6 +24,14 @@ const clearBrandingLogoLight = document.getElementById("clearBrandingLogoLight")
 const clearBrandingLogoDark = document.getElementById("clearBrandingLogoDark");
 const clearBrandingFaviconLight = document.getElementById("clearBrandingFaviconLight");
 const clearBrandingFaviconDark = document.getElementById("clearBrandingFaviconDark");
+const specIconLibrary = document.getElementById("specIconLibrary");
+const brandIconName = document.getElementById("brandIconName");
+const brandIconFile = document.getElementById("brandIconFile");
+const brandIconPendingPreview = document.getElementById("brandIconPendingPreview");
+const addBrandIcon = document.getElementById("addBrandIcon");
+const brandIconLibrary = document.getElementById("brandIconLibrary");
+const saveIconSettings = document.getElementById("saveIconSettings");
+const productBrandIconPreview = document.getElementById("productBrandIconPreview");
 const saveBrandingSettings = document.getElementById("saveBrandingSettings");
 
 const contactsSettingsForm = document.getElementById("contactsSettingsForm");
@@ -206,11 +214,14 @@ let brandingLogoLightDataUrl = "";
 let brandingLogoDarkDataUrl = "";
 let brandingFaviconLightDataUrl = "";
 let brandingFaviconDarkDataUrl = "";
+let adminSpecIcons = {};
+let adminBrandIcons = {};
+let pendingBrandIconDataUrl = "";
 let contactIconDataUrls = { discord:"", steam:"", x:"", youtube:"", tiktok:"", email:"" };
 let colorImagesByHex = {};
 const ADMIN_BUILD_RELEASE = {
-  version: "5.32",
-  title: "Correcciones de interfaz, roles y Access Keys",
+  version: "5.34",
+  title: "Iconos automáticos y marcas",
   date: "2026-09-27",
   changes: {
     added: [
@@ -296,6 +307,111 @@ async function api(path, options = {}, token = adminToken) {
 
   return data;
 }
+
+/* ---------------- AUTOMATIC ICONS ---------------- */
+const SPEC_ICON_LIBRARY = [
+  ["mcu","MCU"],["pollingRate","Polling Rate"],["switchType","Switch"],["battery","Batería"],["batteryHours","Autonomía"],
+  ["weight","Peso"],["sensor","Sensor"],["material","Material"],["switchTechnology","Tecnología de switch"],["layout","Formato / Layout"],
+  ["hotSwap","Hot-swap"],["rapidTrigger","Rapid Trigger"],["keycaps","Keycaps"],["mount","Montaje"],["driverConfig","Drivers"],
+  ["soundSignature","Firma sonora"],["impedance","Impedancia"],["sensitivity","Sensibilidad"],["frequencyResponse","Respuesta en frecuencia"],
+  ["cableConnector","Conector de cable"],["plug","Plug"],["detachableCable","Cable desmontable"],["microphone","Micrófono"],
+  ["weightPerSide","Peso por lado"],["driver","Driver"],["detachableMic","Micrófono desmontable"],["codec","Codec"],["spatialAudio","Sonido espacial"],
+  ["earpads","Almohadillas"],["surfaceMaterial","Superficie"],["surfaceType","Tipo de superficie"],["dimensions","Dimensiones"],
+  ["widthMm","Ancho"],["heightMm","Largo"],["thicknessMm","Grosor"],["baseMaterial","Material de base"],
+  ["antiSlipBase","Base antideslizante"],["stitchedEdges","Bordes cosidos"],["waterResistant","Resistencia al agua"],["washable","Lavable"]
+];
+
+function normalizeAdminIconKey(value){
+  return String(value||"").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
+}
+
+function defaultAdminSpecIconSvg(key,label=""){
+  const value=`${key} ${label}`.toLowerCase();
+  if(/battery|autonom/.test(value))return `<svg viewBox="0 0 24 24"><rect x="3" y="7" width="17" height="10" rx="2"></rect><path d="M20 10h2v4h-2M6 10h8"></path></svg>`;
+  if(/weight|peso/.test(value))return `<svg viewBox="0 0 24 24"><path d="M6 20h12l-1.5-11h-9z"></path><path d="M9 9a3 3 0 0 1 6 0"></path></svg>`;
+  if(/sensor|sensitivity|sensibilidad/.test(value))return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path></svg>`;
+  if(/polling|frequency|frecuencia/.test(value))return `<svg viewBox="0 0 24 24"><path d="M4 14a8 8 0 1 1 2 4"></path><path d="M4 19v-5h5"></path></svg>`;
+  if(/switch|hot-swap|rapid/.test(value))return `<svg viewBox="0 0 24 24"><rect x="5" y="6" width="14" height="12" rx="2"></rect><path d="M8 10h8M8 14h5"></path></svg>`;
+  if(/layout|format|dimension|width|height|ancho|largo|thickness|grosor/.test(value))return `<svg viewBox="0 0 24 24"><path d="M4 7h16v10H4z"></path><path d="M7 4v3M17 4v3M7 17v3M17 17v3"></path></svg>`;
+  if(/microphone|micrófono/.test(value))return `<svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M6 11a6 6 0 0 0 12 0M12 17v4"></path></svg>`;
+  if(/driver|sound|spatial|firma/.test(value))return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2"></circle></svg>`;
+  if(/material|surface|superficie|base|earpads|almohadillas/.test(value))return `<svg viewBox="0 0 24 24"><path d="m12 3 8 5-8 5-8-5z"></path><path d="m4 12 8 5 8-5"></path></svg>`;
+  if(/plug|connector|cable/.test(value))return `<svg viewBox="0 0 24 24"><path d="M8 4v6M16 4v6M6 10h12v4a6 6 0 0 1-12 0z"></path></svg>`;
+  if(/mcu|codec/.test(value))return `<svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"></rect><path d="M9 3v4M15 3v4M9 17v4M15 17v4M3 9h4M17 9h4M3 15h4M17 15h4"></path></svg>`;
+  return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4M12 16h.01"></path></svg>`;
+}
+
+function adminSpecIconHtml(key,label=""){
+  const src=safeImageSource(adminSpecIcons?.[normalizeAdminIconKey(key)]||"");
+  return src?`<img src="${escapeAttr(src)}" alt="">`:defaultAdminSpecIconSvg(key,label);
+}
+
+function normalizeBrandLibraryKey(value){return normalizeAdminIconKey(value);}
+function adminBrandIconEntry(brand){return adminBrandIcons?.[normalizeBrandLibraryKey(brand)]||null;}
+function renderProductBrandIconPreview(){
+  if(!productBrandIconPreview)return;
+  const brand=document.getElementById("productBrand")?.value.trim()||"";
+  const entry=adminBrandIconEntry(brand);
+  const src=safeImageSource(entry?.icon||"");
+  productBrandIconPreview.innerHTML=src?`<img src="${escapeAttr(src)}" alt="">`:`<span>${escapeHtml((brand||"B").charAt(0).toUpperCase())}</span>`;
+  productBrandIconPreview.title=entry?.name?`Icono automático: ${entry.name}`:"Icono predeterminado";
+}
+
+function renderSpecIconLibrary(){
+  if(!specIconLibrary)return;
+  specIconLibrary.innerHTML=SPEC_ICON_LIBRARY.map(([key,label])=>{
+    const custom=safeImageSource(adminSpecIcons?.[normalizeAdminIconKey(key)]||"");
+    return `<article class="spec-icon-admin-item" data-spec-icon-key="${escapeAttr(key)}">
+      <span class="spec-icon-admin-preview">${custom?`<img src="${escapeAttr(custom)}" alt="">`:defaultAdminSpecIconSvg(key,label)}</span>
+      <span class="spec-icon-admin-copy"><strong>${escapeHtml(label)}</strong><small>${custom?"Personalizado":"Predeterminado automático"}</small></span>
+      <label class="icon-upload-mini"><input type="file" accept="image/png,image/jpeg,image/webp" data-spec-icon-file="${escapeAttr(key)}"><span>${custom?"CAMBIAR":"SUBIR"}</span></label>
+      ${custom?`<button type="button" class="icon-reset-mini" data-reset-spec-icon="${escapeAttr(key)}">Predeterminado</button>`:""}
+    </article>`;
+  }).join("");
+  specIconLibrary.querySelectorAll("[data-spec-icon-file]").forEach(input=>input.addEventListener("change",async()=>{
+    const file=input.files?.[0];if(!file)return;
+    try{adminSpecIcons[normalizeAdminIconKey(input.dataset.specIconFile)]=await imageFileToWebpDataUrl(file,{maxSize:128,quality:.82,maxChars:90000});renderSpecIconLibrary();renderCategoryFields(productCategory?.value||"Mouse",collectCategorySpecs());}
+    catch(error){alert(error.message);}finally{input.value="";}
+  }));
+  specIconLibrary.querySelectorAll("[data-reset-spec-icon]").forEach(button=>button.addEventListener("click",()=>{delete adminSpecIcons[normalizeAdminIconKey(button.dataset.resetSpecIcon)];renderSpecIconLibrary();renderCategoryFields(productCategory?.value||"Mouse",collectCategorySpecs());}));
+}
+
+function renderBrandIconPendingPreview(){
+  if(!brandIconPendingPreview)return;
+  brandIconPendingPreview.innerHTML=pendingBrandIconDataUrl?`<img src="${escapeAttr(pendingBrandIconDataUrl)}" alt="">`:`<span>Sin icono</span>`;
+}
+
+function renderBrandIconLibrary(){
+  if(!brandIconLibrary)return;
+  const entries=Object.entries(adminBrandIcons||{}).sort((a,b)=>String(a[1]?.name||a[0]).localeCompare(String(b[1]?.name||b[0]),"es"));
+  brandIconLibrary.innerHTML=entries.length?entries.map(([key,item])=>`<article class="brand-icon-admin-item">
+    <span class="brand-icon-admin-preview"><img src="${escapeAttr(item.icon||"")}" alt=""></span>
+    <span><strong>${escapeHtml(item.name||key)}</strong><small>Se aplica automáticamente al escribir la marca</small></span>
+    <button type="button" data-delete-brand-icon="${escapeAttr(key)}">Eliminar</button>
+  </article>`).join(""):`<div class="empty-admin-state">Todavía no has agregado iconos de marcas.</div>`;
+  brandIconLibrary.querySelectorAll("[data-delete-brand-icon]").forEach(button=>button.addEventListener("click",()=>{delete adminBrandIcons[button.dataset.deleteBrandIcon];renderBrandIconLibrary();renderProductBrandIconPreview();}));
+}
+
+function fillIconSettings(icons={}){
+  adminSpecIcons=icons.specs&&typeof icons.specs==="object"?{...icons.specs}:{};
+  adminBrandIcons=icons.brands&&typeof icons.brands==="object"?{...icons.brands}:{};
+  renderSpecIconLibrary();renderBrandIconLibrary();renderProductBrandIconPreview();
+}
+
+brandIconFile?.addEventListener("change",async()=>{
+  const file=brandIconFile.files?.[0];if(!file)return;
+  try{pendingBrandIconDataUrl=await imageFileToWebpDataUrl(file,{maxSize:160,quality:.84,maxChars:100000});renderBrandIconPendingPreview();}
+  catch(error){alert(error.message);}finally{brandIconFile.value="";}
+});
+addBrandIcon?.addEventListener("click",()=>{
+  const name=brandIconName?.value.trim()||"";if(!name)return alert("Escribe el nombre de la marca.");if(!pendingBrandIconDataUrl)return alert("Selecciona un icono para la marca.");
+  adminBrandIcons[normalizeBrandLibraryKey(name)]={name,icon:pendingBrandIconDataUrl};brandIconName.value="";pendingBrandIconDataUrl="";renderBrandIconPendingPreview();renderBrandIconLibrary();renderProductBrandIconPreview();
+});
+saveIconSettings?.addEventListener("click",async()=>{
+  const old=saveIconSettings.textContent;saveIconSettings.disabled=true;saveIconSettings.textContent="GUARDANDO...";
+  try{const data=await api("/admin/settings/icons",{method:"PUT",body:JSON.stringify({specs:adminSpecIcons,brands:adminBrandIcons})});fillIconSettings(data.icons||{});showAdminToast("Biblioteca de iconos guardada");}
+  catch(error){alert(`No se pudieron guardar los iconos: ${error.code||error.message}`);}finally{saveIconSettings.disabled=false;saveIconSettings.textContent=old;}
+});
 
 /* ---------------- CATEGORY FIELDS ---------------- */
 
@@ -395,7 +511,7 @@ function fieldHtml(item, value) {
       : (String(safeValue || "").trim() ? String(safeValue).split(/[,/]|\s+\+\s+/).map(item => item.trim()).filter(Boolean) : []);
     return `
       <div class="spec-choice-field full-width">
-        <span class="spec-choice-label">${item.label.toUpperCase()}</span>
+        <span class="spec-choice-label admin-spec-field-label"><span class="admin-spec-field-icon">${adminSpecIconHtml(item.key,item.label)}</span><span>${item.label.toUpperCase()}</span></span>
         <div class="spec-choice-group" data-spec-key="${item.key}" data-spec-type="multichoice">
           ${item.options.map(([optionValue, optionLabel]) => {
             const active = selected.includes(String(optionValue));
@@ -410,7 +526,7 @@ function fieldHtml(item, value) {
 
   if (item.type === "boolean") {
     return `
-      <label>${item.label.toUpperCase()}
+      <label><span class="admin-spec-field-label"><span class="admin-spec-field-icon">${adminSpecIconHtml(item.key,item.label)}</span><span>${item.label.toUpperCase()}</span></span>
         <select id="${id}" data-spec-key="${item.key}" data-spec-type="boolean">
           <option value="">Sin especificar</option>
           <option value="true" ${safeValue === true ? "selected" : ""}>Sí</option>
@@ -421,7 +537,7 @@ function fieldHtml(item, value) {
 
   if (item.type === "select") {
     return `
-      <label>${item.label.toUpperCase()}
+      <label><span class="admin-spec-field-label"><span class="admin-spec-field-icon">${adminSpecIconHtml(item.key,item.label)}</span><span>${item.label.toUpperCase()}</span></span>
         <select id="${id}" data-spec-key="${item.key}" data-spec-type="select">
           <option value="">Sin especificar</option>
           ${item.options.map(([value, label]) =>
@@ -434,14 +550,14 @@ function fieldHtml(item, value) {
   if (item.type === "lines") {
     const text = Array.isArray(safeValue) ? safeValue.join("\n") : safeValue;
     return `
-      <label class="full-width">${item.label.toUpperCase()}
+      <label class="full-width"><span class="admin-spec-field-label"><span class="admin-spec-field-icon">${adminSpecIconHtml(item.key,item.label)}</span><span>${item.label.toUpperCase()}</span></span>
         <textarea id="${id}" data-spec-key="${item.key}" data-spec-type="lines" rows="4"
           placeholder="${escapeAttr(item.placeholder)}">${escapeHtml(text)}</textarea>
       </label>`;
   }
 
   return `
-    <label>${item.label.toUpperCase()}
+    <label><span class="admin-spec-field-label"><span class="admin-spec-field-icon">${adminSpecIconHtml(item.key,item.label)}</span><span>${item.label.toUpperCase()}</span></span>
       <input id="${id}" data-spec-key="${item.key}" data-spec-type="${item.type}"
         type="${item.type}" value="${escapeAttr(safeValue)}" placeholder="${escapeAttr(item.placeholder)}">
     </label>`;
@@ -559,6 +675,7 @@ function normalizePriceValue(value){
 }
 const priceInput=document.getElementById("productPrice");
 priceInput?.addEventListener("blur",()=>{priceInput.value=normalizePriceValue(priceInput.value);renderProductLivePreview();});
+document.getElementById("productBrand")?.addEventListener("input",()=>{renderProductBrandIconPreview();renderProductLivePreview();});
 function normalizeSpecSymbol(key,value){
   if(typeof value!=="string")return value; const text=value.trim(); if(!text)return text;
   if(key==="layout" && /^\d+(?:[.,]\d+)?$/.test(text)) return `${text.replace(",",".")}%`;
@@ -812,73 +929,9 @@ clearProductImage?.addEventListener("click", () => {
   renderMainImagePreview();
 });
 
-function clampBannerControl(value, min, max, fallback) {
-  const number = Number(value);
-  return Number.isFinite(number) ? Math.max(min, Math.min(max, number)) : fallback;
-}
+function renderProductBannerImagePreview() { /* V5.34: sin controles manuales de posición */ }
 
-function bannerTransformState() {
-  return {
-    scale: clampBannerControl(productBannerImageScale?.value, 60, 180, 100),
-    x: clampBannerControl(productBannerImagePositionX?.value, 0, 100, 50),
-    y: clampBannerControl(productBannerImagePositionY?.value, 0, 100, 50)
-  };
-}
 
-function renderProductBannerImagePreview() {
-  const src = safeImageSource(productBannerImageUrl?.value || "");
-  const { scale, x, y } = bannerTransformState();
-  if (productBannerImageScaleValue) productBannerImageScaleValue.textContent = `${Math.round(scale)}%`;
-  if (productBannerImagePositionXValue) productBannerImagePositionXValue.textContent = `${Math.round(x)}%`;
-  if (productBannerImagePositionYValue) productBannerImagePositionYValue.textContent = `${Math.round(y)}%`;
-
-  if (productBannerPreviewBrand) productBannerPreviewBrand.textContent = String(document.getElementById("productBrand")?.value || "MARCA").trim() || "MARCA";
-  if (productBannerPreviewName) productBannerPreviewName.textContent = String(document.getElementById("productName")?.value || "Nombre del producto").trim() || "Nombre del producto";
-  if (productBannerPreviewSummary) {
-    const summary = String(document.getElementById("productSummary")?.value || "La descripción del producto se mostrará aquí.").trim();
-    productBannerPreviewSummary.textContent = summary || "La descripción del producto se mostrará aquí.";
-  }
-
-  if (productBannerImagePreviewMedia) {
-    productBannerImagePreviewMedia.innerHTML = src
-      ? `<img src="${escapeAttr(src)}" alt="Vista previa del banner" draggable="false" style="--banner-admin-scale:${scale/100};--banner-admin-x:${(x-50)*0.8}%;--banner-admin-y:${(y-50)*0.8}%">`
-      : `<span class="banner-preview-empty">Vista previa 900 × 420</span>`;
-  }
-}
-
-[productBannerImageScale, productBannerImagePositionX, productBannerImagePositionY].filter(Boolean).forEach(input => input.addEventListener("input", renderProductBannerImagePreview));
-["productBrand","productName","productSummary"].forEach(id => {
-  document.getElementById(id)?.addEventListener("input", renderProductBannerImagePreview);
-});
-resetProductBannerTransform?.addEventListener("click", () => {
-  if (productBannerImageScale) productBannerImageScale.value = "100";
-  if (productBannerImagePositionX) productBannerImagePositionX.value = "50";
-  if (productBannerImagePositionY) productBannerImagePositionY.value = "50";
-  renderProductBannerImagePreview();
-});
-
-let bannerDragState = null;
-productBannerImagePreview?.addEventListener("pointerdown", event => {
-  if (!safeImageSource(productBannerImageUrl?.value || "")) return;
-  if (productBannerImagePreviewMedia && !productBannerImagePreviewMedia.contains(event.target)) return;
-  const rect = (productBannerImagePreviewMedia || productBannerImagePreview).getBoundingClientRect();
-  const state = bannerTransformState();
-  bannerDragState = { pointerId:event.pointerId,startClientX:event.clientX,startClientY:event.clientY,startX:state.x,startY:state.y,width:rect.width||1,height:rect.height||1 };
-  productBannerImagePreview.setPointerCapture?.(event.pointerId);
-  productBannerImagePreview.classList.add("is-dragging");
-  event.preventDefault();
-});
-productBannerImagePreview?.addEventListener("pointermove", event => {
-  if (!bannerDragState || bannerDragState.pointerId !== event.pointerId) return;
-  const nextX = clampBannerControl(bannerDragState.startX + ((event.clientX-bannerDragState.startClientX)/bannerDragState.width)*100,0,100,50);
-  const nextY = clampBannerControl(bannerDragState.startY + ((event.clientY-bannerDragState.startClientY)/bannerDragState.height)*100,0,100,50);
-  if (productBannerImagePositionX) productBannerImagePositionX.value = String(Math.round(nextX));
-  if (productBannerImagePositionY) productBannerImagePositionY.value = String(Math.round(nextY));
-  renderProductBannerImagePreview();
-});
-const finishBannerDrag = () => { bannerDragState=null; productBannerImagePreview?.classList.remove("is-dragging"); };
-productBannerImagePreview?.addEventListener("pointerup", finishBannerDrag);
-productBannerImagePreview?.addEventListener("pointercancel", finishBannerDrag);
 
 productBannerImageUrl?.addEventListener("input", renderProductBannerImagePreview);
 
@@ -1528,6 +1581,7 @@ function applyImportedWebProduct(product) {
   }
 
   document.getElementById("productBrand").value = product.brand || "";
+  renderProductBrandIconPreview();
   document.getElementById("productName").value = product.name || "";
   document.getElementById("productModel").value = product.model || "";
   document.getElementById("productScore").value =
@@ -1609,6 +1663,7 @@ async function loadBrandingSettings() {
     renderBrandingPreviews();
     applyAdminBranding();
     fillContactsSettings(data.contacts || {});
+    fillIconSettings(data.icons || {});
     fillAnnouncementSettings(data.announcements || [], data.announcementMode || announcementMode?.value || "scroll");
     fillReleaseSettings(data.release || { version: data.appVersion || "5.18" });
   } catch (error) {
@@ -2296,6 +2351,7 @@ function activateAdminPanel(panelId) {
     usersPanel: "Usuarios y roles",
     auditPanel: "Registro de auditoría",
     brandingPanel: "Apariencia",
+    iconsPanel: "Iconos",
     avatarsPanel: "Fotos de perfil",
     contactsPanel: "Contactos",
     announcementsPanel: "Noticias",
@@ -2395,6 +2451,7 @@ function editProduct(id) {
   document.getElementById("productCategory").value = product.category || "Mouse";
   document.getElementById("productStatus").value = product.status || "published";
   document.getElementById("productBrand").value = product.brand || "";
+  renderProductBrandIconPreview();
   document.getElementById("productName").value = product.name || "";
   document.getElementById("productModel").value = product.model || "";
   document.getElementById("productScore").value = product.score ?? "";
@@ -2411,9 +2468,6 @@ function editProduct(id) {
   setProductImages(Array.isArray(product.images) && product.images.length ? product.images : (product.imageUrl ? [product.imageUrl] : []));
   if (productVideoUrl) productVideoUrl.value = product.specs?.productVideo || "";
   if (productBannerImageUrl) productBannerImageUrl.value = product.specs?.bannerImageUrl || "";
-  if (productBannerImageScale) productBannerImageScale.value = String(product.specs?.bannerImageScale ?? 100);
-  if (productBannerImagePositionX) productBannerImagePositionX.value = String(product.specs?.bannerImagePositionX ?? 50);
-  if (productBannerImagePositionY) productBannerImagePositionY.value = String(product.specs?.bannerImagePositionY ?? 50);
   renderProductBannerImagePreview();
   if (keyboardSoundUrl) keyboardSoundUrl.value = product.specs?.keyboardSound || "";
   renderKeyboardSoundPreview();
@@ -2454,9 +2508,6 @@ function resetProductForm() {
   if (productVideoUrl) productVideoUrl.value = "";
   if (productBannerImageUrl) productBannerImageUrl.value = "";
   if (productBannerImageFile) productBannerImageFile.value = "";
-  if (productBannerImageScale) productBannerImageScale.value = "100";
-  if (productBannerImagePositionX) productBannerImagePositionX.value = "50";
-  if (productBannerImagePositionY) productBannerImagePositionY.value = "50";
   renderProductBannerImagePreview();
   renderAdminScoreStars(0);
   if (keyboardSoundUrl) keyboardSoundUrl.value = "";
@@ -2517,9 +2568,6 @@ productForm.addEventListener("submit", async event => {
   payload.specs.colorImages = getColorImages();
   payload.specs.productVideo = productVideoUrl?.value.trim() || "";
   payload.specs.bannerImageUrl = productBannerImageUrl?.value.trim() || "";
-  payload.specs.bannerImageScale = bannerTransformState().scale;
-  payload.specs.bannerImagePositionX = bannerTransformState().x;
-  payload.specs.bannerImagePositionY = bannerTransformState().y;
   payload.specs.keyboardSound = isKeyboardCategory(productCategory.value) ? (keyboardSoundUrl?.value.trim() || "") : "";
   payload.specs.variantProductIds = [...selectedVariantProductIds];
   payload.specs.driverDownloadUrl = productDriverUrl?.value.trim() || "";
